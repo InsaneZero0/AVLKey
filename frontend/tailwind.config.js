@@ -12,7 +12,14 @@ module.exports = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
       },
+      fontFamily: {
+        display: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        terracotta: { DEFAULT: '#C05C3D', hover: '#A64A2E' },
+        navy: { DEFAULT: '#1E3A5F', light: '#2C4E7A' },
+        sand: '#FAFAF9',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
