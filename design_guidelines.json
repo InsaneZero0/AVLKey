@@ -1,0 +1,90 @@
+{
+  "project_name": "Réntalo en Línea",
+  "theme": "light",
+  "archetype": "Organic & Earthy combined with Clean Modernism",
+  "colors": {
+    "background": "#FAFAF9",
+    "surface": "#FFFFFF",
+    "primary": "#C05C3D",
+    "primary_hover": "#A64A2E",
+    "secondary": "#1E3A5F",
+    "accent": "#F59E0B",
+    "text_primary": "#1C1917",
+    "text_secondary": "#57534E",
+    "border": "#E7E5E4",
+    "error": "#DC2626",
+    "success": "#16A34A"
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "rules": [
+      "Use tight letter spacing (tracking-tight) for headings > 32px",
+      "Overlines/Labels must be uppercase + tiny + tracking-[0.2em]",
+      "Hierarchy Gap Rule: jump between heading and subheading must not exceed 2 Tailwind steps",
+      "Headings should use font-medium to font-bold to create contrast with body"
+    ]
+  },
+  "visual_enhancers": {
+    "shadows": [
+      "Soft ambient shadows for cards: shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+      "Hover states: -translate-y-1 with stronger shadow shadow-[0_20px_40px_rgb(0,0,0,0.08)]"
+    ],
+    "glassmorphism": "Use backdrop-blur-xl bg-white/80 border border-white/20 for sticky headers and floating navs. NEVER fully transparent if content scrolls behind.",
+    "borders": "1px solid border-stone-200 for clean structural definition.",
+    "radius": "rounded-2xl for property cards and main sections, rounded-full for buttons."
+  },
+  "layouts": {
+    "landing": "Generous spacing (py-24, gap-8), large typography (up to text-6xl for hero). Asymmetrical grids.",
+    "marketplace": "Grid layout: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 or 4. Card-heavy, high focus on imagery.",
+    "dashboard": "Sidebar navigation (w-64) + main content area. High density, grid-cols-1 lg:grid-cols-3 gap-6. Clear data hierarchy."
+  },
+  "motion": {
+    "hover": "Subtle transform and shadow transitions using 'transition-all duration-300 ease-out'. DO NOT use 'transition: all' in plain CSS, use Tailwind classes.",
+    "page_transitions": "Framer motion for smooth mounting (e.g., initial opacity 0, y 20 -> animate to 1, 0).",
+    "micro_interactions": "Active states on buttons (scale down 0.98), subtle pulse on new notifications."
+  },
+  "accessibility": {
+    "contrast": "Ensure all text meets 4.5:1 ratio against background. Use text-shadow or gradient overlays on images to ensure text readability.",
+    "focus": "focus:ring-2 focus:ring-primary/50 focus:outline-none",
+    "testing": "All interactive and key informational elements MUST include a 'data-testid' attribute (e.g., data-testid='login-button')."
+  },
+  "image_urls": {
+    "hero_background": "https://images.pexels.com/photos/7746560/pexels-photo-7746560.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "property_listing_1": "https://images.pexels.com/photos/21853674/pexels-photo-21853674.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "property_listing_2": "https://images.pexels.com/photos/21853670/pexels-photo-21853670.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "property_listing_3": "https://images.unsplash.com/photo-1708127665466-1f9a166a24c8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBpbnRlcmlvciUyMG1leGljb3xlbnwwfHx8fDE3ODQ0NDU3NTR8MA&ixlib=rb-4.1.0&q=85",
+    "trust_signing": "https://images.pexels.com/photos/36729673/pexels-photo-36729673.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "family_moving": "https://images.unsplash.com/photo-1713942590368-09cfc6ae94ce?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGZhbWlseSUyMG1vdmluZyUyMGludG8lMjBob3VzZXxlbnwwfHx8fDE3ODQ0NDU3NTR8MA&ixlib=rb-4.1.0&q=85"
+  },
+  "component_guidelines": {
+    "cards": "Property cards should have aspect-[4/3] or aspect-[3/2] images, hover zoom effect on image within container, clear price and location typography.",
+    "buttons": "Primary CTA uses the primary color (#C05C3D) with white text. Pill-shaped or rounded-full for modern SaaS feel.",
+    "inputs": "Shadcn inputs with custom focus rings. Avoid native <select>, use Radix/Shadcn Select component.",
+    "navigation": "Sticky top header. MUST use backdrop-blur-xl and bg-white/80. NEVER fully transparent. Desktop: explicit links. Mobile: Hamburger.",
+    "dashboards": "Go flat, rectangular, dense styles. Avoid overuse of rounded cards. Use 1px subtle border for definition."
+  },
+  "instructions_to_main_agent": [
+    "Install Google Fonts 'Outfit' and 'Manrope'. Use 'Outfit' for headings and 'Manrope' for body text.",
+    "Use Lucide-React for all icons. Icons should have consistent stroke widths (usually 1.5 or 2).",
+    "Implement the marketing landing page first, then the property listing/search (marketplace), then the authenticated dashboards (Landlord and Tenant).",
+    "Use pure HTML + Tailwind for marketing sections, but strictly use Shadcn components for complex interactive elements (forms, date pickers, tables, dropdowns).",
+    "Ensure the hero image has a proper dark overlay (e.g., bg-black/40 to bg-black/60) so the white text layered over it is highly readable.",
+    "The UI must be entirely in Spanish (Mexico). Use terms like 'Arrendador', 'Arrendatario', 'Inmuebles', 'Inicia Sesión', 'Regístrate'.",
+    "Ensure all buttons, links, and forms have appropriate hover and focus states.",
+    "For the marketplace list, build a clear card structure similar to Airbnb with images, Title, Location, and Price/month."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. Make creative, distinctive frontends that surprise and delight.",
+    "Do not use dark colors as gradients.",
+    "Create depth through layered design elements with z-index hierarchy and glassmorphism (backdrop-blur-xl).",
+    "Never use 'transition: all'. Always specify transition properties (e.g. transition-colors, transition-transform).",
+    "Do not center align the app container (.App { text-align: center; }). Keep natural reading flow (left-aligned).",
+    "Every interaction needs micro-animations: hover states, active scaling, entrance animations.",
+    "Use 2-3x more spacing. Use Tailwind scales like p-8, p-12, py-24.",
+    "Missing categories of images? DO NOT use placeholder text. Reuse provided URLs or adapt.",
+    "Use 'sonner' for toasts.",
+    "Never use emoji characters like 🤖🧠 for icons. Use proper SVG libraries.",
+    "All interactive and key informational elements MUST include a 'data-testid' attribute to facilitate robust automated testing."
+  ]
+}
