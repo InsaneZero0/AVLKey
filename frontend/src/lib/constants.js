@@ -83,3 +83,30 @@ export const CITIES = [
   { name: "Puebla", state: "Puebla", img: "https://images.unsplash.com/photo-1579967742648-bcb8bacfee66?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
   { name: "Toluca", state: "Estado de México", img: "https://images.unsplash.com/photo-1674252260339-6a9986775993?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
 ];
+
+export const STAFF_ROLE_LABELS = {
+  superadmin: "Superadministrador",
+  admin_general: "Administrador general",
+  operaciones: "Operaciones",
+  revision_propiedades: "Revisión de propiedades",
+  soporte: "Soporte",
+  finanzas: "Finanzas",
+  cobranza: "Cobranza",
+  legal: "Área legal",
+  notaria: "Notaría",
+};
+
+export const PERMISSION_LABELS = {
+  consultar: "Consultar",
+  crear: "Crear",
+  editar: "Editar",
+  aprobar: "Aprobar",
+  rechazar: "Rechazar",
+  descargar: "Descargar",
+  eliminar: "Eliminar",
+  administrar_pagos: "Administrar pagos",
+  administrar_contratos: "Administrar contratos",
+  consultar_documentos_sensibles: "Documentos sensibles",
+  modificar_decisiones_automaticas: "Modificar decisiones automáticas",
+  administrar_usuarios: "Administrar usuarios",
+};

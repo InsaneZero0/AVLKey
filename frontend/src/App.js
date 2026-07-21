@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 
 import Landing from "@/pages/Landing";
 import Explore from "@/pages/Explore";
@@ -23,6 +24,16 @@ import MyApplications from "@/pages/dashboard/MyApplications";
 import Contracts from "@/pages/dashboard/Contracts";
 import Payments from "@/pages/dashboard/Payments";
 import Profile from "@/pages/dashboard/Profile";
+
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminOverview from "@/pages/admin/AdminOverview";
+import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminProperties from "@/pages/admin/AdminProperties";
+import AdminApplications from "@/pages/admin/AdminApplications";
+import AdminContracts from "@/pages/admin/AdminContracts";
+import AdminPayments from "@/pages/admin/AdminPayments";
+import AdminDocuments from "@/pages/admin/AdminDocuments";
+import AdminAudit from "@/pages/admin/AdminAudit";
 
 function AppRoutes() {
   const location = useLocation();
@@ -48,6 +59,16 @@ function AppRoutes() {
         <Route path="contratos" element={<Contracts />} />
         <Route path="pagos" element={<Payments />} />
         <Route path="perfil" element={<Profile />} />
+      </Route>
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+        <Route index element={<AdminOverview />} />
+        <Route path="usuarios" element={<AdminUsers />} />
+        <Route path="propiedades" element={<AdminProperties />} />
+        <Route path="solicitudes" element={<AdminApplications />} />
+        <Route path="contratos" element={<AdminContracts />} />
+        <Route path="pagos" element={<AdminPayments />} />
+        <Route path="documentos" element={<AdminDocuments />} />
+        <Route path="auditoria" element={<AdminAudit />} />
       </Route>
     </Routes>
   );

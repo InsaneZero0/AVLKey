@@ -64,12 +64,12 @@ export default function Navbar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs text-stone-500">{user.role === "arrendador" ? "Arrendador" : "Arrendatario"}</div>
+                <div className="px-2 py-1.5 text-xs text-stone-500">{user.account_type === "internal" ? "Personal interno" : (user.role === "arrendador" ? "Arrendador" : "Arrendatario")}</div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/panel")} data-testid="menu-panel">
-                  <LayoutDashboard className="w-4 h-4 mr-2" /> Mi panel
+                <DropdownMenuItem onClick={() => navigate(user.account_type === "internal" ? "/admin" : "/panel")} data-testid="menu-panel">
+                  <LayoutDashboard className="w-4 h-4 mr-2" /> {user.account_type === "internal" ? "Panel interno" : "Mi panel"}
                 </DropdownMenuItem>
-                {user.role === "arrendador" && (
+                {user.account_type !== "internal" && (
                   <DropdownMenuItem onClick={() => navigate("/panel/publicar")} data-testid="menu-publicar">
                     <Building2 className="w-4 h-4 mr-2" /> Publicar inmueble
                   </DropdownMenuItem>

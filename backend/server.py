@@ -38,6 +38,78 @@ logger = logging.getLogger("rentalo")
 
 PROPERTY_TYPES = ["casa", "departamento", "oficina", "local", "terreno", "bodega", "industrial"]
 
+# ---------------------------------------------------------------------------
+# RBAC — roles internos y permisos granulares (una sola organización)
+# ---------------------------------------------------------------------------
+STAFF_ROLES = [
+    "superadmin", "admin_general", "operaciones", "revision_propiedades",
+    "soporte", "finanzas", "cobranza", "legal", "notaria",
+]
+
+ALL_PERMISSIONS = [
+    "consultar", "crear", "editar", "aprobar", "rechazar", "descargar", "eliminar",
+    "administrar_pagos", "administrar_contratos", "consultar_documentos_sensibles",
+    "modificar_decisiones_automaticas", "administrar_usuarios",
+]
+
+STAFF_PERMISSIONS = {
+    "superadmin": list(ALL_PERMISSIONS),
+    "admin_general": ["consultar", "crear", "editar", "aprobar", "rechazar", "descargar",
+                       "eliminar", "administrar_pagos", "administrar_contratos",
+                       "consultar_documentos_sensibles", "modificar_decisiones_automaticas",
+                       "administrar_usuarios"],
+    "operaciones": ["consultar", "crear", "editar", "aprobar", "rechazar", "administrar_contratos"],
+    "revision_propiedades": ["consultar", "editar", "aprobar", "rechazar"],
+    "soporte": ["consultar", "crear", "editar"],
+    "finanzas": ["consultar", "administrar_pagos", "descargar", "consultar_documentos_sensibles"],
+    "cobranza": ["consultar", "editar", "administrar_pagos"],
+    "legal": ["consultar", "administrar_contratos", "consultar_documentos_sensibles", "descargar"],
+    "notaria": ["consultar", "aprobar", "descargar", "consultar_documentos_sensibles"],
+}
+
+EXTERNAL_PERMISSIONS = ["consultar", "crear", "editar", "descargar", "eliminar"]
+
+# Grant hierarchy: a principal may only assign roles at or below its own level.
+ROLE_RANK = {"superadmin": 3, "admin_general": 2}
+
+
+def perms_for(user: dict) -> list:
+    if user.get("account_type") == "internal":
+        return STAFF_PERMISSIONS.get(user.get("staff_role"), [])
+    return EXTERNAL_PERMISSIONS
+
+
+def has_perm(user: dict, perm: str) -> bool:
+    return perm in perms_for(user)
+
+
+def can_grant(actor: dict, target_staff_role: Optional[str], target_account_type: str) -> bool:
+    if actor.get("account_type") != "internal":
+        return False
+    if "administrar_usuarios" not in perms_for(actor):
+        return False
+    actor_rank = ROLE_RANK.get(actor.get("staff_role"), 1)
+    if target_account_type == "internal" and target_staff_role:
+        target_rank = ROLE_RANK.get(target_staff_role, 1)
+        return target_rank <= actor_rank
+    return True
+
+
+def with_perms(user: dict) -> dict:
+    user = clean_user(user)
+    user.setdefault("account_type", "internal" if user.get("staff_role") else "external")
+    user["permissions"] = perms_for(user)
+    return user
+
+
+async def audit(actor: dict, action: str, resource: str, detail: str = ""):
+    await db.audit_logs.insert_one({
+        "actor_id": actor.get("id"), "actor_email": actor.get("email"),
+        "actor_role": actor.get("staff_role") or actor.get("role"),
+        "action": action, "resource": resource, "detail": detail,
+        "at": now_utc().isoformat(),
+    })
+
 
 def now_utc():
     return datetime.now(timezone.utc)
@@ -108,7 +180,7 @@ async def get_current_user(request: Request) -> dict:
     user = await db.users.find_one({"id": session["user_id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="Usuario no encontrado")
-    return clean_user(user)
+    return with_perms(user)
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +296,8 @@ async def register(data: RegisterInput, response: Response):
         "name": data.name,
         "password_hash": hash_password(data.password),
         "role": data.role,
+        "account_type": "external",
+        "staff_role": None,
         "phone": data.phone,
         "picture": None,
         "auth_provider": "password",
@@ -232,7 +306,7 @@ async def register(data: RegisterInput, response: Response):
     await db.users.insert_one(dict(user))
     token = await create_session(user["id"])
     set_session_cookie(response, token)
-    return clean_user(dict(user))
+    return with_perms(dict(user))
 
 
 @api.post("/auth/login")
@@ -243,7 +317,7 @@ async def login(data: LoginInput, response: Response):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
     token = await create_session(user["id"])
     set_session_cookie(response, token)
-    return clean_user(dict(user))
+    return with_perms(dict(user))
 
 
 @api.post("/auth/session")
@@ -263,6 +337,8 @@ async def google_session(data: SessionInput, response: Response):
             "name": info.get("name", email),
             "password_hash": None,
             "role": "arrendatario",
+            "account_type": "external",
+            "staff_role": None,
             "phone": None,
             "picture": info.get("picture"),
             "auth_provider": "google",
@@ -279,7 +355,7 @@ async def google_session(data: SessionInput, response: Response):
         "created_at": now_utc().isoformat(),
     })
     set_session_cookie(response, token)
-    return clean_user(dict(user))
+    return with_perms(dict(user))
 
 
 @api.get("/auth/me")
@@ -308,7 +384,7 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
     if updates:
         await db.users.update_one({"id": user["id"]}, {"$set": updates})
     updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
-    return clean_user(updated)
+    return with_perms(updated)
 
 
 # ---------------------------------------------------------------------------
@@ -322,8 +398,8 @@ async def enrich_property(prop: dict) -> dict:
 
 @api.post("/properties")
 async def create_property(data: PropertyInput, user: dict = Depends(get_current_user)):
-    if user["role"] != "arrendador":
-        raise HTTPException(status_code=403, detail="Solo los arrendadores pueden publicar inmuebles")
+    if not (user.get("account_type") == "external" or has_perm(user, "crear")):
+        raise HTTPException(status_code=403, detail="No autorizado para publicar inmuebles")
     if data.property_type not in PROPERTY_TYPES:
         raise HTTPException(status_code=400, detail="Tipo de inmueble inválido")
     prop = data.model_dump()
@@ -331,6 +407,7 @@ async def create_property(data: PropertyInput, user: dict = Depends(get_current_
         "id": new_id("prop"),
         "owner_id": user["id"],
         "status": "disponible",
+        "review_status": "pendiente",
         "created_at": now_utc().isoformat(),
     })
     await db.properties.insert_one(dict(prop))
@@ -358,6 +435,7 @@ async def list_properties(
     query = {}
     if status:
         query["status"] = status
+    query["review_status"] = {"$ne": "rechazada"}
     if property_type and property_type != "todos":
         query["property_type"] = property_type
     if state and state != "todos":
@@ -447,8 +525,8 @@ async def my_properties(user: dict = Depends(get_current_user)):
 # ---------------------------------------------------------------------------
 @api.post("/applications")
 async def create_application(data: ApplicationInput, user: dict = Depends(get_current_user)):
-    if user["role"] != "arrendatario":
-        raise HTTPException(status_code=403, detail="Solo los arrendatarios pueden solicitar")
+    if user.get("account_type") != "external":
+        raise HTTPException(status_code=403, detail="Solo los usuarios externos pueden solicitar")
     prop = await db.properties.find_one({"id": data.property_id}, {"_id": 0})
     if not prop:
         raise HTTPException(status_code=404, detail="Inmueble no encontrado")
@@ -692,6 +770,161 @@ async def root():
     return {"message": "Réntalo en Línea API", "status": "ok"}
 
 
+# ---------------------------------------------------------------------------
+# Internal admin (RBAC-gated)
+# ---------------------------------------------------------------------------
+def require_permission(perm: str):
+    async def dep(user: dict = Depends(get_current_user)):
+        if user.get("account_type") != "internal" or not has_perm(user, perm):
+            raise HTTPException(status_code=403, detail="Permiso insuficiente")
+        return user
+    return dep
+
+
+async def require_internal(user: dict = Depends(get_current_user)):
+    if user.get("account_type") != "internal":
+        raise HTTPException(status_code=403, detail="Acceso restringido al personal interno")
+    return user
+
+
+class UserRoleUpdate(BaseModel):
+    account_type: Optional[str] = None
+    staff_role: Optional[str] = None
+    role: Optional[str] = None
+
+
+class ReviewDecision(BaseModel):
+    decision: str  # aprobada | rechazada
+    note: str = ""
+
+
+class RiskOverride(BaseModel):
+    risk_level: str
+    reason: str = ""
+
+
+@api.get("/admin/meta")
+async def admin_meta(user: dict = Depends(require_internal)):
+    return {"staff_roles": STAFF_ROLES, "permissions": ALL_PERMISSIONS, "staff_permissions": STAFF_PERMISSIONS}
+
+
+@api.get("/admin/stats")
+async def admin_stats(user: dict = Depends(require_permission("consultar"))):
+    return {
+        "users": await db.users.count_documents({}),
+        "internal_users": await db.users.count_documents({"account_type": "internal"}),
+        "properties": await db.properties.count_documents({}),
+        "properties_pending": await db.properties.count_documents({"review_status": "pendiente"}),
+        "applications": await db.applications.count_documents({}),
+        "contracts": await db.contracts.count_documents({}),
+        "payments_paid": await db.payment_transactions.count_documents({"payment_status": "paid"}),
+    }
+
+
+@api.get("/admin/users")
+async def admin_users(user: dict = Depends(require_permission("consultar"))):
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
+    return users
+
+
+@api.patch("/admin/users/{user_id}")
+async def admin_update_user(user_id: str, data: UserRoleUpdate, actor: dict = Depends(require_permission("administrar_usuarios"))):
+    target = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    account_type = data.account_type or target.get("account_type", "external")
+    staff_role = data.staff_role
+    if account_type == "internal":
+        if staff_role and staff_role not in STAFF_ROLES:
+            raise HTTPException(status_code=400, detail="Rol interno inválido")
+        if not can_grant(actor, staff_role, "internal"):
+            raise HTTPException(status_code=403, detail="No puedes asignar un rol igual o superior al tuyo")
+    updates = {"account_type": account_type}
+    if account_type == "internal":
+        updates["staff_role"] = staff_role
+    else:
+        updates["staff_role"] = None
+        if data.role in ("arrendador", "arrendatario"):
+            updates["role"] = data.role
+    await db.users.update_one({"id": user_id}, {"$set": updates})
+    await audit(actor, "update_user_role", user_id, str(updates))
+    updated = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return updated
+
+
+@api.get("/admin/properties")
+async def admin_properties(review_status: Optional[str] = None, user: dict = Depends(require_permission("consultar"))):
+    q = {}
+    if review_status:
+        q["review_status"] = review_status
+    props = await db.properties.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return props
+
+
+@api.patch("/admin/properties/{property_id}/review")
+async def admin_review_property(property_id: str, data: ReviewDecision, actor: dict = Depends(get_current_user)):
+    if actor.get("account_type") != "internal":
+        raise HTTPException(status_code=403, detail="Acceso restringido")
+    perm = "aprobar" if data.decision == "aprobada" else "rechazar"
+    if not has_perm(actor, perm):
+        raise HTTPException(status_code=403, detail="Permiso insuficiente")
+    if data.decision not in ("aprobada", "rechazada", "pendiente"):
+        raise HTTPException(status_code=400, detail="Decisión inválida")
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    await db.properties.update_one({"id": property_id}, {"$set": {"review_status": data.decision, "review_note": data.note}})
+    await audit(actor, f"review_property_{data.decision}", property_id, data.note)
+    return {"ok": True}
+
+
+@api.get("/admin/applications")
+async def admin_applications(user: dict = Depends(require_permission("consultar"))):
+    apps = await db.applications.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return apps
+
+
+@api.patch("/admin/applications/{application_id}/risk")
+async def admin_override_risk(application_id: str, data: RiskOverride, actor: dict = Depends(require_permission("modificar_decisiones_automaticas"))):
+    if data.risk_level not in ("bajo", "medio", "alto"):
+        raise HTTPException(status_code=400, detail="Nivel inválido")
+    app_doc = await db.applications.find_one({"id": application_id}, {"_id": 0})
+    if not app_doc:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    await db.applications.update_one({"id": application_id}, {"$set": {
+        "risk_level": data.risk_level, "risk_overridden": True, "risk_override_reason": data.reason,
+    }})
+    await audit(actor, "override_risk", application_id, f"{data.risk_level}: {data.reason}")
+    return {"ok": True}
+
+
+@api.get("/admin/contracts")
+async def admin_contracts(user: dict = Depends(require_permission("consultar"))):
+    contracts = await db.contracts.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return contracts
+
+
+@api.get("/admin/payments")
+async def admin_payments(user: dict = Depends(require_permission("administrar_pagos"))):
+    payments = await db.payment_transactions.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return payments
+
+
+@api.get("/admin/documents")
+async def admin_documents(user: dict = Depends(require_permission("consultar_documentos_sensibles"))):
+    # Sensitive: applicant income + occupation across all applications
+    apps = await db.applications.find({}, {"_id": 0, "tenant_name": 1, "property_title": 1,
+                                           "monthly_income": 1, "occupation": 1, "employment_type": 1,
+                                           "income_ratio": 1, "created_at": 1}).sort("created_at", -1).to_list(500)
+    return apps
+
+
+@api.get("/admin/audit")
+async def admin_audit(user: dict = Depends(require_permission("administrar_usuarios"))):
+    logs = await db.audit_logs.find({}, {"_id": 0}).sort("at", -1).to_list(200)
+    return logs
+
+
 app.include_router(api)
 
 app.add_middleware(
@@ -761,6 +994,7 @@ async def seed():
         await db.users.insert_one({
             "id": new_id("user"), "email": admin_email, "name": "Administrador",
             "password_hash": hash_password(admin_password), "role": "arrendador",
+            "account_type": "external", "staff_role": None,
             "phone": None, "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         })
 
@@ -770,6 +1004,7 @@ async def seed():
         landlord = {
             "id": new_id("user"), "email": landlord_email, "name": "Carlos Mendoza",
             "password_hash": hash_password("Demo123!"), "role": "arrendador",
+            "account_type": "external", "staff_role": None,
             "phone": "5555550101", "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         }
         await db.users.insert_one(dict(landlord))
@@ -779,13 +1014,34 @@ async def seed():
         await db.users.insert_one({
             "id": new_id("user"), "email": tenant_email, "name": "Ana Torres",
             "password_hash": hash_password("Demo123!"), "role": "arrendatario",
+            "account_type": "external", "staff_role": None,
             "phone": "5555550202", "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         })
+
+    # Internal staff — one account per role
+    staff_seed = {
+        "superadmin": "Sofía Superadmin", "admin_general": "Andrés Admin", "operaciones": "Olivia Ops",
+        "revision_propiedades": "Raúl Revisión", "soporte": "Sara Soporte", "finanzas": "Fernando Finanzas",
+        "cobranza": "Camila Cobranza", "legal": "Laura Legal", "notaria": "Noé Notaría",
+    }
+    for role, name in staff_seed.items():
+        email = f"{role}@rentalo.mx"
+        if not await db.users.find_one({"email": email}):
+            await db.users.insert_one({
+                "id": new_id("user"), "email": email, "name": name,
+                "password_hash": hash_password("Interno123!"), "role": "arrendatario",
+                "account_type": "internal", "staff_role": role,
+                "phone": None, "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
+            })
+
+    # Migrate legacy docs
+    await db.users.update_many({"account_type": {"$exists": False}}, {"$set": {"account_type": "external", "staff_role": None}})
+    await db.properties.update_many({"review_status": {"$exists": False}}, {"$set": {"review_status": "aprobada"}})
 
     if await db.properties.count_documents({}) == 0:
         for sp in SEED_PROPERTIES:
             doc = dict(sp)
-            doc.update({"id": new_id("prop"), "owner_id": landlord["id"], "status": "disponible", "created_at": now_utc().isoformat()})
+            doc.update({"id": new_id("prop"), "owner_id": landlord["id"], "status": "disponible", "review_status": "aprobada", "created_at": now_utc().isoformat()})
             await db.properties.insert_one(doc)
     logger.info("Seed completo")
 

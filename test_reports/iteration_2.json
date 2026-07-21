@@ -1,0 +1,35 @@
+{
+  "summary": "RBAC end-to-end validated. Backend: 13/13 pytest passing on /app/backend/tests/test_rbac.py (permission matrix, dual accounts, review workflow, risk override, audit, hierarchy). Frontend: internal login redirects to /admin, external redirects to /panel, superadmin sees all 8 sidebar sections and can open user edit dialog, review tabs and audit page. One UI bug found: Finanzas sees 'Usuarios' in sidebar (should be hidden per spec).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminLayout.js", "issue": "Sidebar 'Usuarios' entry uses perm 'consultar' — every internal role sees it. Requirement says Finanzas (and other roles without administrar_usuarios) should NOT see Usuarios. Change NAV entry Usuarios to perm 'administrar_usuarios' so only superadmin/admin_general see it.", "selector": "[data-testid=\"admin-nav-usuarios\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_rbac.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/rbac_results.xml"
+  ],
+  "action_items": [
+    "In /app/frontend/src/pages/admin/AdminLayout.js change the Usuarios NAV item perm from 'consultar' to 'administrar_usuarios' so Finanzas/Revisión/Soporte/etc. don't see it. AdminUsers page itself already guards write actions with canManage."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1057 lines — consider splitting admin/RBAC endpoints into /app/backend/routers/admin.py for maintainability.",
+    "admin_review_property uses get_current_user + manual has_perm checks instead of the require_permission dependency (works but inconsistent).",
+    "Seeded internal staff users never get their password refreshed if Interno123! changes (idempotent-with-password-refresh recommended).",
+    "GET /api/admin/documents exposes tenant_name + monthly_income of ALL applications to anyone with consultar_documentos_sensibles — consider pagination/filtering to reduce exposure.",
+    "can_grant() defaults actor_rank to 1 for unranked roles; only superadmin=3 and admin_general=2 are ranked — other internal roles (soporte/finanzas/etc.) implicitly get rank 1 which is fine because they lack administrar_usuarios.",
+    "External accounts are truly dual: POST /api/properties by an arrendatario succeeds, PATCH /users/me role toggles the active profile — confirmed working."
+  ],
+  "updated_files": ["/app/backend/tests/test_rbac.py"],
+  "success_rate": {"backend": "100% (13/13 RBAC + 16/16 regression)", "frontend": "~90% (only Finanzas nav filter is off)"},
+  "test_credentials": "Internos: superadmin@rentalo.mx / admin_general@rentalo.mx / finanzas@rentalo.mx / revision_propiedades@rentalo.mx / operaciones@rentalo.mx (pwd Interno123!). Externos: arrendador@demo.mx, arrendatario@demo.mx (pwd Demo123!).",
+  "seed_data_creation": "Backend seed inserts 9 internal staff users (one per role) with Interno123!. During tests I created and deleted several TEST_ properties + one TEST_ application (rechazada afterwards). One throw-away external user test_rbac_*@test.mx was created (still exists but reverted to external/arrendatario).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend RBAC 100%. Only frontend nav filter fix needed in AdminLayout.js. After the fix, verify Finanzas login only shows: Resumen, Revisión de propiedades, Solicitudes, Contratos, Pagos, Documentos sensibles (no Usuarios, no Auditoría). Superadmin should still see all 8 items. Use /app/backend/tests/test_rbac.py for regression.",
+  "rca of the issue": "Bug RCA — Sidebar over-permissive: In AdminLayout.js the NAV array grants Usuarios visibility to anyone with 'consultar' permission (all internal roles). Since 'administrar_usuarios' is only held by superadmin/admin_general, and the spec says only they should see Usuarios, the NAV entry must use perm:'administrar_usuarios'. Reproduction: login as finanzas@rentalo.mx / Interno123! → /admin sidebar shows 'Usuarios'. Fix: one-line change in AdminLayout.js NAV constant."
+}

@@ -22,9 +22,9 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      const u = await login(email, password);
       toast.success("¡Bienvenido de vuelta!");
-      navigate("/panel");
+      navigate(u?.account_type === "internal" ? "/admin" : "/panel");
     } catch (err) {
       toast.error(apiError(err.response?.data?.detail));
     } finally {
