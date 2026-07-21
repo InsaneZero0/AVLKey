@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Home, Menu, X, LayoutDashboard, LogOut, Building2 } from "lucide-react";
+import { Home, Menu, X, LayoutDashboard, LogOut, Building2, Globe } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -30,13 +31,27 @@ export default function Navbar() {
           <span className="font-display font-bold text-lg tracking-tight text-navy">Réntalo <span className="text-terracotta">en Línea</span></span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-stone-600">
-          <Link to="/explorar" className="hover:text-terracotta transition-colors" data-testid="nav-explorar">Explorar inmuebles</Link>
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-stone-600">
+          <Link to="/" className="hover:text-terracotta transition-colors" data-testid="nav-inicio">Inicio</Link>
+          <Link to="/explorar" className="hover:text-terracotta transition-colors" data-testid="nav-explorar">Buscar propiedades</Link>
           <Link to="/#como-funciona" className="hover:text-terracotta transition-colors" data-testid="nav-como-funciona">Cómo funciona</Link>
-          <Link to="/#servicios" className="hover:text-terracotta transition-colors" data-testid="nav-servicios">Servicios</Link>
+          <Link to="/panel/publicar" className="hover:text-terracotta transition-colors" data-testid="nav-publicar">Publicar propiedad</Link>
+          <Link to="/#beneficios" className="hover:text-terracotta transition-colors" data-testid="nav-beneficios">Beneficios</Link>
+          <Link to="/#ayuda" className="hover:text-terracotta transition-colors" data-testid="nav-ayuda">Centro de ayuda</Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-terracotta transition-colors" data-testid="lang-selector">
+                <Globe className="w-4 h-4" /> ES
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem data-testid="lang-es">Español</DropdownMenuItem>
+              <DropdownMenuItem data-testid="lang-en" onClick={() => toast.info("English version coming soon")}>English (próximamente)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -73,14 +88,19 @@ export default function Navbar() {
           )}
         </div>
 
-        <button className="md:hidden p-2" onClick={() => setOpen(!open)} data-testid="mobile-menu-toggle">
+        <button className="lg:hidden p-2" onClick={() => setOpen(!open)} data-testid="mobile-menu-toggle">
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-stone-200 bg-white px-5 py-4 space-y-3" data-testid="mobile-menu">
-          <Link to="/explorar" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Explorar inmuebles</Link>
+        <div className="lg:hidden border-t border-stone-200 bg-white px-5 py-4 space-y-1" data-testid="mobile-menu">
+          <Link to="/" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Inicio</Link>
+          <Link to="/explorar" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Buscar propiedades</Link>
+          <Link to="/#como-funciona" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Cómo funciona</Link>
+          <Link to="/panel/publicar" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Publicar propiedad</Link>
+          <Link to="/#beneficios" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Beneficios</Link>
+          <Link to="/#ayuda" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Centro de ayuda</Link>
           {user ? (
             <>
               <Link to="/panel" onClick={() => setOpen(false)} className="block py-2 text-stone-700">Mi panel</Link>

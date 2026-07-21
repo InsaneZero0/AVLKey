@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Home } from "lucide-react";
+import { Home, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -14,6 +14,13 @@ export default function Footer() {
             <span className="font-display font-bold text-lg text-white">Réntalo en Línea</span>
           </div>
           <p className="text-sm text-stone-400 leading-relaxed">La plataforma que administra tus arrendamientos con reglas claras, pagos seguros y respaldo legal en todo México.</p>
+          <div className="flex items-center gap-3 mt-5">
+            {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
+              <a key={i} href="#" data-testid={`social-${i}`} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-terracotta transition-colors">
+                <Icon className="w-4 h-4 text-white" />
+              </a>
+            ))}
+          </div>
         </div>
         <div>
           <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-[0.15em]">Plataforma</h4>
@@ -41,8 +48,15 @@ export default function Footer() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 py-6 text-center text-xs text-stone-500">
-        © {new Date().getFullYear()} Réntalo en Línea. Todos los derechos reservados.
+      <div className="border-t border-white/10 py-6">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500">
+          <span>© {new Date().getFullYear()} Réntalo en Línea. Todos los derechos reservados.</span>
+          <div className="flex items-center gap-5">
+            <a href="#" className="hover:text-terracotta transition-colors" data-testid="legal-terminos">Términos y condiciones</a>
+            <a href="#" className="hover:text-terracotta transition-colors" data-testid="legal-privacidad">Aviso de privacidad</a>
+            <a href="#" className="hover:text-terracotta transition-colors" data-testid="legal-cookies">Política de cookies</a>
+          </div>
+        </div>
       </div>
     </footer>
   );

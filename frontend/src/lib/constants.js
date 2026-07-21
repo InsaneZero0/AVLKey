@@ -54,3 +54,32 @@ export const RISK_LABEL = {
   medio: "Riesgo medio",
   alto: "Riesgo alto",
 };
+
+export const MEX_STATES = [
+  "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas",
+  "Chihuahua", "CDMX", "Coahuila", "Colima", "Durango", "Estado de México", "Guanajuato",
+  "Guerrero", "Hidalgo", "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León",
+  "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora",
+  "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas",
+];
+
+export const LEASE_TERMS = [
+  { value: "6", label: "6 meses" },
+  { value: "12", label: "12 meses" },
+  { value: "18", label: "18 meses" },
+  { value: "24", label: "24 meses" },
+];
+
+export const AMENITIES_OPTIONS = [
+  "Gimnasio", "Alberca", "Roof garden", "Seguridad 24h", "Elevador",
+  "Estacionamiento de visitas", "Área de lavado", "Balcón", "Jardín", "Aire acondicionado",
+];
+
+export const CITIES = [
+  { name: "Ciudad de México", state: "CDMX", img: "https://images.unsplash.com/photo-1518105515732-8df2a35c0c56?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
+  { name: "Monterrey", state: "Nuevo León", img: "https://images.pexels.com/photos/17238410/pexels-photo-17238410.jpeg?auto=compress&cs=tinysrgb&w=600" },
+  { name: "Guadalajara", state: "Jalisco", img: "https://images.unsplash.com/photo-1690130206583-3ad3f9515b82?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
+  { name: "Querétaro", state: "Querétaro", img: "https://images.unsplash.com/photo-1531166473306-c4c0827f3a89?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
+  { name: "Puebla", state: "Puebla", img: "https://images.unsplash.com/photo-1579967742648-bcb8bacfee66?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
+  { name: "Toluca", state: "Estado de México", img: "https://images.unsplash.com/photo-1674252260339-6a9986775993?crop=entropy&cs=srgb&fm=jpg&q=85&w=600" },
+];

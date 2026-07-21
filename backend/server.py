@@ -342,10 +342,17 @@ async def create_property(data: PropertyInput, user: dict = Depends(get_current_
 async def list_properties(
     q: Optional[str] = None,
     property_type: Optional[str] = None,
+    state: Optional[str] = None,
     city: Optional[str] = None,
+    colonia: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     bedrooms: Optional[int] = None,
+    bathrooms: Optional[int] = None,
+    min_area: Optional[float] = None,
+    furnished: Optional[bool] = None,
+    parking: Optional[int] = None,
+    pets_allowed: Optional[bool] = None,
     status: Optional[str] = "disponible",
 ):
     query = {}
@@ -353,10 +360,24 @@ async def list_properties(
         query["status"] = status
     if property_type and property_type != "todos":
         query["property_type"] = property_type
+    if state and state != "todos":
+        query["state"] = {"$regex": state, "$options": "i"}
     if city:
         query["city"] = {"$regex": city, "$options": "i"}
+    if colonia:
+        query["colonia"] = {"$regex": colonia, "$options": "i"}
     if bedrooms:
         query["bedrooms"] = {"$gte": bedrooms}
+    if bathrooms:
+        query["bathrooms"] = {"$gte": bathrooms}
+    if min_area:
+        query["area_m2"] = {"$gte": min_area}
+    if furnished:
+        query["furnished"] = True
+    if parking:
+        query["parking"] = {"$gte": parking}
+    if pets_allowed:
+        query["pets_allowed"] = True
     if min_price is not None or max_price is not None:
         price_q = {}
         if min_price is not None:
