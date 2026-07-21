@@ -847,6 +847,14 @@ def serialize_visit(v: dict, viewer_id: str, prop: Optional[dict] = None) -> dic
 async def create_visit(data: VisitCreate, user: dict = Depends(get_current_user)):
     if user.get("account_type") != "external":
         raise HTTPException(status_code=403, detail="Solo usuarios externos pueden agendar visitas")
+    try:
+        dt = datetime.fromisoformat(data.scheduled_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Fecha y hora inválidas")
+    if dt < now_utc():
+        raise HTTPException(status_code=400, detail="La fecha de la visita debe ser futura")
     prop = await db.properties.find_one({"id": data.property_id}, {"_id": 0})
     if not prop:
         raise HTTPException(status_code=404, detail="Inmueble no encontrado")

@@ -39,6 +39,11 @@ export default function PropertyDetail() {
   const [vDate, setVDate] = useState("");
   const [vTime, setVTime] = useState("10:00");
   const [vNote, setVNote] = useState("");
+  const [busy, setBusy] = useState([]);
+
+  useEffect(() => {
+    if (user && visitOpen) api.get(`/properties/${id}/visits/busy`).then(({ data }) => setBusy(data)).catch(() => {});
+  }, [id, user, visitOpen]);
 
   const submitVisit = async () => {
     if (!user) { navigate("/login"); return; }
@@ -243,7 +248,12 @@ export default function PropertyDetail() {
                         <Label>Hora</Label>
                         <Select value={vTime} onValueChange={setVTime}>
                           <SelectTrigger data-testid="visit-time"><SelectValue /></SelectTrigger>
-                          <SelectContent>{TIME_SLOTS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                          <SelectContent>
+                            {TIME_SLOTS.map((t) => {
+                              const taken = busy.some((b) => b.startsWith(vDate) && b.slice(11, 16) === t);
+                              return <SelectItem key={t} value={t} disabled={taken}>{t}{taken ? " (ocupado)" : ""}</SelectItem>;
+                            })}
+                          </SelectContent>
                         </Select>
                       </div>
                       <div>

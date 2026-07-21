@@ -4,6 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/index.css";
 import App from "@/App";
 
+// Silence benign ResizeObserver loop warnings (Radix Select/Dialog) that trigger the CRA dev overlay.
+window.addEventListener("error", (e) => {
+  if (e.message && e.message.includes("ResizeObserver loop")) {
+    e.stopImmediatePropagation();
+  }
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

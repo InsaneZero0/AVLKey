@@ -82,7 +82,7 @@ export default function Visits() {
                     <div>
                       <div className="flex items-center gap-2">
                         <Badge className={`rounded-full ${st.cls}`} data-testid={`visit-status-${v.id}`}>{st.label}</Badge>
-                        {v.status === "reprogramada" && <span className="text-xs text-stone-400">propuesta por {v.proposed_by}</span>}
+                        {v.status === "reprogramada" && <span className="text-xs text-stone-400">propuesta por {v.proposed_by === (landlord ? "arrendador" : "arrendatario") ? "ti" : v.proposed_by}</span>}
                       </div>
                       <h3 className="font-display font-semibold text-navy mt-1">{v.property_title}</h3>
                       <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />{fmt(v.scheduled_at)}</div>

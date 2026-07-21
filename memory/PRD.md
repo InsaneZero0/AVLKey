@@ -48,6 +48,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Revisión interna (RBAC): aprobar/rechazar/solicitar corrección + fecha de vencimiento; listar/revisar documentos requiere `consultar_documentos_sensibles`.
 - Verificado: backend 13/13 verificación + 16/16 base + 13/13 RBAC; flujos frontend 100%.
 
+## Agendamiento de visitas (2026-06-21)
+- Arrendatario solicita visita (fecha/hora, horarios ocupados deshabilitados). Arrendador confirma, rechaza, propone nueva fecha (reprograma) o cancela; marca completada / no asistió.
+- Dirección exacta revelada solo tras confirmación (para el arrendatario).
+- Estados: solicitada, confirmada, reprogramada, cancelada, completada, no_asistio; con historial (timeline) por visita.
+- Notificaciones in-app (campana con conteo) + recordatorios de visitas confirmadas en <48h; disponibilidad por inmueble; validación de fecha futura.
+- Verificado: backend 14/14 + suites previas; flujos frontend 100%.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
