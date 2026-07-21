@@ -25,6 +25,7 @@ import Contracts from "@/pages/dashboard/Contracts";
 import Payments from "@/pages/dashboard/Payments";
 import Profile from "@/pages/dashboard/Profile";
 import Verification from "@/pages/dashboard/Verification";
+import Visits from "@/pages/dashboard/Visits";
 
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminOverview from "@/pages/admin/AdminOverview";
@@ -60,6 +61,7 @@ function AppRoutes() {
         <Route path="solicitudes" element={<MyApplications />} />
         <Route path="contratos" element={<Contracts />} />
         <Route path="pagos" element={<Payments />} />
+        <Route path="visitas" element={<Visits />} />
         <Route path="verificacion" element={<Verification />} />
         <Route path="perfil" element={<Profile />} />
       </Route>

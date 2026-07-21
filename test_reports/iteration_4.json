@@ -1,0 +1,39 @@
+{
+  "summary": "End-to-end validation of the new Visitas (visit scheduling) + notifications feature. Backend: 14/14 pytest cases pass in /app/backend/tests/test_visits.py covering create/confirm/reschedule/complete/no_show/cancel/reject, address hiding & reveal, busy slots, /my/notifications with reminders, and read-all. Frontend: full tenant->landlord->tenant flow validated via Playwright — tenant schedules a Solicitada visit (address hidden), landlord confirms it (address revealed to tenant afterwards), history dialog shows the complete timeline. Notification bell shows correct unread counter for both roles.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard (any /panel/*)", "issues": ["Radix Select / Dialog triggers 'ResizeObserver loop completed with undelivered notifications' console warnings. In dev this pops a CRA runtime-error overlay that blocks clicks on the NotificationBell right after any modal close. Users on the production build never see the overlay, but the warnings should still be silenced (patch: window.addEventListener('error', e => { if (e.message.includes('ResizeObserver')) e.stopImmediatePropagation(); }) in index.js)."]},
+      {"screen": "Visits list", "issues": ["When status is 'reprogramada' the badge shows 'propuesta por arrendador/arrendatario' but the wording could confuse tenants when THEY proposed; consider phrasing 'propuesta por ti' when proposed_by matches viewer."]},
+      {"screen": "Schedule dialog (PropertyDetail)", "issues": ["Busy slots (GET /api/properties/{id}/visits/busy) are fetched by the frontend but not visually disabled in the time <Select> (all 11 slots are always selectable). Backend rejects duplicates, but UX is misleading."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_visits.py",
+    "/app/test_reports/pytest/visits_results.xml"
+  ],
+  "action_items": [
+    "(Optional UX) Disable/gray out already-busy time slots in the schedule dialog using GET /api/properties/{id}/visits/busy.",
+    "(Optional a11y/dev-UX) Silence the ResizeObserver warning globally so CRA dev overlay doesn't cover the NotificationBell in local dev.",
+    "(Optional wording) Show 'propuesta por ti' when proposed_by == viewer role."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1578 lines — the /visits + notify block adds ~200 more lines. Please split into a routers/visits.py module.",
+    "GET /api/my/notifications recomputes reminders on every poll (every 30s from NotificationBell) with a $or query + N property lookups; for landlords with many visits this could get expensive. Cache or index.",
+    "serialize_visit reveals address to landlord even for 'solicitada'/'cancelada' — spec says address should only be shown after confirm, but landlord owns the property so it's fine. Worth an inline comment though.",
+    "reject_visit and complete_visit require landlord role but /cancel and /reschedule are allowed by either party. cancel_visit does not restrict which party can cancel a 'reprogramada' visit — OK per spec but worth documenting.",
+    "No pagination on /my/visits (limit=300) or /my/notifications (limit=100). Will not scale for busy landlords.",
+    "Race condition: two tenants can create visits for the same slot; there's no unique index on (property_id, scheduled_at, status in busy set). Backend silently allows it. Consider a Mongo compound unique index or transaction.",
+    "VisitCreate.scheduled_at is a raw string; no server-side validation that it's ISO or in the future. A tenant could POST 'yesterday' and it would go through."
+  ],
+  "updated_files": ["/app/backend/tests/test_visits.py"],
+  "success_rate": {"backend": "100% (14/14 visits + prior verification/rbac suites unaffected)", "frontend": "100% of tested visit flows (schedule, hide-address, confirm, reveal-address, history, notification bell)"},
+  "test_credentials": "arrendatario@demo.mx / Demo123!, arrendador@demo.mx / Demo123!",
+  "seed_data_creation": "Created ~8 new visits on prop 'Nave industrial en Toluca' during tests (mix of confirmada/completada/cancelada/no_asistio). Next testing agent may want to prune db.visits where property_id is that seeded property to reduce noise on /panel/visitas.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests: `pytest /app/backend/tests/test_visits.py -v`. Note that backend_test.py has 4 pre-existing regression failures (unrelated to visits): (1) seeded_properties count is 7 instead of 8, (2) tenant_cannot_create_property fails because demo external accounts are DUAL (tenant can also create properties per test_credentials.md line 31), (3) test_application_flow_creates_contract because the tenant already has an active application on the seeded Roma Norte estudio, (4) test_rent_checkout depends on prior test. These are test-data/design issues, not app bugs.",
+  "rca of the issue": "No bugs found this iteration."
+}

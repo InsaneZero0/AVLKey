@@ -3,8 +3,9 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home, LayoutDashboard, Building2, FileText, CreditCard, User, LogOut,
-  ClipboardList, PlusCircle, Inbox, FileCheck2,
+  ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock,
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
@@ -22,6 +23,7 @@ export default function DashboardLayout() {
     ] : [
       { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList },
     ]),
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
     { to: "/panel/contratos", label: "Contratos", icon: FileText },
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
     { to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 },
@@ -70,10 +72,13 @@ export default function DashboardLayout() {
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 inset-x-0 bg-white border-b border-stone-200 h-14 flex items-center justify-between px-4 z-40">
         <Link to="/" className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-terracotta flex items-center justify-center"><Home className="w-4 h-4 text-white" /></div><span className="font-display font-bold text-navy text-sm">Réntalo</span></Link>
-        <button onClick={doLogout} className="text-red-600"><LogOut className="w-5 h-5" /></button>
+        <div className="flex items-center gap-1"><NotificationBell /><button onClick={doLogout} className="text-red-600 p-2"><LogOut className="w-5 h-5" /></button></div>
       </div>
 
       <main className="flex-1 lg:ml-64 pt-14 lg:pt-0">
+        <div className="hidden lg:flex items-center justify-end h-16 px-8 border-b border-stone-200 bg-white/60">
+          <NotificationBell />
+        </div>
         <div className="max-w-6xl mx-auto p-5 sm:p-8">
           <Outlet />
         </div>

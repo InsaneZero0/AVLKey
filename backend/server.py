@@ -794,6 +794,215 @@ async def my_payments(user: dict = Depends(get_current_user)):
 
 
 # ---------------------------------------------------------------------------
+# Visitas (agendamiento) + notificaciones
+# ---------------------------------------------------------------------------
+VISIT_STATUSES = ["solicitada", "confirmada", "reprogramada", "cancelada", "completada", "no_asistio"]
+REVEAL_ADDRESS_STATUSES = {"confirmada", "completada", "no_asistio"}
+
+
+class VisitCreate(BaseModel):
+    property_id: str
+    scheduled_at: str
+    note: str = ""
+
+
+class RescheduleInput(BaseModel):
+    scheduled_at: str
+    note: str = ""
+
+
+class CancelInput(BaseModel):
+    note: str = ""
+
+
+class CompleteInput(BaseModel):
+    attended: bool = True
+
+
+async def notify(user_id: str, ntype: str, title: str, message: str, link: str = ""):
+    await db.notifications.insert_one({
+        "id": new_id("ntf"), "user_id": user_id, "type": ntype, "title": title,
+        "message": message, "link": link, "read": False, "created_at": now_utc().isoformat(),
+    })
+
+
+def exact_address(prop: dict) -> str:
+    parts = [prop.get("address"), prop.get("colonia"), prop.get("city"), prop.get("state")]
+    return ", ".join([p for p in parts if p])
+
+
+def serialize_visit(v: dict, viewer_id: str, prop: Optional[dict] = None) -> dict:
+    v = dict(v)
+    v.pop("_id", None)
+    reveal = viewer_id == v["landlord_id"] or v["status"] in REVEAL_ADDRESS_STATUSES
+    if reveal and prop:
+        v["exact_address"] = exact_address(prop)
+    else:
+        v["exact_address"] = None
+    v["address_revealed"] = bool(reveal)
+    return v
+
+
+@api.post("/visits")
+async def create_visit(data: VisitCreate, user: dict = Depends(get_current_user)):
+    if user.get("account_type") != "external":
+        raise HTTPException(status_code=403, detail="Solo usuarios externos pueden agendar visitas")
+    prop = await db.properties.find_one({"id": data.property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    if prop["owner_id"] == user["id"]:
+        raise HTTPException(status_code=400, detail="No puedes agendar una visita a tu propio inmueble")
+    entry = {"status": "solicitada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note}
+    visit = {
+        "id": new_id("visit"),
+        "property_id": data.property_id,
+        "property_title": prop["title"],
+        "property_city": prop["city"],
+        "property_image": (prop.get("images") or [None])[0],
+        "tenant_id": user["id"],
+        "tenant_name": user["name"],
+        "landlord_id": prop["owner_id"],
+        "scheduled_at": data.scheduled_at,
+        "proposed_at": None,
+        "proposed_by": None,
+        "status": "solicitada",
+        "note": data.note,
+        "history": [entry],
+        "created_at": now_utc().isoformat(),
+        "updated_at": now_utc().isoformat(),
+    }
+    await db.visits.insert_one(dict(visit))
+    await notify(prop["owner_id"], "visita", "Nueva solicitud de visita",
+                 f"{user['name']} solicitó visitar {prop['title']}", "/panel/visitas")
+    return serialize_visit(visit, user["id"], prop)
+
+
+async def _get_visit_and_check(visit_id: str, user: dict):
+    v = await db.visits.find_one({"id": visit_id}, {"_id": 0})
+    if not v:
+        raise HTTPException(status_code=404, detail="Visita no encontrada")
+    if user["id"] not in (v["tenant_id"], v["landlord_id"]):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    return v
+
+
+async def _apply_visit_status(v: dict, status: str, user: dict, note: str = "", scheduled_at: str = None):
+    updates = {"status": status, "updated_at": now_utc().isoformat()}
+    if scheduled_at:
+        updates["scheduled_at"] = scheduled_at
+    entry = {"status": status, "by": user["name"], "at": now_utc().isoformat(), "note": note}
+    await db.visits.update_one({"id": v["id"]}, {"$set": updates, "$push": {"history": entry}})
+
+
+@api.patch("/visits/{visit_id}/confirm")
+async def confirm_visit(visit_id: str, user: dict = Depends(get_current_user)):
+    v = await _get_visit_and_check(visit_id, user)
+    if v["status"] not in ("solicitada", "reprogramada"):
+        raise HTTPException(status_code=400, detail="La visita no puede confirmarse en su estado actual")
+    await _apply_visit_status(v, "confirmada", user)
+    other = v["tenant_id"] if user["id"] == v["landlord_id"] else v["landlord_id"]
+    await notify(other, "visita", "Visita confirmada", f"La visita a {v['property_title']} fue confirmada.", "/panel/visitas")
+    prop = await db.properties.find_one({"id": v["property_id"]}, {"_id": 0})
+    v = await db.visits.find_one({"id": visit_id}, {"_id": 0})
+    return serialize_visit(v, user["id"], prop)
+
+
+@api.patch("/visits/{visit_id}/reject")
+async def reject_visit(visit_id: str, data: CancelInput, user: dict = Depends(get_current_user)):
+    v = await _get_visit_and_check(visit_id, user)
+    if user["id"] != v["landlord_id"]:
+        raise HTTPException(status_code=403, detail="Solo el arrendador puede rechazar")
+    await _apply_visit_status(v, "cancelada", user, note=data.note or "Rechazada por el arrendador")
+    await notify(v["tenant_id"], "visita", "Visita rechazada", f"Tu visita a {v['property_title']} fue rechazada.", "/panel/visitas")
+    return {"ok": True}
+
+
+@api.patch("/visits/{visit_id}/reschedule")
+async def reschedule_visit(visit_id: str, data: RescheduleInput, user: dict = Depends(get_current_user)):
+    v = await _get_visit_and_check(visit_id, user)
+    if v["status"] in ("cancelada", "completada", "no_asistio"):
+        raise HTTPException(status_code=400, detail="La visita no puede reprogramarse")
+    await db.visits.update_one({"id": visit_id}, {"$set": {
+        "status": "reprogramada", "scheduled_at": data.scheduled_at,
+        "proposed_by": "arrendador" if user["id"] == v["landlord_id"] else "arrendatario",
+        "updated_at": now_utc().isoformat(),
+    }, "$push": {"history": {"status": "reprogramada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note or f"Nueva fecha propuesta"}}})
+    other = v["tenant_id"] if user["id"] == v["landlord_id"] else v["landlord_id"]
+    await notify(other, "visita", "Nueva fecha propuesta", f"Se propuso una nueva fecha para {v['property_title']}.", "/panel/visitas")
+    return {"ok": True}
+
+
+@api.patch("/visits/{visit_id}/cancel")
+async def cancel_visit(visit_id: str, data: CancelInput, user: dict = Depends(get_current_user)):
+    v = await _get_visit_and_check(visit_id, user)
+    if v["status"] in ("cancelada", "completada", "no_asistio"):
+        raise HTTPException(status_code=400, detail="La visita ya está finalizada")
+    await _apply_visit_status(v, "cancelada", user, note=data.note or "Cancelada")
+    other = v["tenant_id"] if user["id"] == v["landlord_id"] else v["landlord_id"]
+    await notify(other, "visita", "Visita cancelada", f"La visita a {v['property_title']} fue cancelada.", "/panel/visitas")
+    return {"ok": True}
+
+
+@api.patch("/visits/{visit_id}/complete")
+async def complete_visit(visit_id: str, data: CompleteInput, user: dict = Depends(get_current_user)):
+    v = await _get_visit_and_check(visit_id, user)
+    if user["id"] != v["landlord_id"]:
+        raise HTTPException(status_code=403, detail="Solo el arrendador puede marcar el resultado")
+    if v["status"] != "confirmada":
+        raise HTTPException(status_code=400, detail="Solo visitas confirmadas pueden completarse")
+    status = "completada" if data.attended else "no_asistio"
+    await _apply_visit_status(v, status, user)
+    await notify(v["tenant_id"], "visita", "Visita finalizada", f"La visita a {v['property_title']} se marcó como {status.replace('_', ' ')}.", "/panel/visitas")
+    return {"ok": True}
+
+
+@api.get("/my/visits")
+async def my_visits(user: dict = Depends(get_current_user)):
+    q = {"$or": [{"tenant_id": user["id"]}, {"landlord_id": user["id"]}]}
+    visits = await db.visits.find(q, {"_id": 0}).sort("scheduled_at", -1).to_list(300)
+    props = {}
+    result = []
+    for v in visits:
+        pid = v["property_id"]
+        if pid not in props:
+            props[pid] = await db.properties.find_one({"id": pid}, {"_id": 0})
+        result.append(serialize_visit(v, user["id"], props[pid]))
+    return result
+
+
+@api.get("/properties/{property_id}/visits/busy")
+async def property_busy_slots(property_id: str, user: dict = Depends(get_current_user)):
+    visits = await db.visits.find({"property_id": property_id, "status": {"$in": ["solicitada", "confirmada", "reprogramada"]}}, {"_id": 0, "scheduled_at": 1}).to_list(300)
+    return [v["scheduled_at"] for v in visits]
+
+
+@api.get("/my/notifications")
+async def my_notifications(user: dict = Depends(get_current_user)):
+    notifs = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    unread = sum(1 for n in notifs if not n.get("read"))
+    reminders = []
+    now = now_utc()
+    visits = await db.visits.find({"$or": [{"tenant_id": user["id"]}, {"landlord_id": user["id"]}], "status": "confirmada"}, {"_id": 0}).to_list(100)
+    for v in visits:
+        try:
+            dt = datetime.fromisoformat(v["scheduled_at"])
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            hrs = (dt - now).total_seconds() / 3600
+            if 0 <= hrs <= 48:
+                reminders.append({"visit_id": v["id"], "property_title": v["property_title"], "scheduled_at": v["scheduled_at"], "hours": round(hrs, 1)})
+        except Exception:
+            pass
+    return {"notifications": notifs, "unread": unread, "reminders": reminders}
+
+
+@api.post("/notifications/read-all")
+async def read_all_notifications(user: dict = Depends(get_current_user)):
+    await db.notifications.update_many({"user_id": user["id"], "read": False}, {"$set": {"read": True}})
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
 # Dashboard stats
 # ---------------------------------------------------------------------------
 @api.get("/dashboard/stats")

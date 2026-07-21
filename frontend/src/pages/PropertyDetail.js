@@ -17,8 +17,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Bed, Bath, Maximize, Car, MapPin, Loader2, Check, ShieldCheck, PawPrint, Sofa, Building,
+  Bed, Bath, Maximize, Car, MapPin, Loader2, Check, ShieldCheck, PawPrint, Sofa, Building, CalendarClock,
 } from "lucide-react";
+
+const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -32,6 +34,27 @@ export default function PropertyDetail() {
     monthly_income: "", occupation: "", employment_type: "empleado_formal",
     num_occupants: "1", has_guarantor: false, message: "",
   });
+  const [visitOpen, setVisitOpen] = useState(false);
+  const [visitSubmitting, setVisitSubmitting] = useState(false);
+  const [vDate, setVDate] = useState("");
+  const [vTime, setVTime] = useState("10:00");
+  const [vNote, setVNote] = useState("");
+
+  const submitVisit = async () => {
+    if (!user) { navigate("/login"); return; }
+    if (!vDate) { toast.error("Selecciona una fecha"); return; }
+    setVisitSubmitting(true);
+    try {
+      await api.post("/visits", { property_id: id, scheduled_at: `${vDate}T${vTime}:00`, note: vNote });
+      toast.success("¡Visita solicitada! El arrendador la confirmará pronto.");
+      setVisitOpen(false);
+      navigate("/panel/visitas");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    } finally {
+      setVisitSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     api.get(`/properties/${id}`).then(({ data }) => setProp(data)).catch(() => toast.error("Inmueble no encontrado"));
@@ -200,6 +223,42 @@ export default function PropertyDetail() {
                 <div className="mt-5 text-sm text-stone-500 bg-stone-50 rounded-xl p-4 flex items-start gap-2">
                   <Building className="w-4 h-4 mt-0.5" /> Inicia sesión como arrendatario para enviar una solicitud.
                 </div>
+              )}
+
+              {canApply && (
+                <Dialog open={visitOpen} onOpenChange={setVisitOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full mt-3 rounded-full h-11 border-terracotta/40 text-terracotta hover:bg-terracotta/5 hover:text-terracotta" data-testid="schedule-visit-btn">
+                      <CalendarClock className="w-4 h-4 mr-2" /> Agendar una visita
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader><DialogTitle className="font-display text-xl">Agendar visita</DialogTitle></DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div>
+                        <Label>Fecha</Label>
+                        <Input data-testid="visit-date" type="date" min={new Date().toISOString().split("T")[0]} value={vDate} onChange={(e) => setVDate(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label>Hora</Label>
+                        <Select value={vTime} onValueChange={setVTime}>
+                          <SelectTrigger data-testid="visit-time"><SelectValue /></SelectTrigger>
+                          <SelectContent>{TIME_SLOTS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Mensaje (opcional)</Label>
+                        <Textarea data-testid="visit-note" value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="Comparte tu disponibilidad o dudas..." />
+                      </div>
+                      <p className="text-xs text-stone-400 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> La dirección exacta se mostrará al confirmar la visita.</p>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={submitVisit} disabled={visitSubmitting} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-visit-btn">
+                        {visitSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Solicitar visita"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               )}
 
               <div className="mt-4 flex items-center gap-2 text-xs text-stone-500 justify-center">
