@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { STAFF_ROLE_LABELS } from "@/lib/constants";
 import {
   Home, LayoutDashboard, Users, Building2, ClipboardList, FileText, CreditCard,
-  FileLock2, ScrollText, LogOut, ShieldCheck,
+  FileLock2, ScrollText, LogOut, ShieldCheck, FileCheck2,
 } from "lucide-react";
 
 const NAV = [
@@ -15,6 +15,7 @@ const NAV = [
   { to: "/admin/contratos", label: "Contratos", icon: FileText, perm: "consultar" },
   { to: "/admin/pagos", label: "Pagos", icon: CreditCard, perm: "administrar_pagos" },
   { to: "/admin/documentos", label: "Documentos sensibles", icon: FileLock2, perm: "consultar_documentos_sensibles" },
+  { to: "/admin/verificacion", label: "Verificación de docs", icon: FileCheck2, perm: "consultar" },
   { to: "/admin/auditoria", label: "Auditoría", icon: ScrollText, perm: "administrar_usuarios" },
 ];
 

@@ -24,6 +24,7 @@ import MyApplications from "@/pages/dashboard/MyApplications";
 import Contracts from "@/pages/dashboard/Contracts";
 import Payments from "@/pages/dashboard/Payments";
 import Profile from "@/pages/dashboard/Profile";
+import Verification from "@/pages/dashboard/Verification";
 
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminOverview from "@/pages/admin/AdminOverview";
@@ -33,6 +34,7 @@ import AdminApplications from "@/pages/admin/AdminApplications";
 import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminPayments from "@/pages/admin/AdminPayments";
 import AdminDocuments from "@/pages/admin/AdminDocuments";
+import AdminVerification from "@/pages/admin/AdminVerification";
 import AdminAudit from "@/pages/admin/AdminAudit";
 
 function AppRoutes() {
@@ -58,6 +60,7 @@ function AppRoutes() {
         <Route path="solicitudes" element={<MyApplications />} />
         <Route path="contratos" element={<Contracts />} />
         <Route path="pagos" element={<Payments />} />
+        <Route path="verificacion" element={<Verification />} />
         <Route path="perfil" element={<Profile />} />
       </Route>
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
@@ -68,6 +71,7 @@ function AppRoutes() {
         <Route path="contratos" element={<AdminContracts />} />
         <Route path="pagos" element={<AdminPayments />} />
         <Route path="documentos" element={<AdminDocuments />} />
+        <Route path="verificacion" element={<AdminVerification />} />
         <Route path="auditoria" element={<AdminAudit />} />
       </Route>
     </Routes>

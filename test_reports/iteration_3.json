@@ -1,0 +1,37 @@
+{
+  "summary": "End-to-end validation of new Verification feature (documentos + consentimiento + fiscal + revisión interna). Backend: 13/13 tests pass in /app/backend/tests/test_verification.py (upload with versioning, summary, history, download ACL, consent metadata, fiscal update, RBAC review matrix, admin consents). Frontend: tenant, landlord, superadmin and finanzas flows all pass. Only tenant/landlord (external), and internal superadmin/finanzas tested via UI. Consent already existed for tenant from prior run (consent-granted shown). Object storage upload works from UI (v4 shown after replace).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AdminVerification review dialog", "issues": ["Missing DialogDescription / aria-describedby on <DialogContent> generates a11y console warning (non-blocking)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_verification.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_rbac.py",
+    "/app/test_reports/pytest/verification_results.xml"
+  ],
+  "action_items": [
+    "(Optional/a11y) Add <DialogDescription> to AdminVerification review dialog to silence Radix aria warning.",
+    "(Optional cleanup) my_documents endpoint mutates docs to add days_to_expiry but doc_summary re-consumes them — fine, just note tests found nothing to fix."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1368 lines — verification block adds ~270 lines; consider splitting /verification, /documents, /admin/verification into a router module for maintainability.",
+    "download endpoint returns raw Response without Content-Disposition — browser will render inline (OK for images/PDF), but no filename hint is preserved.",
+    "admin_list_documents is gated by 'consultar' (broad) but should possibly require 'consultar_documentos_sensibles' to align with GET /api/admin/consents; today any internal user with 'consultar' can list all users' document metadata (paths still hidden but user_name + filenames leak).",
+    "MIME_TYPES check only whitelists by extension, not by sniffing bytes — a .pdf renamed .png would pass. Low risk given RBAC on download, but worth logging.",
+    "No pagination on /admin/verification/documents (limit=500) — will not scale.",
+    "consent-checkbox / submit-consent-btn once accepted cannot be revoked from UI (there is no DELETE /consent). Not required by spec but worth noting for GDPR-style compliance."
+  ],
+  "updated_files": ["/app/backend/tests/test_verification.py"],
+  "success_rate": {"backend": "100% (13/13 verification + 16/16 baseline + 13/13 RBAC)", "frontend": "100% of tested flows"},
+  "test_credentials": "Externos: arrendador@demo.mx / arrendatario@demo.mx (Demo123!). Internos: superadmin@rentalo.mx / revision_propiedades@rentalo.mx / finanzas@rentalo.mx (Interno123!).",
+  "seed_data_creation": "Uploaded a 1x1 PNG for tenant doc_types identificacion (up to v4 across runs), comprobante_domicilio, comprobante_ingresos, info_laboral, referencias_personales, referencias_laborales. Recorded credit-check consent for arrendatario@demo.mx. Updated landlord fiscal_info (RFC/BBVA/CLABE). Reviewer approved/rejected/requested corrections on the seeded pending docs — future runs of the reviewer test will pick up 3 fresh pending docs because it re-uploads.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Feature is fully green. If you need to re-run backend tests: `pytest /app/backend/tests/test_verification.py -v`. The tenant identificacion doc has already been approved with expiry 2099-12-31 during the UI test. If you want a clean pending queue, re-upload as arrendatario before opening /admin/verificacion as superadmin.",
+  "rca of the issue": "No bugs found this iteration."
+}

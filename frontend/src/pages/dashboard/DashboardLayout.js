@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home, LayoutDashboard, Building2, FileText, CreditCard, User, LogOut,
-  ClipboardList, PlusCircle, Inbox,
+  ClipboardList, PlusCircle, Inbox, FileCheck2,
 } from "lucide-react";
 
 export default function DashboardLayout() {
@@ -24,6 +24,7 @@ export default function DashboardLayout() {
     ]),
     { to: "/panel/contratos", label: "Contratos", icon: FileText },
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
+    { to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 },
     { to: "/panel/perfil", label: "Mi perfil", icon: User },
   ];
 
