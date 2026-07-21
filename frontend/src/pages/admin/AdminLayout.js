@@ -9,7 +9,7 @@ import {
 
 const NAV = [
   { to: "/admin", label: "Resumen", icon: LayoutDashboard, perm: "consultar", end: true },
-  { to: "/admin/usuarios", label: "Usuarios", icon: Users, perm: "consultar" },
+  { to: "/admin/usuarios", label: "Usuarios", icon: Users, perm: "administrar_usuarios" },
   { to: "/admin/propiedades", label: "Revisión de propiedades", icon: Building2, perm: "consultar" },
   { to: "/admin/solicitudes", label: "Solicitudes", icon: ClipboardList, perm: "consultar" },
   { to: "/admin/contratos", label: "Contratos", icon: FileText, perm: "consultar" },
