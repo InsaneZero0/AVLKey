@@ -41,6 +41,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Flujo de revisión de propiedades (pendiente/aprobada/rechazada) y override de decisión de riesgo.
 - Verificado: RBAC backend 13/13 + regresión 16/16; panel frontend validado.
 
+## Verificación de usuarios (2026-06-21)
+- Carga de documentos (object storage) con versiones, visualización controlada por acceso, vencimiento y alertas.
+- Arrendador: identificación, comprobante domicilio, RFC, constancia fiscal, acreditación de propiedad, facultad legal (opcional), foto; + info fiscal y **cuenta bancaria** (para recibir renta).
+- Arrendatario: identificación, comprobante domicilio, comprobantes de ingresos, info laboral, referencias personales/laborales; + **consentimiento obligatorio** de consulta de historial crediticio guardando fecha, hora, IP, texto, versión y evidencia. Tarjeta vía Stripe (no se almacena).
+- Revisión interna (RBAC): aprobar/rechazar/solicitar corrección + fecha de vencimiento; listar/revisar documentos requiere `consultar_documentos_sensibles`.
+- Verificado: backend 13/13 verificación + 16/16 base + 13/13 RBAC; flujos frontend 100%.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

@@ -1059,7 +1059,7 @@ async def get_consent(user: dict = Depends(get_current_user)):
 
 # ---- Internal document review ----
 @api.get("/admin/verification/documents")
-async def admin_list_documents(status: Optional[str] = None, user: dict = Depends(require_permission("consultar"))):
+async def admin_list_documents(status: Optional[str] = None, user: dict = Depends(require_permission("consultar_documentos_sensibles"))):
     q = {"current": True, "is_deleted": False}
     if status:
         q["status"] = status
@@ -1069,7 +1069,7 @@ async def admin_list_documents(status: Optional[str] = None, user: dict = Depend
 
 @api.patch("/admin/verification/documents/{doc_id}/review")
 async def admin_review_document(doc_id: str, data: DocReview, actor: dict = Depends(get_current_user)):
-    if actor.get("account_type") != "internal":
+    if actor.get("account_type") != "internal" or not has_perm(actor, "consultar_documentos_sensibles"):
         raise HTTPException(status_code=403, detail="Acceso restringido")
     decision_perm = {"aprobado": "aprobar", "rechazado": "rechazar", "correccion": "editar"}.get(data.decision)
     if not decision_perm or not has_perm(actor, decision_perm):

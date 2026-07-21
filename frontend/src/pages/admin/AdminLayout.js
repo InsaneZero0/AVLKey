@@ -15,7 +15,7 @@ const NAV = [
   { to: "/admin/contratos", label: "Contratos", icon: FileText, perm: "consultar" },
   { to: "/admin/pagos", label: "Pagos", icon: CreditCard, perm: "administrar_pagos" },
   { to: "/admin/documentos", label: "Documentos sensibles", icon: FileLock2, perm: "consultar_documentos_sensibles" },
-  { to: "/admin/verificacion", label: "Verificación de docs", icon: FileCheck2, perm: "consultar" },
+  { to: "/admin/verificacion", label: "Verificación de docs", icon: FileCheck2, perm: "consultar_documentos_sensibles" },
   { to: "/admin/auditoria", label: "Auditoría", icon: ScrollText, perm: "administrar_usuarios" },
 ];
 
