@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,7 @@ export default function AdminMembers({ role }) {
             {filtered.map((u) => (
               <tr key={u.id} data-testid={`member-row-${u.id}`}>
                 <td className="px-6 py-4"><Badge className="rounded-full bg-navy/10 text-navy hover:bg-navy/10 font-mono">{u.public_id || "—"}</Badge></td>
-                <td className="px-6 py-4 font-medium text-navy">{u.name}</td>
+                <td className="px-6 py-4"><Link to={`/admin/miembro/${u.id}`} className="font-medium text-navy hover:text-terracotta hover:underline transition-colors" data-testid={`member-name-${u.id}`}>{u.name}</Link></td>
                 <td className="px-6 py-4 text-stone-600">{u.email}</td>
                 <td className="px-6 py-4 text-stone-600">{u.phone || "—"}</td>
               </tr>

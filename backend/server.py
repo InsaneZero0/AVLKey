@@ -1473,6 +1473,51 @@ async def admin_users(user: dict = Depends(require_permission("consultar"))):
     return users
 
 
+def property_display_status(p: dict) -> str:
+    rs = p.get("review_status")
+    st = p.get("status")
+    if rs == "rechazada":
+        return "rechazada"
+    if rs == "pendiente":
+        return "recibida"
+    if st == "rentado":
+        return "rentada"
+    if st == "pausado":
+        return "pausada"
+    if st == "en_proceso":
+        return "en_revision"
+    return "publicada"
+
+
+@api.get("/admin/members/{user_id}")
+async def admin_member_detail(user_id: str, viewer: dict = Depends(require_permission("consultar"))):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u["public_id"] = public_id_for(u)
+    props = await db.properties.find({"owner_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    for p in props:
+        p["display_status"] = property_display_status(p)
+        p["applications_count"] = await db.applications.count_documents({"property_id": p["id"]})
+    can_docs = has_perm(viewer, "consultar_documentos_sensibles")
+    documents = []
+    if can_docs:
+        docs = await db.documents.find({"user_id": user_id, "current": True, "is_deleted": False}, {"_id": 0}).sort("created_at", -1).to_list(200)
+        label_map = {r["key"]: r["label"] for cat in DOC_REQUIREMENTS.values() for r in cat}
+        for d in docs:
+            d["label"] = label_map.get(d["doc_type"], d["doc_type"])
+        documents = docs
+    consent = await db.consents.find_one({"user_id": user_id, "type": "credit_check"}, {"_id": 0}, sort=[("timestamp", -1)])
+    return {
+        "user": u,
+        "properties": props,
+        "documents": documents,
+        "can_view_documents": can_docs,
+        "fiscal_info": u.get("fiscal_info"),
+        "consent": consent,
+    }
+
+
 @api.patch("/admin/users/{user_id}")
 async def admin_update_user(user_id: str, data: UserRoleUpdate, actor: dict = Depends(require_permission("administrar_usuarios"))):
     target = await db.users.find_one({"id": user_id}, {"_id": 0})

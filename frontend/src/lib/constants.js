@@ -47,6 +47,26 @@ export const STATUS_LABEL = {
   borrador: "Borrador",
   activo: "Activo",
   finalizado: "Finalizado",
+  recibida: "Recibida",
+  publicada: "Publicada",
+  pausada: "Pausada",
+  rentada: "Rentada",
+};
+
+export const PROPERTY_STATUS_COLOR = {
+  recibida: "bg-blue-100 text-blue-700",
+  en_revision: "bg-amber-100 text-amber-700",
+  publicada: "bg-green-100 text-green-700",
+  pausada: "bg-stone-100 text-stone-600",
+  rentada: "bg-navy/10 text-navy",
+  rechazada: "bg-red-100 text-red-700",
+};
+
+export const DOC_STATUS_COLOR = {
+  pendiente: "bg-amber-100 text-amber-700",
+  aprobado: "bg-green-100 text-green-700",
+  rechazado: "bg-red-100 text-red-700",
+  correccion: "bg-orange-100 text-orange-700",
 };
 
 export const RISK_LABEL = {
