@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home, LayoutDashboard, Building2, FileText, CreditCard, User, LogOut,
-  ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock,
+  ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock, Heart,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -22,6 +22,7 @@ export default function DashboardLayout() {
       { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox },
     ] : [
       { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList },
+      { to: "/panel/favoritos", label: "Favoritos", icon: Heart },
     ]),
     { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
     { to: "/panel/contratos", label: "Contratos", icon: FileText },

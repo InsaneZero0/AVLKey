@@ -64,7 +64,10 @@ export default function Login() {
               <Input data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" required />
             </div>
             <div>
-              <Label>Contraseña</Label>
+              <div className="flex items-center justify-between">
+                <Label>Contraseña</Label>
+                <Link to="/recuperar" className="text-xs text-terracotta hover:underline" data-testid="forgot-link">¿Olvidaste tu contraseña?</Link>
+              </div>
               <Input data-testid="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
             <Button type="submit" disabled={loading} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover h-11" data-testid="login-submit">

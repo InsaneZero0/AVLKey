@@ -1,0 +1,28 @@
+{
+  "summary": "End-to-end validation of the minimal registration + password-recovery + favorites feature set. Backend: 8/8 new pytest cases pass in /app/backend/tests/test_auth_recovery_and_favorites.py covering: minimal /auth/register (name+email+password only, default role arrendatario, session cookie set), /auth/forgot-password (always ok=true even for unknown email, does not leak existence), /auth/reset-password (200 on valid token, 400 on reuse, 400 on unknown token, previous sessions invalidated), and /favorites CRUD (401 unauth, add/list/remove, 404 unknown property). Frontend Playwright: /registro exposes ONLY name/email/password fields (no role, no phone) and lands on /panel; /login has 'forgot-link' -> /recuperar; /recuperar shows 'forgot-sent' screen for any email (existing or not); /restablecer?token=... validates matching passwords (shows 'Las contraseñas no coinciden' on mismatch) and on submit redirects to /login with a 'Contraseña actualizada' toast; login with the new password works. Favoritos: tenant can toggle heart on /explorar, appears on /panel/favoritos; unauthenticated fav click redirects to /login. Freshly registered user can navigate to /explorar (8 property cards).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_auth_recovery_and_favorites.py",
+    "/app/test_reports/pytest/recovery_favorites.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now ~1687 lines — recovery + favorites add ~90 more. Please move /auth/* and /favorites/* into separate routers (routers/auth.py, routers/favorites.py) to keep files under 700 lines.",
+    "forgot_password: the response message 'Si el correo existe, enviamos un enlace de recuperación.' is fine, but consider adding a small server-side rate limit per IP+email to prevent enumeration via timing/spam (currently no throttling on POST /api/auth/forgot-password).",
+    "reset_password: password strength enforcement is only `min_length=6`. Consider requiring at least one digit and one letter (same policy as register would be nice for consistency).",
+    "reset_password deletes all sessions for the user, which is correct; make sure to also clear any pending JWT/API tokens if you add them later.",
+    "Favorites endpoints use $addToSet / $pull on the user document. Fine for small lists, but if a user accumulates thousands of favorites the array will grow unbounded; consider capping (e.g. 500) or moving to a favorites collection.",
+    "GET /api/my/favorites filters out rechazada but still returns oculta/pausada properties without any 'unavailable' flag; the UI cannot distinguish, which may confuse users when a favorited property has been paused."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auth_recovery_and_favorites.py"
+  ],
+  "success_rate": {"backend": "100% (8/8 recovery+favorites; prior suites unaffected)", "frontend": "100% of tested flows (register, login, forgot, reset via token from logs, favorites add/list/remove, unauth redirect)"},
+  "seed_data_creation": "Created a handful of TEST_ / test_recover_ / test_reset_ui_ users via /api/auth/register (all role=arrendatario). They can be safely purged with `db.users.deleteMany({email: /^test_(recover|reset_ui|ui)_/})`. Corresponding password_reset_tokens entries also present but are marked used.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "arrendatario@demo.mx / Demo123! (unchanged, as required). New destructive-reset tests always register a fresh throw-away account.",
+  "context_for_next_testing_agent": "Run `pytest /app/backend/tests/test_auth_recovery_and_favorites.py -v` for the recovery+favorites regression. Reset tokens are read from backend supervisor logs via `tail /var/log/supervisor/backend.err.log` — the send_email() helper logs 'restablecer?token=…' whenever RESEND_API_KEY is not configured (which is the current preview environment). Do NOT set/modify RESEND_API_KEY in the tests. arrendatario@demo.mx must keep Demo123!.",
+  "rca_of_the_issue": "No bugs found this iteration. All specified acceptance criteria for minimal registration, password recovery (single-use, 1h expiry, no enumeration, session invalidation), /restablecer UX (matching validation), and favorites (auth-gated add/list/remove + redirect for unauth) behave as specified."
+}

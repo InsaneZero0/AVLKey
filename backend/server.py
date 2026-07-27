@@ -16,6 +16,24 @@ import uuid
 import bcrypt
 import requests
 import stripe
+import secrets
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+RESEND_FROM = os.environ.get("RESEND_FROM", "Réntalo en Línea <onboarding@resend.dev>")
+
+
+def send_email(to: str, subject: str, html: str) -> bool:
+    if not RESEND_API_KEY:
+        logging.getLogger("rentalo").info(f"[EMAIL:dev] Para: {to} | Asunto: {subject}\n{html}")
+        return False
+    try:
+        requests.post("https://api.resend.com/emails",
+                      headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                      json={"from": RESEND_FROM, "to": [to], "subject": subject, "html": html}, timeout=20)
+        return True
+    except Exception as e:
+        logging.getLogger("rentalo").error(f"Resend error: {e}")
+        return False
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -422,6 +440,89 @@ async def logout(request: Request, response: Response):
         await db.user_sessions.delete_one({"session_token": token})
     response.delete_cookie("session_token", path="/")
     return {"ok": True}
+
+
+class ForgotInput(BaseModel):
+    email: EmailStr
+    origin_url: str
+
+
+class ResetInput(BaseModel):
+    token: str
+    password: str = Field(min_length=6)
+
+
+@api.post("/auth/forgot-password")
+async def forgot_password(data: ForgotInput):
+    email = data.email.lower()
+    user = await db.users.find_one({"email": email})
+    # Always respond success to avoid leaking which emails exist
+    if user and user.get("password_hash") is not None:
+        token = secrets.token_urlsafe(32)
+        await db.password_reset_tokens.insert_one({
+            "token": token,
+            "user_id": user["id"],
+            "expires_at": (now_utc() + timedelta(hours=1)).isoformat(),
+            "used": False,
+            "created_at": now_utc().isoformat(),
+        })
+        link = f"{data.origin_url.rstrip('/')}/restablecer?token={token}"
+        html = (f"<div style='font-family:sans-serif'><h2>Restablece tu contraseña</h2>"
+                f"<p>Hola {user['name']}, recibimos una solicitud para restablecer tu contraseña.</p>"
+                f"<p><a href='{link}' style='background:#C05C3D;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none'>Restablecer contraseña</a></p>"
+                f"<p>Este enlace expira en 1 hora y solo puede usarse una vez. Si no lo solicitaste, ignora este correo.</p></div>")
+        send_email(email, "Restablece tu contraseña · Réntalo en Línea", html)
+    return {"ok": True, "message": "Si el correo existe, enviamos un enlace de recuperación."}
+
+
+@api.post("/auth/reset-password")
+async def reset_password(data: ResetInput):
+    record = await db.password_reset_tokens.find_one({"token": data.token})
+    if not record or record.get("used"):
+        raise HTTPException(status_code=400, detail="Enlace inválido o ya utilizado")
+    expires_at = record["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < now_utc():
+        raise HTTPException(status_code=400, detail="El enlace ha expirado")
+    await db.users.update_one({"id": record["user_id"]}, {"$set": {"password_hash": hash_password(data.password)}})
+    await db.password_reset_tokens.update_one({"token": data.token}, {"$set": {"used": True, "used_at": now_utc().isoformat()}})
+    await db.user_sessions.delete_many({"user_id": record["user_id"]})
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Favoritos
+# ---------------------------------------------------------------------------
+@api.post("/favorites/{property_id}")
+async def add_favorite(property_id: str, user: dict = Depends(get_current_user)):
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0, "id": 1})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"favorites": property_id}})
+    return {"ok": True}
+
+
+@api.delete("/favorites/{property_id}")
+async def remove_favorite(property_id: str, user: dict = Depends(get_current_user)):
+    await db.users.update_one({"id": user["id"]}, {"$pull": {"favorites": property_id}})
+    return {"ok": True}
+
+
+@api.get("/my/favorites/ids")
+async def my_favorite_ids(user: dict = Depends(get_current_user)):
+    u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorites": 1})
+    return u.get("favorites") or []
+
+
+@api.get("/my/favorites")
+async def my_favorites(user: dict = Depends(get_current_user)):
+    u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorites": 1})
+    ids = u.get("favorites") or []
+    props = await db.properties.find({"id": {"$in": ids}, "review_status": {"$ne": "rechazada"}}, {"_id": 0}).to_list(200)
+    return props
 
 
 @api.patch("/users/me")

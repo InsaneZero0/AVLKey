@@ -12,6 +12,8 @@ import PropertyDetail from "@/pages/PropertyDetail";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AuthCallback from "@/pages/AuthCallback";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 
@@ -26,6 +28,7 @@ import Payments from "@/pages/dashboard/Payments";
 import Profile from "@/pages/dashboard/Profile";
 import Verification from "@/pages/dashboard/Verification";
 import Visits from "@/pages/dashboard/Visits";
+import Favorites from "@/pages/dashboard/Favorites";
 
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminOverview from "@/pages/admin/AdminOverview";
@@ -51,6 +54,8 @@ function AppRoutes() {
       <Route path="/inmueble/:id" element={<PropertyDetail />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Register />} />
+      <Route path="/recuperar" element={<ForgotPassword />} />
+      <Route path="/restablecer" element={<ResetPassword />} />
       <Route path="/pago/exito" element={<PaymentSuccess />} />
       <Route path="/pago/cancelado" element={<PaymentCancel />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -62,6 +67,7 @@ function AppRoutes() {
         <Route path="contratos" element={<Contracts />} />
         <Route path="pagos" element={<Payments />} />
         <Route path="visitas" element={<Visits />} />
+        <Route path="favoritos" element={<Favorites />} />
         <Route path="verificacion" element={<Verification />} />
         <Route path="perfil" element={<Profile />} />
       </Route>

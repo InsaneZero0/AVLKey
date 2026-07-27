@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -17,6 +18,32 @@ export function AuthProvider({ children }) {
       return null;
     }
   }, []);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const { data } = await api.get("/my/favorites/ids");
+      setFavoriteIds(data);
+    } catch {
+      setFavoriteIds([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) loadFavorites(); else setFavoriteIds([]);
+  }, [user, loadFavorites]);
+
+  const toggleFavorite = async (propertyId) => {
+    if (!user) return false;
+    const isFav = favoriteIds.includes(propertyId);
+    setFavoriteIds((prev) => isFav ? prev.filter((x) => x !== propertyId) : [...prev, propertyId]);
+    try {
+      if (isFav) await api.delete(`/favorites/${propertyId}`);
+      else await api.post(`/favorites/${propertyId}`);
+    } catch {
+      loadFavorites();
+    }
+    return true;
+  };
 
   useEffect(() => {
     // If returning from Google OAuth callback, let AuthCallback establish session first.
@@ -47,7 +74,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, refresh, favoriteIds, toggleFavorite }}>
       {children}
     </AuthContext.Provider>
   );

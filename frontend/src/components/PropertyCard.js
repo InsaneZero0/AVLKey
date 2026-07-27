@@ -1,12 +1,21 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { TYPE_LABEL, formatMXN, STATUS_LABEL } from "@/lib/constants";
-import { Bed, Bath, Maximize, MapPin } from "lucide-react";
+import { Bed, Bath, Maximize, MapPin, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function PropertyCard({ property, index = 0 }) {
   const navigate = useNavigate();
+  const { user, favoriteIds, toggleFavorite } = useAuth();
   const img = property.images?.[0] || "https://images.pexels.com/photos/7746560/pexels-photo-7746560.jpeg?auto=compress&cs=tinysrgb&w=940";
+  const isFav = favoriteIds?.includes(property.id);
+
+  const onFav = (e) => {
+    e.stopPropagation();
+    if (!user) { navigate("/login"); return; }
+    toggleFavorite(property.id);
+  };
 
   return (
     <div
@@ -20,8 +29,11 @@ export default function PropertyCard({ property, index = 0 }) {
         <div className="absolute top-3 left-3 flex gap-2">
           <Badge className="bg-white/90 text-navy hover:bg-white backdrop-blur-sm rounded-full">{TYPE_LABEL[property.property_type]}</Badge>
         </div>
+        <button onClick={onFav} data-testid={`fav-btn-${property.id}`} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-transform">
+          <Heart className={`w-4 h-4 ${isFav ? "fill-terracotta text-terracotta" : "text-stone-600"}`} />
+        </button>
         {property.status && property.status !== "disponible" && (
-          <div className="absolute top-3 right-3">
+          <div className="absolute bottom-3 right-3">
             <Badge className="bg-navy/90 text-white rounded-full">{STATUS_LABEL[property.status]}</Badge>
           </div>
         )}
