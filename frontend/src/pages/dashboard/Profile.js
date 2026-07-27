@@ -41,8 +41,11 @@ export default function Profile() {
       <p className="text-stone-500 mt-1">Administra tu información personal.</p>
 
       <div className="mt-8 bg-white border border-stone-200 rounded-2xl p-6 space-y-5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge className="rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta/10">{user?.role === "arrendador" ? "Arrendador" : "Arrendatario"}</Badge>
+          {user?.public_id && (
+            <Badge data-testid="profile-public-id" className="rounded-full bg-navy/10 text-navy hover:bg-navy/10 font-mono">ID: {user.public_id}</Badge>
+          )}
           <span className="text-sm text-stone-500">{user?.email}</span>
         </div>
         <div>

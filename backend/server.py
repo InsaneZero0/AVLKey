@@ -8,6 +8,7 @@ load_dotenv(ROOT_DIR / '.env')
 from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, UploadFile, File, Form, Header, Query
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ReturnDocument
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
@@ -155,6 +156,7 @@ def with_perms(user: dict) -> dict:
     user = clean_user(user)
     user.setdefault("account_type", "internal" if user.get("staff_role") else "external")
     user["permissions"] = perms_for(user)
+    user["public_id"] = public_id_for(user)
     return user
 
 
@@ -184,6 +186,21 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:16]}"
+
+
+async def next_member_no() -> int:
+    doc = await db.counters.find_one_and_update(
+        {"_id": "member_no"}, {"$inc": {"seq": 1}},
+        upsert=True, return_document=ReturnDocument.AFTER,
+    )
+    return doc["seq"]
+
+
+def public_id_for(user: dict) -> Optional[str]:
+    if user.get("account_type") == "internal" or user.get("member_no") is None:
+        return None
+    prefix = "A" if user.get("role") == "arrendador" else "I"
+    return f"{prefix}{user['member_no']:05d}"
 
 
 def set_session_cookie(response: Response, token: str):
@@ -367,6 +384,7 @@ async def register(data: RegisterInput, response: Response):
         "password_hash": hash_password(data.password),
         "role": data.role,
         "account_type": "external",
+        "member_no": await next_member_no(),
         "staff_role": None,
         "phone": data.phone,
         "picture": None,
@@ -408,6 +426,7 @@ async def google_session(data: SessionInput, response: Response):
             "password_hash": None,
             "role": "arrendatario",
             "account_type": "external",
+            "member_no": await next_member_no(),
             "staff_role": None,
             "phone": None,
             "picture": info.get("picture"),
@@ -1619,7 +1638,7 @@ async def seed():
         await db.users.insert_one({
             "id": new_id("user"), "email": admin_email, "name": "Administrador",
             "password_hash": hash_password(admin_password), "role": "arrendador",
-            "account_type": "external", "staff_role": None,
+            "account_type": "external", "member_no": await next_member_no(), "staff_role": None,
             "phone": None, "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         })
 
@@ -1629,7 +1648,7 @@ async def seed():
         landlord = {
             "id": new_id("user"), "email": landlord_email, "name": "Carlos Mendoza",
             "password_hash": hash_password("Demo123!"), "role": "arrendador",
-            "account_type": "external", "staff_role": None,
+            "account_type": "external", "member_no": await next_member_no(), "staff_role": None,
             "phone": "5555550101", "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         }
         await db.users.insert_one(dict(landlord))
@@ -1639,7 +1658,7 @@ async def seed():
         await db.users.insert_one({
             "id": new_id("user"), "email": tenant_email, "name": "Ana Torres",
             "password_hash": hash_password("Demo123!"), "role": "arrendatario",
-            "account_type": "external", "staff_role": None,
+            "account_type": "external", "member_no": await next_member_no(), "staff_role": None,
             "phone": "5555550202", "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         })
 
@@ -1662,6 +1681,13 @@ async def seed():
     # Migrate legacy docs
     await db.users.update_many({"account_type": {"$exists": False}}, {"$set": {"account_type": "external", "staff_role": None}})
     await db.properties.update_many({"review_status": {"$exists": False}}, {"$set": {"review_status": "aprobada"}})
+
+    # Backfill member_no for existing external users (stable, ordered by creation)
+    pending = await db.users.find(
+        {"account_type": "external", "member_no": {"$exists": False}}
+    ).sort("created_at", 1).to_list(None)
+    for u in pending:
+        await db.users.update_one({"id": u["id"]}, {"$set": {"member_no": await next_member_no()}})
 
     if await db.properties.count_documents({}) == 0:
         for sp in SEED_PROPERTIES:

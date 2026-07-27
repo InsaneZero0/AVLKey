@@ -61,7 +61,7 @@ export default function DashboardLayout() {
             <div className="w-9 h-9 rounded-full bg-navy text-white flex items-center justify-center text-xs font-medium">{initials}</div>
             <div className="min-w-0">
               <div className="text-sm font-medium text-navy truncate">{user?.name}</div>
-              <div className="text-xs text-stone-500">{isLandlord ? "Arrendador" : "Arrendatario"}</div>
+              <div className="text-xs text-stone-500">{isLandlord ? "Arrendador" : "Arrendatario"}{user?.public_id ? ` · ${user.public_id}` : ""}</div>
             </div>
           </div>
           <button onClick={doLogout} className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 w-full px-3 py-2 rounded-lg" data-testid="dashboard-logout">
