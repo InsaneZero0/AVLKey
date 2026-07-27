@@ -33,6 +33,7 @@ import Favorites from "@/pages/dashboard/Favorites";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminOverview from "@/pages/admin/AdminOverview";
 import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminMembers from "@/pages/admin/AdminMembers";
 import AdminProperties from "@/pages/admin/AdminProperties";
 import AdminApplications from "@/pages/admin/AdminApplications";
 import AdminContracts from "@/pages/admin/AdminContracts";
@@ -74,6 +75,8 @@ function AppRoutes() {
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<AdminOverview />} />
         <Route path="usuarios" element={<AdminUsers />} />
+        <Route path="arrendadores" element={<AdminMembers role="arrendador" />} />
+        <Route path="arrendatarios" element={<AdminMembers role="arrendatario" />} />
         <Route path="propiedades" element={<AdminProperties />} />
         <Route path="solicitudes" element={<AdminApplications />} />
         <Route path="contratos" element={<AdminContracts />} />

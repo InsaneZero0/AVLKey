@@ -4,12 +4,14 @@ import { useAuth } from "@/context/AuthContext";
 import { STAFF_ROLE_LABELS } from "@/lib/constants";
 import {
   Home, LayoutDashboard, Users, Building2, ClipboardList, FileText, CreditCard,
-  FileLock2, ScrollText, LogOut, ShieldCheck, FileCheck2,
+  FileLock2, ScrollText, LogOut, ShieldCheck, FileCheck2, UserRound,
 } from "lucide-react";
 
 const NAV = [
   { to: "/admin", label: "Resumen", icon: LayoutDashboard, perm: "consultar", end: true },
   { to: "/admin/usuarios", label: "Usuarios", icon: Users, perm: "administrar_usuarios" },
+  { to: "/admin/arrendadores", label: "Arrendadores", icon: Building2, perm: "consultar" },
+  { to: "/admin/arrendatarios", label: "Arrendatarios", icon: UserRound, perm: "consultar" },
   { to: "/admin/propiedades", label: "Revisión de propiedades", icon: Building2, perm: "consultar" },
   { to: "/admin/solicitudes", label: "Solicitudes", icon: ClipboardList, perm: "consultar" },
   { to: "/admin/contratos", label: "Contratos", icon: FileText, perm: "consultar" },

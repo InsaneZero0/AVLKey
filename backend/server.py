@@ -1468,6 +1468,8 @@ async def admin_stats(user: dict = Depends(require_permission("consultar"))):
 @api.get("/admin/users")
 async def admin_users(user: dict = Depends(require_permission("consultar"))):
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
+    for u in users:
+        u["public_id"] = public_id_for(u)
     return users
 
 
@@ -1661,6 +1663,22 @@ async def seed():
             "account_type": "external", "member_no": await next_member_no(), "staff_role": None,
             "phone": "5555550202", "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
         })
+
+    # Custom superadmin account (owner)
+    owner_email = "cpfzamora@yahoo.com.mx"
+    owner = await db.users.find_one({"email": owner_email})
+    if not owner:
+        await db.users.insert_one({
+            "id": new_id("user"), "email": owner_email, "name": "Administrador Zamora",
+            "password_hash": hash_password("digital2025"), "role": "arrendatario",
+            "account_type": "internal", "staff_role": "superadmin",
+            "phone": None, "picture": None, "auth_provider": "password", "created_at": now_utc().isoformat(),
+        })
+    elif owner.get("staff_role") != "superadmin":
+        await db.users.update_one({"email": owner_email}, {"$set": {
+            "account_type": "internal", "staff_role": "superadmin",
+            "password_hash": hash_password("digital2025"), "auth_provider": "password",
+        }})
 
     # Internal staff — one account per role
     staff_seed = {
