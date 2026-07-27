@@ -10,14 +10,14 @@ import { Home, Loader2, Building2, User } from "lucide-react";
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "arrendatario" });
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await register({ ...form, role: "arrendatario" });
+      await register(form);
       toast.success("¡Cuenta creada con éxito!");
       navigate("/panel");
     } catch (err) {
@@ -36,9 +36,34 @@ export default function Register() {
             <span className="font-display font-bold text-lg text-navy">Réntalo en Línea</span>
           </Link>
           <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Crea tu cuenta</h1>
-          <p className="text-stone-500 mt-2">Explora propiedades y guarda tus favoritas.</p>
+          <p className="text-stone-500 mt-2">Elige cómo quieres usar Réntalo en Línea.</p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
+            <div>
+              <Label>¿Cómo quieres registrarte?</Label>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  data-testid="register-role-arrendatario"
+                  onClick={() => setForm({ ...form, role: "arrendatario" })}
+                  className={`flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-colors ${form.role === "arrendatario" ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}
+                >
+                  <User className={`w-5 h-5 ${form.role === "arrendatario" ? "text-terracotta" : "text-stone-400"}`} />
+                  <span className="font-medium text-navy text-sm">Arrendatario</span>
+                  <span className="text-xs text-stone-500">Busco un inmueble para rentar</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="register-role-arrendador"
+                  onClick={() => setForm({ ...form, role: "arrendador" })}
+                  className={`flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-colors ${form.role === "arrendador" ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}
+                >
+                  <Building2 className={`w-5 h-5 ${form.role === "arrendador" ? "text-terracotta" : "text-stone-400"}`} />
+                  <span className="font-medium text-navy text-sm">Arrendador</span>
+                  <span className="text-xs text-stone-500">Quiero publicar y rentar mi inmueble</span>
+                </button>
+              </div>
+            </div>
             <div>
               <Label>Nombre completo</Label>
               <Input data-testid="register-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
