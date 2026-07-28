@@ -46,7 +46,7 @@ export default function PropertyForm() {
       for (const f of list) {
         const fd = new FormData();
         fd.append("file", f);
-        const { data } = await api.post("/properties/upload-image", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        const { data } = await api.post("/properties/upload-image", fd);
         const url = `${API}/media/${data.path}`;
         setForm((prev) => (prev.images.includes(url) ? prev : { ...prev, images: [...prev.images, url] }));
       }
@@ -82,7 +82,7 @@ export default function PropertyForm() {
         fd.append("doc_type", "acreditacion_propiedad");
         fd.append("category", "arrendador");
         try {
-          await api.post("/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+          await api.post("/documents/upload", fd);
         } catch (docErr) {
           toast.error("El inmueble se registró, pero no se pudo subir el documento de propiedad. Súbelo en Verificación.");
         }
