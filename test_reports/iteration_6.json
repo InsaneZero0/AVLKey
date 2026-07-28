@@ -1,0 +1,24 @@
+{
+  "summary": "Validado el bug fix de 'Publicar inmueble': subida de fotos desde dispositivo (PC/móvil) funciona end-to-end. Backend (6/6 pytest) y UI (Playwright) pasan. La imagen subida se almacena en rentalo-en-linea/properties/{user_id}/*, se sirve pública en /api/media/*, aparece como miniatura, la propiedad se crea con esa imagen y se ve en /panel/inmuebles.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_property_image_upload.py",
+    "/app/test_reports/pytest/image_upload.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PropertyForm.uploadImages establece Content-Type manualmente en multipart/form-data sin boundary; axios normalmente lo maneja bien si es FormData, pero convendría omitir el header y dejar que axios calcule el boundary automáticamente para evitar problemas en algunos entornos.",
+    "server.py GET /api/media/{file_path:path} no valida extensión permitida ni tamaños al servir; considerar cache headers (Cache-Control) para mejorar rendimiento en listados con muchas imágenes."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_property_image_upload.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Se creó y eliminó una propiedad temporal 'TEST_UI Publicar' del arrendador demo. Los blobs de imagen subidos (uuid.png) quedan en el object storage bajo rentalo-en-linea/properties/{user_id}/ (huellas pequeñas de 68 bytes).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "arrendador@demo.mx / Demo123!",
+  "context_for_next_testing_agent": "Cubierto: POST /api/properties/upload-image (auth 401 sin sesión, 400 ext inválida, 200 png), GET /api/media (200 público en prefijo properties, 404 para docs), creación de propiedad con imagen subida y verificación en /panel/inmuebles. Toast 'Foto agregada' verificado en UI. El input tiene class='hidden' — usar state='attached' en wait_for_selector y set_input_files directo. El botón 'Agregar' por URL sigue funcionando.",
+  "rca_of_the_issue": "El bug reportado (botón 'Agregar' no funcionaba para subir fotos) se resolvió agregando un input type=file oculto (data-testid='photo-upload-input') dentro de un label clickeable (data-testid='photo-upload-label') que llama a uploadImages() → POST /api/properties/upload-image. Además el endpoint público /api/media/{path} restringe correctamente el prefijo a 'rentalo-en-linea/properties/' devolviendo 404 para otros prefijos como 'docs/'."
+}

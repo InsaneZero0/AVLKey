@@ -692,6 +692,35 @@ async def my_properties(user: dict = Depends(get_current_user)):
     return props
 
 
+@api.post("/properties/upload-image")
+async def upload_property_image(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"
+    if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
+        raise HTTPException(status_code=400, detail="Formato no permitido (usa JPG, PNG, WEBP o GIF)")
+    data = await file.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="La imagen excede 10 MB")
+    path = f"{APP_NAME}/properties/{user['id']}/{uuid.uuid4()}.{ext}"
+    content_type = MIME_TYPES.get(ext, file.content_type or "image/jpeg")
+    try:
+        put_object(path, data, content_type)
+    except Exception as e:
+        logger.error(f"Storage upload error: {e}")
+        raise HTTPException(status_code=500, detail="No se pudo subir la imagen")
+    return {"path": path}
+
+
+@api.get("/media/{file_path:path}")
+async def get_media(file_path: str):
+    if not file_path.startswith(f"{APP_NAME}/properties/"):
+        raise HTTPException(status_code=404, detail="No encontrado")
+    try:
+        data, ct = get_object(file_path)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Imagen no disponible")
+    return Response(content=data, media_type=ct)
+
+
 # ---------------------------------------------------------------------------
 # Applications (solicitudes)
 # ---------------------------------------------------------------------------

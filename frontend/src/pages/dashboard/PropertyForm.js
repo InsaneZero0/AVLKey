@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import api, { apiError } from "@/lib/api";
+import api, { apiError, API } from "@/lib/api";
 import { PROPERTY_TYPES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, ImagePlus, FileCheck2, Upload } from "lucide-react";
+import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera } from "lucide-react";
 
 const SAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1708127665466-1f9a166a24c8?crop=entropy&cs=srgb&fm=jpg&q=85",
@@ -23,6 +23,7 @@ export default function PropertyForm() {
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [ownershipFile, setOwnershipFile] = useState(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
     price_month: "", deposit: "", maintenance_fee: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
@@ -36,6 +37,26 @@ export default function PropertyForm() {
     setImageUrl("");
   };
   const removeImage = (url) => set("images", form.images.filter((i) => i !== url));
+
+  const uploadImages = async (files) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
+    setUploadingImg(true);
+    try {
+      for (const f of list) {
+        const fd = new FormData();
+        fd.append("file", f);
+        const { data } = await api.post("/properties/upload-image", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        const url = `${API}/media/${data.path}`;
+        setForm((prev) => (prev.images.includes(url) ? prev : { ...prev, images: [...prev.images, url] }));
+      }
+      toast.success(list.length > 1 ? "Fotos agregadas" : "Foto agregada");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    } finally {
+      setUploadingImg(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -144,9 +165,26 @@ export default function PropertyForm() {
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Fotos</h2>
+          <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${uploadingImg ? "border-stone-200 opacity-60 pointer-events-none" : "border-stone-300 hover:border-terracotta"}`} data-testid="photo-upload-label">
+            <div className="w-11 h-11 rounded-xl bg-terracotta/10 flex items-center justify-center">
+              {uploadingImg ? <Loader2 className="w-5 h-5 text-terracotta animate-spin" /> : <Camera className="w-5 h-5 text-terracotta" />}
+            </div>
+            <div>
+              <div className="font-medium text-navy">{uploadingImg ? "Subiendo fotos..." : "Subir fotos desde tu dispositivo"}</div>
+              <div className="text-xs text-stone-500">PC o móvil · JPG, PNG, WEBP o GIF (máx. 10 MB c/u)</div>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              data-testid="photo-upload-input"
+              onChange={(e) => { uploadImages(e.target.files); e.target.value = ""; }}
+            />
+          </label>
           <div className="flex gap-2">
-            <Input data-testid="prop-image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Pega una URL de imagen" />
-            <Button type="button" variant="outline" onClick={() => addImage(imageUrl)} className="rounded-full whitespace-nowrap"><ImagePlus className="w-4 h-4 mr-1" /> Agregar</Button>
+            <Input data-testid="prop-image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="O pega una URL de imagen" />
+            <Button type="button" variant="outline" onClick={() => addImage(imageUrl)} className="rounded-full whitespace-nowrap" data-testid="add-image-url-btn"><ImagePlus className="w-4 h-4 mr-1" /> Agregar</Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {SAMPLE_IMAGES.map((im) => (
@@ -156,7 +194,7 @@ export default function PropertyForm() {
             ))}
           </div>
           {form.images.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2" data-testid="selected-images">
               {form.images.map((im) => (
                 <div key={im} className="relative w-24 h-20 rounded-lg overflow-hidden border-2 border-terracotta">
                   <img src={im} alt="" className="w-full h-full object-cover" />
