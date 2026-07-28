@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, ImagePlus } from "lucide-react";
+import { Loader2, X, ImagePlus, FileCheck2, Upload } from "lucide-react";
 
 const SAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1708127665466-1f9a166a24c8?crop=entropy&cs=srgb&fm=jpg&q=85",
@@ -22,6 +22,7 @@ export default function PropertyForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [ownershipFile, setOwnershipFile] = useState(null);
   const [form, setForm] = useState({
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
     price_month: "", deposit: "", maintenance_fee: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
@@ -54,7 +55,18 @@ export default function PropertyForm() {
         images: form.images.length ? form.images : [SAMPLE_IMAGES[0]],
       };
       await api.post("/properties", payload);
-      toast.success("¡Inmueble publicado!");
+      if (ownershipFile) {
+        const fd = new FormData();
+        fd.append("file", ownershipFile);
+        fd.append("doc_type", "acreditacion_propiedad");
+        fd.append("category", "arrendador");
+        try {
+          await api.post("/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        } catch (docErr) {
+          toast.error("El inmueble se registró, pero no se pudo subir el documento de propiedad. Súbelo en Verificación.");
+        }
+      }
+      toast.success("¡Información enviada al departamento de validación!");
       navigate("/panel/inmuebles");
     } catch (err) {
       toast.error(apiError(err.response?.data?.detail));
@@ -73,7 +85,7 @@ export default function PropertyForm() {
   return (
     <div className="max-w-3xl">
       <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Publicar inmueble</h1>
-      <p className="text-stone-500 mt-1">Completa la información para publicar tu propiedad en renta.</p>
+      <p className="text-stone-500 mt-1">Esta información pasará al departamento de validación y te estaremos enviando una notificación de tu status.</p>
 
       <form onSubmit={submit} className="mt-8 space-y-8">
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
@@ -155,10 +167,31 @@ export default function PropertyForm() {
           )}
         </section>
 
+        <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
+          <h2 className="font-display font-semibold text-navy">Documento que acredite la propiedad</h2>
+          <p className="text-sm text-stone-500">Sube el documento que acredite que eres el propietario del inmueble (escritura, boleta predial u otro). Formatos: PDF, JPG o PNG (máx. 10 MB).</p>
+          <label className="flex items-center gap-3 border-2 border-dashed border-stone-300 rounded-xl px-4 py-6 cursor-pointer hover:border-terracotta transition-colors" data-testid="ownership-doc-label">
+            <div className="w-11 h-11 rounded-xl bg-terracotta/10 flex items-center justify-center">
+              {ownershipFile ? <FileCheck2 className="w-5 h-5 text-terracotta" /> : <Upload className="w-5 h-5 text-terracotta" />}
+            </div>
+            <div className="min-w-0">
+              <div className="font-medium text-navy truncate">{ownershipFile ? ownershipFile.name : "Seleccionar archivo"}</div>
+              <div className="text-xs text-stone-500">{ownershipFile ? "Documento listo para enviar" : "Haz clic para subir tu documento de propiedad"}</div>
+            </div>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              data-testid="ownership-doc-input"
+              onChange={(e) => setOwnershipFile(e.target.files?.[0] || null)}
+            />
+          </label>
+        </section>
+
         <div className="flex gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/panel/inmuebles")} className="rounded-full">Cancelar</Button>
           <Button type="submit" disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover flex-1" data-testid="submit-property-btn">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publicar inmueble"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
           </Button>
         </div>
       </form>
