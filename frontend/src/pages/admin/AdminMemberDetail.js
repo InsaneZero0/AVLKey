@@ -8,10 +8,11 @@ import {
 } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
-  MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck,
+  MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck, MessageSquare,
 } from "lucide-react";
 
 const Row = ({ icon: Icon, label, value }) => (
@@ -97,9 +98,13 @@ export default function AdminMemberDetail() {
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [savingId, setSavingId] = useState(null);
+  const [note, setNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
-    api.get(`/admin/members/${userId}`).then(({ data }) => setData(data)).catch(() => setNotFound(true));
+    api.get(`/admin/members/${userId}`)
+      .then(({ data }) => { setData(data); setNote(data.user?.admin_note || ""); })
+      .catch(() => setNotFound(true));
   }, [userId]);
 
   const setStage = async (propId, stage) => {
@@ -115,6 +120,18 @@ export default function AdminMemberDetail() {
       toast.error(apiError(e.response?.data?.detail));
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const saveNote = async () => {
+    setSavingNote(true);
+    try {
+      await api.patch(`/admin/members/${userId}/note`, { note });
+      toast.success("Observación guardada. Se notificó al arrendador.");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -190,6 +207,26 @@ export default function AdminMemberDetail() {
               </div>
             )}
             {docItems.map((it) => <DocRow key={it.key} item={it} />)}
+
+            {/* Observación del administrador (máx. 50 caracteres) */}
+            <div className="mt-5 pt-5 border-t border-stone-100">
+              <label className="font-medium text-navy flex items-center gap-2 mb-1"><MessageSquare className="w-4 h-4 text-terracotta" /> Observaciones</label>
+              <p className="text-xs text-stone-500 mb-2">Este comentario se mostrará al arrendador dentro del apartado de su propiedad.</p>
+              <Textarea
+                data-testid="member-note-textarea"
+                value={note}
+                maxLength={50}
+                rows={2}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ej. Falta comprobante de domicilio vigente"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-stone-400">{note.length}/50</span>
+                <Button size="sm" className="rounded-full bg-terracotta hover:bg-terracotta-hover" disabled={savingNote} onClick={saveNote} data-testid="save-member-note-btn">
+                  {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar observación"}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>

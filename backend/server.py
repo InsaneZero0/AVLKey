@@ -689,6 +689,8 @@ async def my_properties(user: dict = Depends(get_current_user)):
     props = await db.properties.find({"owner_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)
     for p in props:
         p["applications_count"] = await db.applications.count_documents({"property_id": p["id"]})
+        p["display_status"] = property_display_status(p)
+        p["admin_note"] = user.get("admin_note")
     return props
 
 
@@ -1635,6 +1637,26 @@ async def admin_set_property_stage(property_id: str, data: StageInput, actor: di
                  f"El estado de '{prop.get('title', 'tu inmueble')}' cambió a: {REVIEW_STAGE_LABELS[data.stage]}.",
                  "/panel/inmuebles")
     return {"ok": True, "review_stage": data.stage}
+
+
+class MemberNoteInput(BaseModel):
+    note: str = ""
+
+
+@api.patch("/admin/members/{user_id}/note")
+async def admin_set_member_note(user_id: str, data: MemberNoteInput, actor: dict = Depends(get_current_user)):
+    if actor.get("account_type") != "internal" or not has_perm(actor, "editar"):
+        raise HTTPException(status_code=403, detail="Permiso insuficiente")
+    note = (data.note or "")[:50]
+    target = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await db.users.update_one({"id": user_id}, {"$set": {"admin_note": note}})
+    await audit(actor, "member_note", user_id, note)
+    if note:
+        await notify(user_id, "validacion", "Observación del administrador",
+                     f"El equipo de validación dejó una observación: {note}", "/panel/inmuebles")
+    return {"ok": True, "admin_note": note}
 
 
 @api.get("/admin/applications")

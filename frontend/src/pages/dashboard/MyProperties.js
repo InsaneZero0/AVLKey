@@ -2,21 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { TYPE_LABEL, formatMXN, STATUS_LABEL } from "@/lib/constants";
+import { TYPE_LABEL, formatMXN, STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, Trash2, Inbox, Building2, Loader2, MapPin } from "lucide-react";
-
-const statusColor = {
-  disponible: "bg-green-100 text-green-700",
-  rentado: "bg-navy/10 text-navy",
-  en_proceso: "bg-amber-100 text-amber-700",
-  pausado: "bg-stone-100 text-stone-600",
-};
+import { PlusCircle, Trash2, Inbox, Building2, Loader2, MapPin, MessageSquare } from "lucide-react";
 
 export default function MyProperties() {
   const navigate = useNavigate();
@@ -63,13 +56,21 @@ export default function MyProperties() {
                   <div>
                     <div className="flex items-center gap-2">
                       <Badge className="bg-terracotta/10 text-terracotta hover:bg-terracotta/10 rounded-full">{TYPE_LABEL[p.property_type]}</Badge>
-                      <Badge className={`rounded-full ${statusColor[p.status] || "bg-stone-100 text-stone-600"}`}>{STATUS_LABEL[p.status]}</Badge>
+                      <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[p.display_status] || "bg-stone-100 text-stone-600"}`} data-testid={`my-prop-status-${p.id}`}>{STATUS_LABEL[p.display_status] || STATUS_LABEL[p.status]}</Badge>
                     </div>
                     <h3 className="font-display font-semibold text-lg text-navy mt-2">{p.title}</h3>
                     <div className="flex items-center gap-1.5 text-stone-500 text-sm"><MapPin className="w-3.5 h-3.5" />{p.city}</div>
                   </div>
                   <div className="font-display font-bold text-xl text-terracotta whitespace-nowrap">{formatMXN(p.price_month)}<span className="text-xs text-stone-400 font-normal">/mes</span></div>
                 </div>
+
+                {p.admin_note && (
+                  <div className="mt-3 flex items-start gap-2 bg-amber-50 text-amber-800 rounded-lg px-3 py-2 text-sm" data-testid={`prop-admin-note-${p.id}`}>
+                    <MessageSquare className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Observación de validación:</span> {p.admin_note}</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mt-4">
                   <button onClick={() => navigate("/panel/recibidas")} className="flex items-center gap-1.5 text-sm text-navy hover:text-terracotta transition-colors">
                     <Inbox className="w-4 h-4" /> {p.applications_count} solicitud(es)
