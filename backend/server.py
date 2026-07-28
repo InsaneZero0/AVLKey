@@ -1503,6 +1503,8 @@ async def admin_users(user: dict = Depends(require_permission("consultar"))):
 
 
 def property_display_status(p: dict) -> str:
+    if p.get("review_stage"):
+        return p["review_stage"]
     rs = p.get("review_status")
     st = p.get("status")
     if rs == "rechazada":
@@ -1596,6 +1598,44 @@ async def admin_review_property(property_id: str, data: ReviewDecision, actor: d
     await db.properties.update_one({"id": property_id}, {"$set": {"review_status": data.decision, "review_note": data.note}})
     await audit(actor, f"review_property_{data.decision}", property_id, data.note)
     return {"ok": True}
+
+
+REVIEW_STAGES = ["recibido", "en_revision", "doc_faltante", "aprobado", "publicado", "rechazado"]
+REVIEW_STAGE_LABELS = {
+    "recibido": "Recibido", "en_revision": "En revisión", "doc_faltante": "Documentación faltante",
+    "aprobado": "Aprobado", "publicado": "Publicado", "rechazado": "Rechazado",
+}
+
+
+class StageInput(BaseModel):
+    stage: str
+
+
+@api.patch("/admin/properties/{property_id}/stage")
+async def admin_set_property_stage(property_id: str, data: StageInput, actor: dict = Depends(get_current_user)):
+    if actor.get("account_type") != "internal" or not has_perm(actor, "editar"):
+        raise HTTPException(status_code=403, detail="Permiso insuficiente")
+    if data.stage not in REVIEW_STAGES:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    updates = {"review_stage": data.stage}
+    if data.stage == "rechazado":
+        updates["review_status"] = "rechazada"
+    elif data.stage in ("aprobado", "publicado"):
+        updates["review_status"] = "aprobada"
+        if data.stage == "publicado":
+            updates["status"] = "disponible"
+    else:
+        updates["review_status"] = "pendiente"
+    await db.properties.update_one({"id": property_id}, {"$set": updates})
+    await audit(actor, f"property_stage_{data.stage}", property_id, prop.get("title", ""))
+    await notify(prop["owner_id"], "validacion",
+                 f"Estado de tu inmueble: {REVIEW_STAGE_LABELS[data.stage]}",
+                 f"El estado de '{prop.get('title', 'tu inmueble')}' cambió a: {REVIEW_STAGE_LABELS[data.stage]}.",
+                 "/panel/inmuebles")
+    return {"ok": True, "review_stage": data.stage}
 
 
 @api.get("/admin/applications")

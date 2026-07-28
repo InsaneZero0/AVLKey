@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api, { API } from "@/lib/api";
+import { toast } from "sonner";
+import api, { API, apiError } from "@/lib/api";
 import {
-  TYPE_LABEL, STATUS_LABEL, PROPERTY_STATUS_COLOR, DOC_STATUS_COLOR, formatMXN, formatDate,
+  TYPE_LABEL, STATUS_LABEL, PROPERTY_STATUS_COLOR, DOC_STATUS_COLOR, REVIEW_STAGE_OPTIONS,
+  formatMXN, formatDate,
 } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye,
-  MapPin, BadgeCheck, ShieldAlert, CreditCard,
+  MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck,
 } from "lucide-react";
 
 const Row = ({ icon: Icon, label, value }) => (
@@ -19,15 +23,39 @@ const Row = ({ icon: Icon, label, value }) => (
   </div>
 );
 
+const STAGE_FROM_DISPLAY = {
+  recibida: "recibido", recibido: "recibido", en_revision: "en_revision",
+  doc_faltante: "doc_faltante", aprobado: "aprobado", publicada: "publicado",
+  publicado: "publicado", rentada: "publicado", pausada: "aprobado",
+  rechazada: "rechazado", rechazado: "rechazado",
+};
+
 export default function AdminMemberDetail() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [savingId, setSavingId] = useState(null);
 
   useEffect(() => {
     api.get(`/admin/members/${userId}`).then(({ data }) => setData(data)).catch(() => setNotFound(true));
   }, [userId]);
+
+  const setStage = async (propId, stage) => {
+    setSavingId(propId);
+    try {
+      await api.patch(`/admin/properties/${propId}/stage`, { stage });
+      setData((prev) => ({
+        ...prev,
+        properties: prev.properties.map((p) => (p.id === propId ? { ...p, review_stage: stage, display_status: stage } : p)),
+      }));
+      toast.success("Estado de validación actualizado. Se notificó al arrendador.");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   if (notFound) return <div className="text-center py-20 text-stone-500">Usuario no encontrado.</div>;
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
@@ -89,7 +117,7 @@ export default function AdminMemberDetail() {
 
       {/* Documents */}
       <div>
-        <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><FileText className="w-5 h-5" /> Documentos</h2>
+        <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><FileText className="w-5 h-5" /> Documentos enviados</h2>
         {!can_view_documents ? (
           <div className="bg-white border border-stone-200 rounded-2xl p-6 text-sm text-stone-400">No tienes permiso para ver documentos sensibles.</div>
         ) : documents.length === 0 ? (
@@ -139,6 +167,44 @@ export default function AdminMemberDetail() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Validation review radio buttons — final section */}
+      {isLandlord && properties.length > 0 && (
+        <div data-testid="validation-review">
+          <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><ClipboardCheck className="w-5 h-5" /> Revisión de validación</h2>
+          <p className="text-sm text-stone-500 mb-4">Selecciona el estado de validación de cada inmueble. El arrendador recibirá una notificación con su status.</p>
+          <div className="space-y-4">
+            {properties.map((p) => {
+              const current = p.review_stage || STAGE_FROM_DISPLAY[p.display_status] || "recibido";
+              return (
+                <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-5" data-testid={`validation-card-${p.id}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-medium text-navy truncate">{p.title}</div>
+                    {savingId === p.id && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
+                  </div>
+                  <RadioGroup
+                    value={current}
+                    onValueChange={(v) => setStage(p.id, v)}
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                    data-testid={`stage-radiogroup-${p.id}`}
+                  >
+                    {REVIEW_STAGE_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.value}
+                        htmlFor={`${p.id}-${opt.value}`}
+                        className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${current === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}
+                      >
+                        <RadioGroupItem value={opt.value} id={`${p.id}-${opt.value}`} data-testid={`stage-${p.id}-${opt.value}`} />
+                        <span className="text-sm font-medium text-navy">{opt.label}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
