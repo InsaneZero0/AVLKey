@@ -3,15 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { API, apiError } from "@/lib/api";
 import {
-  TYPE_LABEL, STATUS_LABEL, PROPERTY_STATUS_COLOR, DOC_STATUS_COLOR, REVIEW_STAGE_OPTIONS,
+  TYPE_LABEL, STATUS_LABEL, PROPERTY_STATUS_COLOR, REVIEW_STAGE_OPTIONS,
   formatMXN, formatDate,
 } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import {
-  Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye,
+  Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
   MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck,
 } from "lucide-react";
 
@@ -23,12 +22,74 @@ const Row = ({ icon: Icon, label, value }) => (
   </div>
 );
 
+const docStatusMap = {
+  pendiente: { label: "En revisión", cls: "bg-amber-100 text-amber-700" },
+  aprobado: { label: "Aprobado", cls: "bg-green-100 text-green-700" },
+  rechazado: { label: "Rechazado", cls: "bg-red-100 text-red-700" },
+  correccion: { label: "Corrección solicitada", cls: "bg-blue-100 text-blue-700" },
+};
+
 const STAGE_FROM_DISPLAY = {
   recibida: "recibido", recibido: "recibido", en_revision: "en_revision",
   doc_faltante: "doc_faltante", aprobado: "aprobado", publicada: "publicado",
   publicado: "publicado", rentada: "publicado", pausada: "aprobado",
   rechazada: "rechazado", rechazado: "rechazado",
 };
+
+function DocRow({ item }) {
+  const doc = item.document;
+  const st = doc ? docStatusMap[doc.status] : null;
+
+  const download = async () => {
+    try {
+      const res = await api.get(`/documents/${doc.id}/download`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.original_filename || "documento";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("No se pudo descargar el documento");
+    }
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 border-b border-stone-100 last:border-0" data-testid={`admin-doc-row-${item.key}`}>
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-stone-100 flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-stone-500" /></div>
+        <div>
+          <div className="font-medium text-navy flex items-center gap-2">
+            {item.label}
+            {item.required ? <span className="text-red-500 text-xs">*</span> : <span className="text-xs text-stone-400">(opcional)</span>}
+          </div>
+          {doc ? (
+            <div className="text-xs text-stone-500 mt-0.5">
+              v{doc.version} · {doc.original_filename}
+              {doc.expiry_date && <> · vence {formatDate(doc.expiry_date)}</>}
+              {doc.review_note && <div className="text-stone-600 italic mt-0.5">"{doc.review_note}"</div>}
+            </div>
+          ) : <div className="text-xs text-stone-400 mt-0.5">Sin cargar</div>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {st && <Badge className={`rounded-full ${st.cls}`}>{st.label}</Badge>}
+        {doc && (
+          <>
+            <Button variant="outline" size="sm" className="rounded-full" onClick={() => window.open(`${API}/documents/${doc.id}/download`, "_blank")} data-testid={`admin-view-doc-${item.key}`}>
+              <Eye className="w-4 h-4 mr-1" /> Ver
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-full" onClick={download} data-testid={`admin-download-doc-${item.key}`}>
+              <Download className="w-4 h-4 mr-1" /> Descargar
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminMemberDetail() {
   const { userId } = useParams();
@@ -60,8 +121,9 @@ export default function AdminMemberDetail() {
   if (notFound) return <div className="text-center py-20 text-stone-500">Usuario no encontrado.</div>;
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
-  const { user, properties, documents, can_view_documents, fiscal_info, consent } = data;
+  const { user, properties, documents_summary, can_view_documents, fiscal_info, consent } = data;
   const isLandlord = user.role === "arrendador";
+  const docItems = documents_summary?.items || [];
 
   return (
     <div className="space-y-8" data-testid="admin-member-detail">
@@ -115,27 +177,19 @@ export default function AdminMemberDetail() {
         </div>
       )}
 
-      {/* Documents */}
+      {/* Documents — mismo formato que Verificación (solo ver/descargar) */}
       <div>
         <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><FileText className="w-5 h-5" /> Documentos enviados</h2>
         {!can_view_documents ? (
           <div className="bg-white border border-stone-200 rounded-2xl p-6 text-sm text-stone-400">No tienes permiso para ver documentos sensibles.</div>
-        ) : documents.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-2xl p-6 text-sm text-stone-400" data-testid="member-no-docs">Este usuario no ha subido documentos.</div>
         ) : (
-          <div className="bg-white border border-stone-200 rounded-xl divide-y divide-stone-100">
-            {documents.map((d) => (
-              <div key={d.id} className="flex items-center justify-between px-5 py-4" data-testid={`member-doc-${d.id}`}>
-                <div>
-                  <div className="font-medium text-navy">{d.label}</div>
-                  <div className="text-xs text-stone-500">{d.original_filename} · v{d.version} · {formatDate(d.created_at)}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={`rounded-full ${DOC_STATUS_COLOR[d.status] || "bg-stone-100 text-stone-600"}`}>{d.status}</Badge>
-                  <Button variant="outline" size="sm" className="rounded-full" onClick={() => window.open(`${API}/documents/${d.id}/download`, "_blank")} data-testid={`member-view-doc-${d.id}`}><Eye className="w-4 h-4" /></Button>
-                </div>
+          <div className="bg-white border border-stone-200 rounded-2xl p-6">
+            {documents_summary?.total_required > 0 && (
+              <div className={`mb-4 rounded-xl p-3 text-sm font-medium ${documents_summary.verified ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`} data-testid="admin-verification-status">
+                {documents_summary.verified ? "Verificación completa" : `Verificación en progreso: ${documents_summary.approved_required}/${documents_summary.total_required} documentos obligatorios aprobados`}
               </div>
-            ))}
+            )}
+            {docItems.map((it) => <DocRow key={it.key} item={it} />)}
           </div>
         )}
       </div>

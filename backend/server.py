@@ -1531,19 +1531,18 @@ async def admin_member_detail(user_id: str, viewer: dict = Depends(require_permi
         p["display_status"] = property_display_status(p)
         p["applications_count"] = await db.applications.count_documents({"property_id": p["id"]})
     can_docs = has_perm(viewer, "consultar_documentos_sensibles")
-    documents = []
+    category = u.get("role", "arrendatario")
+    documents_summary = None
     if can_docs:
-        docs = await db.documents.find({"user_id": user_id, "current": True, "is_deleted": False}, {"_id": 0}).sort("created_at", -1).to_list(200)
-        label_map = {r["key"]: r["label"] for cat in DOC_REQUIREMENTS.values() for r in cat}
-        for d in docs:
-            d["label"] = label_map.get(d["doc_type"], d["doc_type"])
-        documents = docs
+        docs = await db.documents.find({"user_id": user_id, "current": True, "is_deleted": False}, {"_id": 0}).to_list(200)
+        documents_summary = doc_summary(docs, category)
     consent = await db.consents.find_one({"user_id": user_id, "type": "credit_check"}, {"_id": 0}, sort=[("timestamp", -1)])
     return {
         "user": u,
         "properties": props,
-        "documents": documents,
+        "documents_summary": documents_summary,
         "can_view_documents": can_docs,
+        "category": category,
         "fiscal_info": u.get("fiscal_info"),
         "consent": consent,
     }
