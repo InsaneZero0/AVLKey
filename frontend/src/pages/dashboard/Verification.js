@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import api, { apiError, API } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { formatDate } from "@/lib/constants";
+import { formatDate, STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -284,6 +284,15 @@ export default function Verification() {
         </div>
       )}
 
+      {category === "arrendatario" && user?.registro_stage && (
+        <div className="mt-3 flex items-center gap-3 rounded-xl bg-white border border-stone-200 p-4" data-testid="registro-status-banner">
+          <span className="text-sm font-medium text-navy">Estatus de tu registro:</span>
+          <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[user.registro_stage] || "bg-stone-100 text-stone-600"}`} data-testid="registro-status-badge">
+            {STATUS_LABEL[user.registro_stage] || user.registro_stage}
+          </Badge>
+        </div>
+      )}
+
       {category === "arrendatario" && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-form">
           <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-4"><UserRound className="w-4 h-4 text-terracotta" /> Datos del solicitante</h2>
@@ -425,12 +434,6 @@ export default function Verification() {
               })}
             </div>
           )}
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button onClick={saveFiscal} disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
-              {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
-            </Button>
-          </div>
         </div>
       )}
 
@@ -455,6 +458,14 @@ export default function Verification() {
         <h2 className="font-display font-semibold text-navy mb-2">Documentos del contratante principal</h2>
         {items.map((it) => <DocRow key={it.key} item={it} onUploaded={reloadDocs} />)}
       </div>
+
+      {category === "arrendatario" && (
+        <div className="mt-6 flex justify-end" data-testid="registro-submit-bottom">
+          <Button onClick={saveFiscal} disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="save-registro-btn">
+            {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
+          </Button>
+        </div>
+      )}
 
       {category === "arrendador" && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
