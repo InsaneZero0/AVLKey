@@ -344,9 +344,6 @@ export default function Verification() {
                 </div>
               )}
             </div>
-            <div className="col-span-2 sm:col-span-3">
-              <IncomeProofs paths={fiscal.comprobantes_ingresos} onChange={(v) => setFiscal({ ...fiscal, comprobantes_ingresos: v })} testid="reg-comprobantes" />
-            </div>
             <div>
               <Label>Adultos (18+ años)</Label>
               <Select value={fiscal.adultos_18} onValueChange={(v) => setFiscal({ ...fiscal, adultos_18: v })}>
