@@ -15,6 +15,7 @@ export default function DashboardLayout() {
   const doLogout = async () => { await logout(); navigate("/"); };
 
   const links = [
+    ...(!isLandlord ? [{ to: "/panel/verificacion", label: "Registro", icon: FileCheck2 }] : []),
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
     ...(isLandlord ? [
       { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2 },
@@ -27,7 +28,7 @@ export default function DashboardLayout() {
     { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
     { to: "/panel/contratos", label: "Contratos", icon: FileText },
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
-    { to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 },
+    ...(isLandlord ? [{ to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 }] : []),
     { to: "/panel/perfil", label: "Mi perfil", icon: User },
   ];
 
