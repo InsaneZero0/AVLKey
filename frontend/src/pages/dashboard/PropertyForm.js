@@ -11,6 +11,36 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera } from "lucide-react";
 
+const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
+  <div>
+    <Label>{label}</Label>
+    <Input data-testid={testid} type={type} inputMode={inputMode} value={value} onChange={onChange} placeholder={placeholder} />
+  </div>
+);
+
+const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hint }) => (
+  <div>
+    <Label>{label}</Label>
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+        <Input
+          data-testid={testid}
+          type="text"
+          inputMode="numeric"
+          value={value}
+          disabled={disabled}
+          onChange={disabled ? undefined : (e) => onChange(e.target.value.replace(/\D/g, ""))}
+          placeholder={placeholder}
+          className={`pl-7 ${disabled ? "bg-stone-100 text-stone-600" : ""}`}
+        />
+      </div>
+      <span className="text-sm font-medium text-stone-500">MX</span>
+    </div>
+    {hint && <p className="text-xs text-stone-500 mt-1">{hint}</p>}
+  </div>
+);
+
 export default function PropertyForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -19,11 +49,12 @@ export default function PropertyForm() {
   const [uploadingImg, setUploadingImg] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
-    price_month: "", deposit: "", maintenance_fee: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
+    price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
     furnished: false, pets_allowed: false, amenities: "", images: [],
   });
 
-  const set = (k, v) => setForm({ ...form, [k]: v });
+  const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+  const maintenance = Math.round((parseInt(form.price_month, 10) || 0) * 0.03);
 
   const addImage = (url) => {
     if (url && !form.images.includes(url)) set("images", [...form.images, url]);
@@ -58,15 +89,15 @@ export default function PropertyForm() {
     try {
       const payload = {
         ...form,
-        price_month: parseFloat(form.price_month) || 0,
-        deposit: parseFloat(form.deposit) || 0,
-        maintenance_fee: parseFloat(form.maintenance_fee) || 0,
+        price_month: parseInt(form.price_month, 10) || 0,
+        deposit: 0,
+        maintenance_fee: maintenance,
         bedrooms: parseInt(form.bedrooms) || 0,
         bathrooms: parseInt(form.bathrooms) || 0,
         parking: parseInt(form.parking) || 0,
         area_m2: parseFloat(form.area_m2) || 0,
         amenities: form.amenities.split(",").map((a) => a.trim()).filter(Boolean),
-        images: form.images.length ? form.images : [SAMPLE_IMAGES[0]],
+        images: form.images,
       };
       await api.post("/properties", payload);
       if (ownershipFile) {
@@ -88,20 +119,6 @@ export default function PropertyForm() {
       setLoading(false);
     }
   };
-
-  const Field = ({ label, k, type = "text", ph }) => (
-    <div>
-      <Label>{label}</Label>
-      <Input
-        data-testid={`prop-${k}`}
-        type={type === "number" ? "text" : type}
-        inputMode={type === "number" ? "decimal" : undefined}
-        value={form[k]}
-        onChange={(e) => set(k, e.target.value)}
-        placeholder={ph}
-      />
-    </div>
-  );
 
   return (
     <div className="max-w-3xl">
@@ -127,31 +144,30 @@ export default function PropertyForm() {
                 <SelectContent>{PROPERTY_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <Field label="Colonia" k="colonia" ph="Roma Norte" />
+            <Field label="Colonia" testid="prop-colonia" value={form.colonia} onChange={(e) => set("colonia", e.target.value)} placeholder="Roma Norte" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Ciudad" k="city" ph="Ciudad de México" />
-            <Field label="Estado" k="state" ph="CDMX" />
+            <Field label="Ciudad" testid="prop-city" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Ciudad de México" />
+            <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="CDMX" />
           </div>
-          <Field label="Dirección" k="address" ph="Calle y número (opcional)" />
+          <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Calle y número (opcional)" />
         </section>
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Precios (MXN)</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Renta mensual" k="price_month" type="number" ph="18000" />
-            <Field label="Depósito" k="deposit" type="number" ph="18000" />
-            <Field label="Mantenimiento" k="maintenance_fee" type="number" ph="0" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <MoneyInput label="Renta mensual" testid="prop-price_month" value={form.price_month} onChange={(v) => set("price_month", v)} placeholder="18000" />
+            <MoneyInput label="Mantenimiento" testid="prop-maintenance_fee" value={maintenance ? String(maintenance) : ""} disabled placeholder="0" hint="Se calcula automáticamente como el 3% de la renta mensual." />
           </div>
         </section>
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Recámaras" k="bedrooms" type="number" ph="2" />
-            <Field label="Baños" k="bathrooms" type="number" ph="2" />
-            <Field label="Estac." k="parking" type="number" ph="1" />
-            <Field label="Área m²" k="area_m2" type="number" ph="85" />
+            <Field label="Recámaras" testid="prop-bedrooms" type="text" inputMode="numeric" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/\D/g, ""))} placeholder="2" />
+            <Field label="Baños" testid="prop-bathrooms" type="text" inputMode="numeric" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/\D/g, ""))} placeholder="2" />
+            <Field label="Estac." testid="prop-parking" type="text" inputMode="numeric" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/\D/g, ""))} placeholder="1" />
+            <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="85" />
           </div>
           <div>
             <Label>Amenidades (separadas por coma)</Label>

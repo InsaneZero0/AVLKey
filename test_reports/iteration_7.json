@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend regression testing on /panel/publicar after moving Field/MoneyInput components to module scope. Verified multi-digit input, $ prefix + MX suffix, deposit removal, auto 3% maintenance (disabled), and end-to-end property creation. All checks pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "Created property 'TEST_MultiDigit Depto' via arrendador@demo.mx (folio P310726002). Consider cleanup if desired; UI does not expose delete by folio automatically.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "arrendador@demo.mx / Demo123!",
+  "context_for_next_testing_agent": "Focus-loss bug on prop-price_month is fixed. Verified: typing '18000' stays as '18000' (single continuous focus, no remount); Recámaras/Baños/Estac./Área m² also accept multi-digit; MoneyInput strips non-digits so 'abc12.5de34' -> '12534'; maintenance auto-computed as Math.round(price*0.03) and Input is disabled; no prop-deposit testid exists; POST /api/properties sends price_month=20000, maintenance_fee=600, deposit=0; property appears on /panel/inmuebles after submit. $ prefix rendered inside input (absolute positioned) and 'MX' label rendered outside to the right.",
+  "rca_of_the_issue": "Previous bug: Field/MoneyInput were declared inside PropertyForm, so each parent render created a new component type -> React unmounted and remounted the Input, dropping focus after every keystroke. Fix moved them to module scope (lines 14-42 of PropertyForm.js), so identity is stable across renders and focus is preserved. Verified end-to-end."
+}
