@@ -68,6 +68,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Folios (nuevos subscriptores/propiedades desde hoy): prefijo + DDMMYY + folio diario 3 dígitos. Arrendatario I, Arrendador A, Propiedad P (ej. I310726001, A310726001, P310726001). Usuarios/propiedades previos conservan su ID anterior (I/A + member_no).
 - Publicar inmueble: subtítulo "Esta información pasará al departamento de validación..."; botón "Enviar información"; subida de fotos desde dispositivo (POST /properties/upload-image, servidas en /api/media/{path}); documento que acredita propiedad (acreditacion_propiedad).
 
+## Publicar inmueble — precios (2026-07)
+- Bug corregido (foco/un-solo-dígito): Field y MoneyInput movidos a nivel de módulo (se remontaban en cada render).
+- Precios con MoneyInput: signo $ dentro del input, etiqueta MX afuera, solo dígitos (sin centavos).
+- Campo Depósito eliminado del formulario (backend deposit=0).
+- Mantenimiento = 3% de la renta, calculado automáticamente y no editable (disabled).
+- Verificado por testing_agent (iteration_7, frontend 100%).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
