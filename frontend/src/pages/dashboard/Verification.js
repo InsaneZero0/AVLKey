@@ -284,6 +284,10 @@ export default function Verification() {
           {fiscal.cohabitantes.length > 0 && (
             <div className="mt-5 pt-5 border-t border-stone-100 space-y-4" data-testid="cohabitantes-list">
               <h3 className="font-display font-semibold text-navy flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Personas que habitarán la propiedad</h3>
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 flex items-start gap-2" data-testid="habitantes-nota">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span><strong>Importante:</strong> Los habitantes son los que se manifiestan en los contratos. Si tienen ingresos, te darán mayor rango de renta. Si no los tienen, manifiesta 0 en ingresos.</span>
+              </div>
               {fiscal.cohabitantes.map((c, idx) => {
                 const coDisp = c.ingreso_mensual ? Number(c.ingreso_mensual).toLocaleString("en-US") : "";
                 return (
