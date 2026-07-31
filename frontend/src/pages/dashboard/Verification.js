@@ -124,8 +124,14 @@ export default function Verification() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Verificación</h1>
+      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">{category === "arrendatario" ? "Registro" : "Verificación"}</h1>
       <p className="text-stone-500 mt-1">Carga y da seguimiento a tus documentos como {category}.</p>
+
+      {category === "arrendatario" && (
+        <div className="mt-4 rounded-xl bg-navy/5 border border-navy/10 p-4 text-sm text-navy" data-testid="registro-info-header">
+          Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil.
+        </div>
+      )}
 
       {summary.total_required > 0 && (
         <div className={`mt-6 rounded-xl p-4 flex items-center gap-3 ${summary.verified ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`} data-testid="verification-status">
