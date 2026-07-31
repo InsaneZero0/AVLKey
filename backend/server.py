@@ -1255,6 +1255,9 @@ class FiscalInfo(BaseModel):
     bank_name: Optional[str] = None
     account_holder: Optional[str] = None
     clabe: Optional[str] = None
+    phone: Optional[str] = None
+    actividad_economica: Optional[str] = None
+    ingreso_mensual: Optional[float] = None
 
 
 class ConsentInput(BaseModel):

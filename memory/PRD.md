@@ -85,6 +85,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - El ID se muestra en negritas y color rojo en el detalle (/inmueble/:id), en las tarjetas (PropertyCard) y en el expediente del panel interno.
 - Buscador por ID en el hero de la landing (GET /properties/by-folio/{folio}, solo publicadas, tolera minúsculas) → navega al detalle.
 
+## Registro del arrendatario (2026-07)
+- Menú del arrendatario: "Verificación" renombrado a "Registro" y movido al tope (arriba de Resumen).
+- Encabezado informativo en Registro: "Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil."
+- Formulario "Datos del solicitante": Teléfono, RFC, Régimen fiscal (selector SAT), Actividad económica, Ingreso mensual neto ($ + MX, separador de miles). Persiste en users.fiscal_info + users.phone (PATCH /users/me/fiscal). FiscalInfo extendido con phone, actividad_economica, ingreso_mensual.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

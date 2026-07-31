@@ -8,10 +8,27 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
-  CreditCard, Landmark, FileText,
+  CreditCard, Landmark, FileText, UserRound,
 } from "lucide-react";
+
+const REGIMENES = [
+  "605 - Sueldos y Salarios e Ingresos Asimilados a Salarios",
+  "606 - Arrendamiento",
+  "607 - Enajenación o Adquisición de Bienes",
+  "608 - Demás ingresos",
+  "610 - Residentes en el Extranjero sin Establecimiento Permanente",
+  "611 - Ingresos por Dividendos (socios y accionistas)",
+  "612 - Personas Físicas con Actividades Empresariales y Profesionales",
+  "614 - Ingresos por intereses",
+  "615 - Régimen de los ingresos por obtención de premios",
+  "616 - Sin obligaciones fiscales",
+  "621 - Incorporación Fiscal",
+  "625 - Actividades Empresariales con ingresos a través de Plataformas Tecnológicas",
+  "626 - Régimen Simplificado de Confianza (RESICO)",
+];
 
 const statusMap = {
   pendiente: { label: "En revisión", cls: "bg-amber-100 text-amber-700" },
@@ -34,7 +51,7 @@ function DocRow({ item, onUploaded }) {
     fd.append("category", item.category);
     setUploading(true);
     try {
-      await api.post("/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      await api.post("/documents/upload", fd);
       toast.success(`${item.label} cargado`);
       onUploaded();
     } catch (err) {
@@ -68,7 +85,7 @@ function DocRow({ item, onUploaded }) {
       <div className="flex items-center gap-2">
         {st && <Badge className={`rounded-full ${st.cls}`}>{st.label}</Badge>}
         {doc && (
-          <Button variant="outline" size="sm" className="rounded-full" onClick={() => window.open(`${API}/documents/${doc.id}/download`, "_blank")} data-testid={`view-doc-${item.key}`}>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => window.open(`${API}/documents/${doc.id}/download`, "_blank")}>
             <Eye className="w-4 h-4" />
           </Button>
         )}
@@ -89,13 +106,21 @@ export default function Verification() {
   const [consent, setConsent] = useState(null);
   const [accepted, setAccepted] = useState(false);
   const [savingConsent, setSavingConsent] = useState(false);
-  const [fiscal, setFiscal] = useState({ rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "" });
+  const [savingFiscal, setSavingFiscal] = useState(false);
+  const [fiscal, setFiscal] = useState({
+    rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
+    phone: "", actividad_economica: "", ingreso_mensual: "",
+  });
 
   const load = () => {
     api.get(`/my/documents?category=${category}`).then(({ data }) => setSummary(data)).catch(() => setSummary({ items: [] }));
     api.get("/my/alerts").then(({ data }) => setAlerts(data)).catch(() => {});
     if (category === "arrendatario") api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
-    if (category === "arrendador") api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({ ...p, ...data }))).catch(() => {});
+    api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
+      ...p, ...data,
+      phone: data.phone || user?.phone || "",
+      ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
+    }))).catch(() => {});
   };
   useEffect(() => { load(); }, [category]); // eslint-disable-line
 
@@ -111,16 +136,20 @@ export default function Verification() {
   };
 
   const saveFiscal = async () => {
+    setSavingFiscal(true);
     try {
-      await api.patch("/users/me/fiscal", fiscal);
-      toast.success("Información fiscal y bancaria guardada");
+      const payload = { ...fiscal, ingreso_mensual: parseInt(fiscal.ingreso_mensual || "0", 10) || 0 };
+      await api.patch("/users/me/fiscal", payload);
+      toast.success("Información enviada a revisión");
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+    finally { setSavingFiscal(false); }
   };
 
   if (!summary) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
   const items = (summary.items || []).map((it) => ({ ...it, category }));
   const hasConsent = consent?.consent?.accepted;
+  const ingresoDisplay = fiscal.ingreso_mensual ? Number(fiscal.ingreso_mensual).toLocaleString("en-US") : "";
 
   return (
     <div className="max-w-3xl">
@@ -130,6 +159,48 @@ export default function Verification() {
       {category === "arrendatario" && (
         <div className="mt-4 rounded-xl bg-navy/5 border border-navy/10 p-4 text-sm text-navy" data-testid="registro-info-header">
           Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil.
+        </div>
+      )}
+
+      {category === "arrendatario" && (
+        <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-form">
+          <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-4"><UserRound className="w-4 h-4 text-terracotta" /> Datos del solicitante</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Teléfono</Label>
+              <Input data-testid="reg-phone" type="tel" inputMode="tel" value={fiscal.phone} onChange={(e) => setFiscal({ ...fiscal, phone: e.target.value })} placeholder="5555550000" />
+            </div>
+            <div>
+              <Label>RFC</Label>
+              <Input data-testid="reg-rfc" value={fiscal.rfc} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Régimen fiscal</Label>
+              <Select value={fiscal.fiscal_regime} onValueChange={(v) => setFiscal({ ...fiscal, fiscal_regime: v })}>
+                <SelectTrigger data-testid="reg-regime"><SelectValue placeholder="Selecciona tu régimen fiscal" /></SelectTrigger>
+                <SelectContent>
+                  {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Actividad económica</Label>
+              <Input data-testid="reg-actividad" value={fiscal.actividad_economica} onChange={(e) => setFiscal({ ...fiscal, actividad_economica: e.target.value })} placeholder="Ej. Empleado, comerciante, profesionista" />
+            </div>
+            <div>
+              <Label>Ingreso mensual neto</Label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+                  <Input data-testid="reg-ingreso" type="text" inputMode="numeric" value={ingresoDisplay} onChange={(e) => setFiscal({ ...fiscal, ingreso_mensual: e.target.value.replace(/\D/g, "") })} placeholder="20000" className="pl-7" />
+                </div>
+                <span className="text-sm font-medium text-stone-500">MX</span>
+              </div>
+            </div>
+          </div>
+          <Button onClick={saveFiscal} disabled={savingFiscal} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
+            {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
+          </Button>
         </div>
       )}
 
