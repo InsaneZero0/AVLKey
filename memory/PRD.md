@@ -80,6 +80,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - El buscador público (GET /properties) filtra review_stage == "publicado"; una propiedad solo es visible cuando el admin selecciona "Publicado".
 - Migración: propiedades aprobadas existentes y seeds -> review_stage "publicado".
 
+## ID de propiedad / folio (2026-07)
+- Cada propiedad tiene public_id (P+DDMMYY+NNN); backfill a propiedades existentes.
+- El ID se muestra en negritas y color rojo en el detalle (/inmueble/:id), en las tarjetas (PropertyCard) y en el expediente del panel interno.
+- Buscador por ID en el hero de la landing (GET /properties/by-folio/{folio}, solo publicadas, tolera minúsculas) → navega al detalle.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

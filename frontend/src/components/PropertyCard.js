@@ -39,6 +39,7 @@ export default function PropertyCard({ property, index = 0 }) {
         )}
       </div>
       <div className="p-5">
+        {property.public_id && <div className="font-mono font-bold text-red-600 text-xs mb-1" data-testid={`card-folio-${property.id}`}>ID: {property.public_id}</div>}
         <div className="flex items-center gap-1.5 text-stone-500 text-xs mb-1.5">
           <MapPin className="w-3.5 h-3.5" />
           <span>{property.colonia ? `${property.colonia}, ` : ""}{property.city}</span>

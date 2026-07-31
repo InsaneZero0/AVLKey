@@ -663,6 +663,17 @@ async def list_properties(
     return props
 
 
+@api.get("/properties/by-folio/{folio}")
+async def get_property_by_folio(folio: str):
+    prop = await db.properties.find_one(
+        {"public_id": folio.strip().upper(), "review_stage": "publicado"},
+        {"_id": 0, "id": 1, "public_id": 1, "title": 1},
+    )
+    if not prop:
+        raise HTTPException(status_code=404, detail="No encontramos una propiedad publicada con ese ID")
+    return prop
+
+
 @api.get("/properties/{property_id}")
 async def get_property(property_id: str):
     prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
@@ -1856,6 +1867,10 @@ async def seed():
         {"review_stage": {"$exists": False}, "review_status": "aprobada"},
         {"$set": {"review_stage": "publicado"}},
     )
+    # Backfill folio (public_id) para propiedades existentes sin ID
+    pend_props = await db.properties.find({"public_id": {"$exists": False}}).sort("created_at", 1).to_list(None)
+    for p in pend_props:
+        await db.properties.update_one({"id": p["id"]}, {"$set": {"public_id": await next_folio("P")}})
 
     # Backfill member_no for existing external users (stable, ordered by creation)
     pending = await db.users.find(

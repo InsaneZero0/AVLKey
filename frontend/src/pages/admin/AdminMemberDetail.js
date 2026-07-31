@@ -254,6 +254,7 @@ export default function AdminMemberDetail() {
                           <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[p.display_status] || "bg-stone-100 text-stone-600"}`} data-testid={`member-prop-status-${p.id}`}>{STATUS_LABEL[p.display_status]}</Badge>
                         </div>
                         <h3 className="font-display font-semibold text-navy mt-1.5 truncate">{p.title}</h3>
+                        {p.public_id && <div className="text-xs font-mono font-bold text-red-600" data-testid={`admin-prop-folio-${p.id}`}>ID: {p.public_id}</div>}
                         <div className="flex items-center gap-1.5 text-stone-500 text-sm"><MapPin className="w-3.5 h-3.5" />{p.city} · {p.applications_count} solicitud(es)</div>
                       </div>
                       <div className="text-right whitespace-nowrap">

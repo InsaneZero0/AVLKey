@@ -6,11 +6,13 @@ import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import PropertySearch from "@/components/PropertySearch";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CITIES } from "@/lib/constants";
 import api from "@/lib/api";
 import {
-  ShieldCheck, FileText, CreditCard, Wrench, Scale, Users, Search,
+  ShieldCheck, FileText, CreditCard, Wrench, Scale, Users, Search, Loader2,
   CalendarCheck, ClipboardCheck, Banknote, ArrowRight, CheckCircle2,
   UserCheck, PiggyBank, LifeBuoy, Star, MapPin, Send, Building2, Quote,
 } from "lucide-react";
@@ -67,10 +69,27 @@ const BLOG = [
 export default function Landing() {
   const navigate = useNavigate();
   const [featured, setFeatured] = useState([]);
+  const [folioQuery, setFolioQuery] = useState("");
+  const [folioLoading, setFolioLoading] = useState(false);
 
   useEffect(() => {
     api.get("/properties").then(({ data }) => setFeatured(data.slice(0, 6))).catch(() => {});
   }, []);
+
+  const searchByFolio = async (e) => {
+    e.preventDefault();
+    const folio = folioQuery.trim();
+    if (!folio) return;
+    setFolioLoading(true);
+    try {
+      const { data } = await api.get(`/properties/by-folio/${encodeURIComponent(folio)}`);
+      navigate(`/inmueble/${data.id}`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "No encontramos una propiedad con ese ID");
+    } finally {
+      setFolioLoading(false);
+    }
+  };
 
   return (
     <div className="App">
@@ -97,6 +116,19 @@ export default function Landing() {
                 Publicar mi propiedad
               </Button>
             </div>
+
+            <form onSubmit={searchByFolio} className="mt-6 flex items-center gap-2 max-w-md" data-testid="folio-search-form">
+              <Input
+                value={folioQuery}
+                onChange={(e) => setFolioQuery(e.target.value.toUpperCase())}
+                placeholder="ID de la propiedad que viste (ej. P310726001)"
+                data-testid="folio-search-input"
+                className="h-12 rounded-full bg-white/95 border-0 text-navy placeholder:text-stone-400"
+              />
+              <Button type="submit" disabled={folioLoading} className="rounded-full bg-navy hover:bg-navy/90 h-12 px-6 shrink-0" data-testid="folio-search-btn">
+                {folioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Search className="w-4 h-4 mr-2" /> Buscar por ID</>}
+              </Button>
+            </form>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="mt-10 max-w-4xl">

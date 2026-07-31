@@ -124,6 +124,7 @@ export default function PropertyDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2">
             <Badge className="bg-terracotta/10 text-terracotta hover:bg-terracotta/10 rounded-full mb-3">{TYPE_LABEL[prop.property_type]}</Badge>
+            {prop.public_id && <div className="font-mono font-bold text-red-600 mb-1" data-testid="detail-property-folio">ID: {prop.public_id}</div>}
             <h1 className="font-display font-bold text-3xl sm:text-4xl text-navy tracking-tight">{prop.title}</h1>
             <div className="flex items-center gap-1.5 text-stone-500 mt-2">
               <MapPin className="w-4 h-4" /> {prop.colonia ? `${prop.colonia}, ` : ""}{prop.city}{prop.state ? `, ${prop.state}` : ""}
