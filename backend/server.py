@@ -1257,7 +1257,7 @@ class FiscalInfo(BaseModel):
     clabe: Optional[str] = None
     phone: Optional[str] = None
     actividad_economica: Optional[str] = None
-    ingreso_mensual: Optional[float] = None
+    curp: Optional[str] = None
 
 
 class ConsentInput(BaseModel):

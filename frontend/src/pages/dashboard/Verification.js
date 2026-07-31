@@ -109,7 +109,7 @@ export default function Verification() {
   const [savingFiscal, setSavingFiscal] = useState(false);
   const [fiscal, setFiscal] = useState({
     rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
-    phone: "", actividad_economica: "", ingreso_mensual: "",
+    phone: "", actividad_economica: "", curp: "",
   });
 
   const load = () => {
@@ -119,7 +119,6 @@ export default function Verification() {
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
       phone: data.phone || user?.phone || "",
-      ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
     }))).catch(() => {});
   };
   useEffect(() => { load(); }, [category]); // eslint-disable-line
@@ -149,7 +148,6 @@ export default function Verification() {
 
   const items = (summary.items || []).map((it) => ({ ...it, category }));
   const hasConsent = consent?.consent?.accepted;
-  const ingresoDisplay = fiscal.ingreso_mensual ? Number(fiscal.ingreso_mensual).toLocaleString("en-US") : "";
 
   return (
     <div className="max-w-3xl">
@@ -188,14 +186,9 @@ export default function Verification() {
               <Input data-testid="reg-actividad" value={fiscal.actividad_economica} onChange={(e) => setFiscal({ ...fiscal, actividad_economica: e.target.value })} placeholder="Ej. Empleado, comerciante, profesionista" />
             </div>
             <div>
-              <Label>Ingreso mensual neto</Label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
-                  <Input data-testid="reg-ingreso" type="text" inputMode="numeric" value={ingresoDisplay} onChange={(e) => setFiscal({ ...fiscal, ingreso_mensual: e.target.value.replace(/\D/g, "") })} placeholder="20000" className="pl-7" />
-                </div>
-                <span className="text-sm font-medium text-stone-500">MX</span>
-              </div>
+              <Label>CURP</Label>
+              <Input data-testid="reg-curp" maxLength={18} value={fiscal.curp} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" />
+              <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>
             </div>
           </div>
           <Button onClick={saveFiscal} disabled={savingFiscal} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">

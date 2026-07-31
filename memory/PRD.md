@@ -88,7 +88,7 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Registro del arrendatario (2026-07)
 - Menú del arrendatario: "Verificación" renombrado a "Registro" y movido al tope (arriba de Resumen).
 - Encabezado informativo en Registro: "Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil."
-- Formulario "Datos del solicitante": Teléfono, RFC, Régimen fiscal (selector SAT), Actividad económica, Ingreso mensual neto ($ + MX, separador de miles). Persiste en users.fiscal_info + users.phone (PATCH /users/me/fiscal). FiscalInfo extendido con phone, actividad_economica, ingreso_mensual.
+- Formulario "Datos del solicitante": Teléfono, RFC, Régimen fiscal (selector SAT), Actividad económica, CURP (18 caracteres, mayúsculas). Persiste en users.fiscal_info + users.phone (PATCH /users/me/fiscal). FiscalInfo con phone, actividad_economica, curp.
 
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
