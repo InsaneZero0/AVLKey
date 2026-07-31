@@ -11,13 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera } from "lucide-react";
 
-const SAMPLE_IMAGES = [
-  "https://images.unsplash.com/photo-1708127665466-1f9a166a24c8?crop=entropy&cs=srgb&fm=jpg&q=85",
-  "https://images.pexels.com/photos/17238410/pexels-photo-17238410.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-  "https://images.unsplash.com/photo-1700809888987-cf2b29ecbd2c?crop=entropy&cs=srgb&fm=jpg&q=85",
-  "https://images.unsplash.com/photo-1771530789155-b1f03fbf82b5?crop=entropy&cs=srgb&fm=jpg&q=85",
-];
-
 export default function PropertyForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -99,7 +92,14 @@ export default function PropertyForm() {
   const Field = ({ label, k, type = "text", ph }) => (
     <div>
       <Label>{label}</Label>
-      <Input data-testid={`prop-${k}`} type={type} value={form[k]} onChange={(e) => set(k, e.target.value)} placeholder={ph} />
+      <Input
+        data-testid={`prop-${k}`}
+        type={type === "number" ? "text" : type}
+        inputMode={type === "number" ? "decimal" : undefined}
+        value={form[k]}
+        onChange={(e) => set(k, e.target.value)}
+        placeholder={ph}
+      />
     </div>
   );
 
@@ -185,13 +185,6 @@ export default function PropertyForm() {
           <div className="flex gap-2">
             <Input data-testid="prop-image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="O pega una URL de imagen" />
             <Button type="button" variant="outline" onClick={() => addImage(imageUrl)} className="rounded-full whitespace-nowrap" data-testid="add-image-url-btn"><ImagePlus className="w-4 h-4 mr-1" /> Agregar</Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {SAMPLE_IMAGES.map((im) => (
-              <button key={im} type="button" onClick={() => addImage(im)} className="w-20 h-16 rounded-lg overflow-hidden border border-stone-200 opacity-70 hover:opacity-100 transition-opacity">
-                <img src={im} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
           </div>
           {form.images.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2" data-testid="selected-images">
