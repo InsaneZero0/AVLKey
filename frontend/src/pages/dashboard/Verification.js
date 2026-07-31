@@ -163,6 +163,7 @@ export default function Verification() {
     rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
     phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
     comprobantes_ingresos: [], cohabitantes: [],
+    adultos_18: "", menores_12_17: "", ninos_0_11: "", mascotas: "",
   });
 
   const load = () => {
@@ -174,6 +175,10 @@ export default function Verification() {
       phone: data.phone || user?.phone || "",
       ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
       comprobantes_ingresos: data.comprobantes_ingresos || [],
+      adultos_18: data.adultos_18 != null ? String(data.adultos_18) : "",
+      menores_12_17: data.menores_12_17 != null ? String(data.menores_12_17) : "",
+      ninos_0_11: data.ninos_0_11 != null ? String(data.ninos_0_11) : "",
+      mascotas: data.mascotas || "",
       cohabitantes: (data.cohabitantes || []).map((c) => ({
         name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
         ingreso_mensual: c.ingreso_mensual != null ? String(c.ingreso_mensual) : "",
@@ -204,6 +209,9 @@ export default function Verification() {
       const payload = {
         ...fiscal,
         ingreso_mensual: parseInt(fiscal.ingreso_mensual || "0", 10) || 0,
+        adultos_18: parseInt(fiscal.adultos_18 || "0", 10) || 0,
+        menores_12_17: parseInt(fiscal.menores_12_17 || "0", 10) || 0,
+        ninos_0_11: parseInt(fiscal.ninos_0_11 || "0", 10) || 0,
         cohabitantes: fiscal.cohabitantes.map((c) => ({
           name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
           ingreso_mensual: parseInt(c.ingreso_mensual || "0", 10) || 0,
@@ -277,6 +285,31 @@ export default function Verification() {
             </div>
             <div className="col-span-2 sm:col-span-3">
               <IncomeProofs paths={fiscal.comprobantes_ingresos} onChange={(v) => setFiscal({ ...fiscal, comprobantes_ingresos: v })} testid="reg-comprobantes" />
+            </div>
+            <div>
+              <Label>Adultos (18+ años)</Label>
+              <Select value={fiscal.adultos_18} onValueChange={(v) => setFiscal({ ...fiscal, adultos_18: v })}>
+                <SelectTrigger data-testid="reg-adultos-18"><SelectValue placeholder="0" /></SelectTrigger>
+                <SelectContent>{Array.from({ length: 11 }, (_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Menores (12 a 17 años)</Label>
+              <Select value={fiscal.menores_12_17} onValueChange={(v) => setFiscal({ ...fiscal, menores_12_17: v })}>
+                <SelectTrigger data-testid="reg-menores-12-17"><SelectValue placeholder="0" /></SelectTrigger>
+                <SelectContent>{Array.from({ length: 11 }, (_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Niños (0 a 11 años)</Label>
+              <Select value={fiscal.ninos_0_11} onValueChange={(v) => setFiscal({ ...fiscal, ninos_0_11: v })}>
+                <SelectTrigger data-testid="reg-ninos-0-11"><SelectValue placeholder="0" /></SelectTrigger>
+                <SelectContent>{Array.from({ length: 11 }, (_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 sm:col-span-3">
+              <Label>Mascotas (descríbelas si tienes)</Label>
+              <Input data-testid="reg-mascotas" value={fiscal.mascotas} onChange={(e) => setFiscal({ ...fiscal, mascotas: e.target.value })} placeholder="Ej. 1 perro pequeño, 2 gatos" />
             </div>
           </div>
 
