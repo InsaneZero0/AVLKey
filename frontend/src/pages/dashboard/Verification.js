@@ -458,6 +458,26 @@ export default function Verification() {
         </div>
       )}
 
+      {category === "arrendatario" && (
+        <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
+          <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-1"><ShieldCheck className="w-4 h-4 text-terracotta" /> Autorización de consulta de historial crediticio</h2>
+          {hasConsent ? (
+            <div className="mt-3 flex items-start gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3" data-testid="consent-granted">
+              <CheckCircle2 className="w-4 h-4 mt-0.5" />
+              <div>Autorización registrada el {formatDate(consent.consent.timestamp)} a las {consent.consent.time} · IP {consent.consent.ip_address} · versión {consent.consent.consent_version}</div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-stone-600 mt-2 leading-relaxed bg-stone-50 rounded-lg p-3">{consent?.text}</p>
+              <div className="flex items-start gap-2 mt-4">
+                <Checkbox id="consent" checked={accepted} onCheckedChange={(v) => setAccepted(!!v)} data-testid="consent-checkbox" />
+                <Label htmlFor="consent" className="cursor-pointer text-sm leading-relaxed">Acepto y autorizo expresamente la consulta de mi historial crediticio (versión {consent?.version}).</Label>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
         <h2 className="font-display font-semibold text-navy mb-2">Documentos del contratante principal</h2>
         {items.map((it) => <DocRow key={it.key} item={it} onUploaded={reloadDocs} />)}
@@ -484,28 +504,6 @@ export default function Verification() {
           </div>
           <Button onClick={saveFiscal} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-fiscal-btn">Guardar</Button>
         </div>
-      )}
-
-      {category === "arrendatario" && (
-        <>
-          <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-1"><ShieldCheck className="w-4 h-4 text-terracotta" /> Autorización de consulta de historial crediticio</h2>
-            {hasConsent ? (
-              <div className="mt-3 flex items-start gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3" data-testid="consent-granted">
-                <CheckCircle2 className="w-4 h-4 mt-0.5" />
-                <div>Autorización registrada el {formatDate(consent.consent.timestamp)} a las {consent.consent.time} · IP {consent.consent.ip_address} · versión {consent.consent.consent_version}</div>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed bg-stone-50 rounded-lg p-3">{consent?.text}</p>
-                <div className="flex items-start gap-2 mt-4">
-                  <Checkbox id="consent" checked={accepted} onCheckedChange={(v) => setAccepted(!!v)} data-testid="consent-checkbox" />
-                  <Label htmlFor="consent" className="cursor-pointer text-sm leading-relaxed">Acepto y autorizo expresamente la consulta de mi historial crediticio (versión {consent?.version}).</Label>
-                </div>
-              </>
-            )}
-          </div>
-        </>
       )}
     </div>
   );
