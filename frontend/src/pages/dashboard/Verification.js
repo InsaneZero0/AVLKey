@@ -30,6 +30,20 @@ const REGIMENES = [
   "626 - Régimen Simplificado de Confianza (RESICO)",
 ];
 
+const PHONE_CODES = [
+  { name: "México", code: "+52" },
+  { name: "Estados Unidos / Canadá", code: "+1" },
+  { name: "España", code: "+34" },
+  { name: "Colombia", code: "+57" },
+  { name: "Argentina", code: "+54" },
+  { name: "Perú", code: "+51" },
+  { name: "Chile", code: "+56" },
+  { name: "Guatemala", code: "+502" },
+  { name: "Venezuela", code: "+58" },
+  { name: "Ecuador", code: "+593" },
+  { name: "Brasil", code: "+55" },
+];
+
 const statusMap = {
   pendiente: { label: "En revisión", cls: "bg-amber-100 text-amber-700" },
   aprobado: { label: "Aprobado", cls: "bg-green-100 text-green-700" },
@@ -164,7 +178,7 @@ export default function Verification() {
     phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
     comprobantes_ingresos: [], cohabitantes: [],
     adultos_18: "", menores_12_17: "", ninos_0_11: "", mascotas: "",
-    es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [],
+    es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [], phone_code: "+52",
   });
 
   const load = () => {
@@ -174,6 +188,7 @@ export default function Verification() {
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
       phone: data.phone || user?.phone || "",
+      phone_code: data.phone_code || "+52",
       ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
       comprobantes_ingresos: data.comprobantes_ingresos || [],
       adultos_18: data.adultos_18 != null ? String(data.adultos_18) : "",
@@ -188,6 +203,7 @@ export default function Verification() {
         name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
         ingreso_mensual: c.ingreso_mensual != null ? String(c.ingreso_mensual) : "",
         comprobantes: c.comprobantes || [],
+        ine_fotos: c.ine_fotos || [],
         es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
         pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
       })),
@@ -201,7 +217,7 @@ export default function Verification() {
     setFiscal((p) => {
       if (p.cohabitantes.length === need) return p;
       const arr = p.cohabitantes.slice(0, need);
-      while (arr.length < need) arr.push({ name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [], es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] });
+      while (arr.length < need) arr.push({ name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [], ine_fotos: [], es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] });
       return { ...p, cohabitantes: arr };
     });
   }, [fiscal.adultos_18]); // eslint-disable-line
@@ -236,6 +252,7 @@ export default function Verification() {
           name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
           ingreso_mensual: parseInt(c.ingreso_mensual || "0", 10) || 0,
           comprobantes: c.comprobantes || [],
+          ine_fotos: c.ine_fotos || [],
           es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
           pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
         })),
@@ -273,7 +290,7 @@ export default function Verification() {
             </div>
             <div>
               <Label>RFC</Label>
-              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={12} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase().slice(0, 12) })} placeholder="XAXX010101" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
             </div>
             <div>
               <Label>CURP</Label>
@@ -282,7 +299,13 @@ export default function Verification() {
             </div>
             <div>
               <Label>Teléfono</Label>
-              <Input data-testid="reg-phone" type="tel" inputMode="tel" value={fiscal.phone} onChange={(e) => setFiscal({ ...fiscal, phone: e.target.value })} placeholder="5555550000" />
+              <div className="flex items-center gap-2">
+                <Select value={fiscal.phone_code} onValueChange={(v) => setFiscal({ ...fiscal, phone_code: v })}>
+                  <SelectTrigger data-testid="reg-phone-code" className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-64">{PHONE_CODES.map((c) => <SelectItem key={c.name} value={c.code}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
+                </Select>
+                <Input data-testid="reg-phone" type="tel" inputMode="numeric" maxLength={10} value={fiscal.phone} onChange={(e) => setFiscal({ ...fiscal, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="5555550000" className="flex-1" />
+              </div>
             </div>
             <div>
               <Label>Régimen fiscal</Label>
@@ -368,7 +391,7 @@ export default function Verification() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
-                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={12} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 12))} placeholder="XAXX010101" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
                         <Label>Ingreso mensual neto</Label>
@@ -381,6 +404,7 @@ export default function Verification() {
                         </div>
                       </div>
                       <div className="col-span-2 sm:col-span-3"><IncomeProofs paths={c.comprobantes} onChange={(v) => setCohab(idx, "comprobantes", v)} testid={`co-comprobantes-${idx}`} /></div>
+                      <div className="col-span-2 sm:col-span-3"><IncomeProofs paths={c.ine_fotos} onChange={(v) => setCohab(idx, "ine_fotos", v)} testid={`co-ine-${idx}`} label="Fotografía de INE (frente y reverso)" buttonText="Subir fotografía de INE" /></div>
                       <div className="col-span-2 sm:col-span-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3">
                         <div className="flex items-start gap-2">
                           <Checkbox id={`co-extranjero-${idx}`} checked={c.es_extranjero} onCheckedChange={(v) => toggleCohabExtranjero(idx, !!v)} data-testid={`co-extranjero-check-${idx}`} />

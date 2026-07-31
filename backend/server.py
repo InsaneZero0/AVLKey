@@ -1255,6 +1255,7 @@ class Cohabitante(BaseModel):
     curp: Optional[str] = None
     ingreso_mensual: Optional[float] = None
     comprobantes: Optional[List[str]] = None
+    ine_fotos: Optional[List[str]] = None
     es_extranjero: Optional[bool] = None
     pasaporte: Optional[str] = None
     pasaporte_fotos: Optional[List[str]] = None
@@ -1268,6 +1269,7 @@ class FiscalInfo(BaseModel):
     account_holder: Optional[str] = None
     clabe: Optional[str] = None
     phone: Optional[str] = None
+    phone_code: Optional[str] = None
     actividad_economica: Optional[str] = None
     curp: Optional[str] = None
     ingreso_mensual: Optional[float] = None

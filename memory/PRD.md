@@ -94,7 +94,8 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Datos del solicitante: selectores de Adultos (18+), Menores (12-17), Niños (0-11) y campo libre de Mascotas. Nota "Importante" (amarilla) junto a "Personas que habitarán la propiedad".
 - Habitantes: se generan automáticamente = (adultos 18+) − 1 (excluye al solicitante); sin botón "Agregar"/"Quitar". Nombre, RFC y CURP obligatorios.
 - Sección "En caso de extranjero" (solicitante y cada habitante): checkbox que revela # de pasaporte + foto de pasaporte + documento migratorio; al activarlo se anulan y deshabilitan RFC, CURP y régimen fiscal.
-- Backend FiscalInfo/Cohabitante: adultos_18, menores_12_17, ninos_0_11, mascotas, es_extranjero, pasaporte, pasaporte_fotos, migratorio_fotos.
+- Habitantes (adultos 18+): campo de Fotografía de INE (ine_fotos). RFC limitado a 12 caracteres (solicitante y habitantes). Teléfono con selector de prefijo por país (default +52) limitado a 10 dígitos (phone_code).
+- Backend FiscalInfo/Cohabitante: adultos_18, menores_12_17, ninos_0_11, mascotas, es_extranjero, pasaporte, pasaporte_fotos, migratorio_fotos, phone_code, cohabitante.ine_fotos.
 - Panel interno (AdminMemberDetail): expediente del arrendatario muestra toda la info fiscal, ocupantes, mascotas, comprobantes/pasaporte/migratorio (fotos privadas) y habitantes. Radio de validación del registro (Recibido, En revisión, Documentación faltante, Aprobado, Publicado, Rechazado) → user.registro_stage; PATCH /api/admin/members/{id}/registro-stage, notifica al arrendatario.
 
 ## Notes

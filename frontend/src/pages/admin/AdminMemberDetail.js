@@ -292,6 +292,7 @@ export default function AdminMemberDetail() {
                       <div><span className="text-stone-400">Ingreso:</span> {c.ingreso_mensual != null ? formatMXN(c.ingreso_mensual) : "—"}</div>
                     </div>
                     {can_view_documents && <PrivatePhotos paths={c.comprobantes} label="Comprobantes" />}
+                    {can_view_documents && <PrivatePhotos paths={c.ine_fotos} label="Fotografía de INE" />}
                     {can_view_documents && c.es_extranjero && (
                       <>
                         <PrivatePhotos paths={c.pasaporte_fotos} label="Pasaporte" />
