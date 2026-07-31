@@ -1255,6 +1255,10 @@ class Cohabitante(BaseModel):
     curp: Optional[str] = None
     ingreso_mensual: Optional[float] = None
     comprobantes: Optional[List[str]] = None
+    es_extranjero: Optional[bool] = None
+    pasaporte: Optional[str] = None
+    pasaporte_fotos: Optional[List[str]] = None
+    migratorio_fotos: Optional[List[str]] = None
 
 
 class FiscalInfo(BaseModel):
@@ -1268,6 +1272,10 @@ class FiscalInfo(BaseModel):
     curp: Optional[str] = None
     ingreso_mensual: Optional[float] = None
     comprobantes_ingresos: Optional[List[str]] = None
+    es_extranjero: Optional[bool] = None
+    pasaporte: Optional[str] = None
+    pasaporte_fotos: Optional[List[str]] = None
+    migratorio_fotos: Optional[List[str]] = None
     adultos_18: Optional[int] = None
     menores_12_17: Optional[int] = None
     ninos_0_11: Optional[int] = None

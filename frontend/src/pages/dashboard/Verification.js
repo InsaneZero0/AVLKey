@@ -98,8 +98,8 @@ function DocRow({ item, onUploaded }) {
   );
 }
 
-// Subida de comprobantes de ingresos (fotos/PDF) a almacenamiento privado
-function IncomeProofs({ paths, onChange, testid }) {
+// Subida de archivos (fotos/PDF) a almacenamiento privado
+function IncomeProofs({ paths, onChange, testid, label = "Comprobantes de ingresos", buttonText = "Subir fotos de comprobantes de ingresos" }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
@@ -127,14 +127,14 @@ function IncomeProofs({ paths, onChange, testid }) {
 
   return (
     <div>
-      <Label>Comprobantes de ingresos</Label>
+      <Label>{label}</Label>
       <input ref={inputRef} type="file" accept="image/*,.pdf" multiple hidden onChange={handle} data-testid={`${testid}-input`} />
       <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
         className="mt-1 w-full flex items-center gap-3 border-2 border-dashed border-stone-300 rounded-xl px-4 py-3 hover:border-terracotta transition-colors" data-testid={testid}>
         <div className="w-9 h-9 rounded-lg bg-terracotta/10 flex items-center justify-center">
           {busy ? <Loader2 className="w-4 h-4 text-terracotta animate-spin" /> : <Camera className="w-4 h-4 text-terracotta" />}
         </div>
-        <span className="text-sm text-stone-600">{busy ? "Subiendo..." : "Subir fotos de comprobantes de ingresos"}</span>
+        <span className="text-sm text-stone-600">{busy ? "Subiendo..." : buttonText}</span>
       </button>
       {(paths || []).length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
@@ -164,6 +164,7 @@ export default function Verification() {
     phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
     comprobantes_ingresos: [], cohabitantes: [],
     adultos_18: "", menores_12_17: "", ninos_0_11: "", mascotas: "",
+    es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [],
   });
 
   const load = () => {
@@ -179,10 +180,16 @@ export default function Verification() {
       menores_12_17: data.menores_12_17 != null ? String(data.menores_12_17) : "",
       ninos_0_11: data.ninos_0_11 != null ? String(data.ninos_0_11) : "",
       mascotas: data.mascotas || "",
+      es_extranjero: !!data.es_extranjero,
+      pasaporte: data.pasaporte || "",
+      pasaporte_fotos: data.pasaporte_fotos || [],
+      migratorio_fotos: data.migratorio_fotos || [],
       cohabitantes: (data.cohabitantes || []).map((c) => ({
         name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
         ingreso_mensual: c.ingreso_mensual != null ? String(c.ingreso_mensual) : "",
         comprobantes: c.comprobantes || [],
+        es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
+        pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
       })),
     }))).catch(() => {});
   };
@@ -194,7 +201,7 @@ export default function Verification() {
     setFiscal((p) => {
       if (p.cohabitantes.length === need) return p;
       const arr = p.cohabitantes.slice(0, need);
-      while (arr.length < need) arr.push({ name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] });
+      while (arr.length < need) arr.push({ name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [], es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] });
       return { ...p, cohabitantes: arr };
     });
   }, [fiscal.adultos_18]); // eslint-disable-line
@@ -211,10 +218,12 @@ export default function Verification() {
   };
 
   const setCohab = (idx, k, v) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.map((c, i) => (i === idx ? { ...c, [k]: v } : c)) }));
+  const toggleCohabExtranjero = (idx, v) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.map((c, i) => (i === idx ? { ...c, es_extranjero: v, ...(v ? { rfc: "", curp: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) } : c)) }));
+  const toggleExtranjero = (v) => setFiscal((p) => ({ ...p, es_extranjero: v, ...(v ? { rfc: "", curp: "", fiscal_regime: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) }));
 
   const saveFiscal = async () => {
-    const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || !(c.rfc || "").trim() || !(c.curp || "").trim());
-    if (invalid) { toast.error("Completa nombre, RFC y CURP de cada habitante"); return; }
+    const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
+    if (invalid) { toast.error("Completa nombre y RFC/CURP (o pasaporte si es extranjero) de cada habitante"); return; }
     setSavingFiscal(true);
     try {
       const payload = {
@@ -227,6 +236,8 @@ export default function Verification() {
           name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
           ingreso_mensual: parseInt(c.ingreso_mensual || "0", 10) || 0,
           comprobantes: c.comprobantes || [],
+          es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
+          pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
         })),
       };
       await api.patch("/users/me/fiscal", payload);
@@ -262,12 +273,12 @@ export default function Verification() {
             </div>
             <div>
               <Label>RFC</Label>
-              <Input data-testid="reg-rfc" value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" />
+              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
             </div>
             <div>
               <Label>CURP</Label>
-              <Input data-testid="reg-curp" maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" />
-              <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>
+              <Input data-testid="reg-curp" disabled={fiscal.es_extranjero} maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              {!fiscal.es_extranjero && <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>}
             </div>
             <div>
               <Label>Teléfono</Label>
@@ -275,8 +286,8 @@ export default function Verification() {
             </div>
             <div>
               <Label>Régimen fiscal</Label>
-              <Select value={fiscal.fiscal_regime} onValueChange={(v) => setFiscal({ ...fiscal, fiscal_regime: v })}>
-                <SelectTrigger data-testid="reg-regime"><SelectValue placeholder="Selecciona tu régimen fiscal" /></SelectTrigger>
+              <Select value={fiscal.fiscal_regime} onValueChange={(v) => setFiscal({ ...fiscal, fiscal_regime: v })} disabled={fiscal.es_extranjero}>
+                <SelectTrigger data-testid="reg-regime" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""}><SelectValue placeholder="Selecciona tu régimen fiscal" /></SelectTrigger>
                 <SelectContent>{REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -293,6 +304,22 @@ export default function Verification() {
                 </div>
                 <span className="text-sm font-medium text-stone-500">MX</span>
               </div>
+            </div>
+            <div className="col-span-2 sm:col-span-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3">
+              <div className="flex items-start gap-2">
+                <Checkbox id="reg-extranjero" checked={fiscal.es_extranjero} onCheckedChange={(v) => toggleExtranjero(!!v)} data-testid="reg-extranjero-check" />
+                <Label htmlFor="reg-extranjero" className="cursor-pointer text-sm leading-relaxed">En caso de extranjero (sin RFC/CURP). Al activarlo se anulan RFC, CURP y régimen fiscal.</Label>
+              </div>
+              {fiscal.es_extranjero && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="reg-extranjero-fields">
+                  <div>
+                    <Label># de pasaporte</Label>
+                    <Input data-testid="reg-pasaporte" value={fiscal.pasaporte} onChange={(e) => setFiscal({ ...fiscal, pasaporte: e.target.value.toUpperCase() })} placeholder="Ej. G12345678" />
+                  </div>
+                  <div><IncomeProofs paths={fiscal.pasaporte_fotos} onChange={(v) => setFiscal({ ...fiscal, pasaporte_fotos: v })} testid="reg-pasaporte-fotos" label="Foto del pasaporte" buttonText="Subir foto del pasaporte" /></div>
+                  <div><IncomeProofs paths={fiscal.migratorio_fotos} onChange={(v) => setFiscal({ ...fiscal, migratorio_fotos: v })} testid="reg-migratorio-fotos" label="Documento migratorio (permanencia en México)" buttonText="Subir documento migratorio" /></div>
+                </div>
+              )}
             </div>
             <div className="col-span-2 sm:col-span-3">
               <IncomeProofs paths={fiscal.comprobantes_ingresos} onChange={(v) => setFiscal({ ...fiscal, comprobantes_ingresos: v })} testid="reg-comprobantes" />
@@ -341,8 +368,8 @@ export default function Verification() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
-                      <div><Label>RFC <span className="text-red-500">*</span></Label><Input data-testid={`co-rfc-${idx}`} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" /></div>
-                      <div><Label>CURP <span className="text-red-500">*</span></Label><Input data-testid={`co-curp-${idx}`} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" /></div>
+                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
                         <Label>Ingreso mensual neto</Label>
                         <div className="flex items-center gap-2">
@@ -354,6 +381,19 @@ export default function Verification() {
                         </div>
                       </div>
                       <div className="col-span-2 sm:col-span-3"><IncomeProofs paths={c.comprobantes} onChange={(v) => setCohab(idx, "comprobantes", v)} testid={`co-comprobantes-${idx}`} /></div>
+                      <div className="col-span-2 sm:col-span-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3">
+                        <div className="flex items-start gap-2">
+                          <Checkbox id={`co-extranjero-${idx}`} checked={c.es_extranjero} onCheckedChange={(v) => toggleCohabExtranjero(idx, !!v)} data-testid={`co-extranjero-check-${idx}`} />
+                          <Label htmlFor={`co-extranjero-${idx}`} className="cursor-pointer text-sm leading-relaxed">En caso de extranjero (sin RFC/CURP). Al activarlo se anulan RFC y CURP.</Label>
+                        </div>
+                        {c.es_extranjero && (
+                          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid={`co-extranjero-fields-${idx}`}>
+                            <div><Label># de pasaporte</Label><Input data-testid={`co-pasaporte-${idx}`} value={c.pasaporte} onChange={(e) => setCohab(idx, "pasaporte", e.target.value.toUpperCase())} placeholder="Ej. G12345678" /></div>
+                            <div><IncomeProofs paths={c.pasaporte_fotos} onChange={(v) => setCohab(idx, "pasaporte_fotos", v)} testid={`co-pasaporte-fotos-${idx}`} label="Foto del pasaporte" buttonText="Subir foto del pasaporte" /></div>
+                            <div><IncomeProofs paths={c.migratorio_fotos} onChange={(v) => setCohab(idx, "migratorio_fotos", v)} testid={`co-migratorio-fotos-${idx}`} label="Documento migratorio" buttonText="Subir documento migratorio" /></div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
