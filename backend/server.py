@@ -1748,6 +1748,28 @@ async def admin_set_member_note(user_id: str, data: MemberNoteInput, actor: dict
     return {"ok": True, "admin_note": note}
 
 
+class RegistroStageInput(BaseModel):
+    stage: str
+
+
+@api.patch("/admin/members/{user_id}/registro-stage")
+async def admin_set_member_registro_stage(user_id: str, data: RegistroStageInput, actor: dict = Depends(get_current_user)):
+    if actor.get("account_type") != "internal" or not has_perm(actor, "editar"):
+        raise HTTPException(status_code=403, detail="Permiso insuficiente")
+    if data.stage not in REVIEW_STAGES:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    target = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await db.users.update_one({"id": user_id}, {"$set": {"registro_stage": data.stage}})
+    await audit(actor, f"member_registro_stage_{data.stage}", user_id, "")
+    await notify(user_id, "validacion",
+                 f"Estado de tu registro: {REVIEW_STAGE_LABELS[data.stage]}",
+                 f"El estado de tu registro cambió a: {REVIEW_STAGE_LABELS[data.stage]}.",
+                 "/panel/verificacion")
+    return {"ok": True, "registro_stage": data.stage}
+
+
 @api.get("/admin/applications")
 async def admin_applications(user: dict = Depends(require_permission("consultar"))):
     apps = await db.applications.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)

@@ -90,6 +90,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Encabezado informativo en Registro: "Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil."
 - Formulario "Datos del solicitante": Nombre (fijo/read-only), RFC, CURP (18), Teléfono, Régimen fiscal (selector SAT), Actividad económica, Ingreso mensual neto ($ + MX + coma miles), Comprobantes de ingresos (subida privada), y botón "Compartiré la vivienda con:" (sub-formulario cohabitante con misma info). Almacenamiento privado: POST /uploads/income-proof + GET /uploads/private/{path} (solo dueño o interno con permiso). FiscalInfo con phone, actividad_economica, curp, ingreso_mensual, comprobantes_ingresos, share_housing, cohabitante.
 
+## Registro del arrendatario — ampliación (2026-07-31)
+- Datos del solicitante: selectores de Adultos (18+), Menores (12-17), Niños (0-11) y campo libre de Mascotas. Nota "Importante" (amarilla) junto a "Personas que habitarán la propiedad".
+- Habitantes: se generan automáticamente = (adultos 18+) − 1 (excluye al solicitante); sin botón "Agregar"/"Quitar". Nombre, RFC y CURP obligatorios.
+- Sección "En caso de extranjero" (solicitante y cada habitante): checkbox que revela # de pasaporte + foto de pasaporte + documento migratorio; al activarlo se anulan y deshabilitan RFC, CURP y régimen fiscal.
+- Backend FiscalInfo/Cohabitante: adultos_18, menores_12_17, ninos_0_11, mascotas, es_extranjero, pasaporte, pasaporte_fotos, migratorio_fotos.
+- Panel interno (AdminMemberDetail): expediente del arrendatario muestra toda la info fiscal, ocupantes, mascotas, comprobantes/pasaporte/migratorio (fotos privadas) y habitantes. Radio de validación del registro (Recibido, En revisión, Documentación faltante, Aprobado, Publicado, Rechazado) → user.registro_stage; PATCH /api/admin/members/{id}/registro-stage, notifica al arrendatario.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

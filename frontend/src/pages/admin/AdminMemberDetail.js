@@ -13,7 +13,24 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
   MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck, MessageSquare,
+  Users, Globe, PawPrint,
 } from "lucide-react";
+
+const PrivatePhotos = ({ paths, label }) => {
+  if (!paths || paths.length === 0) return null;
+  return (
+    <div className="mt-2">
+      {label && <div className="text-xs text-stone-500 mb-1">{label}</div>}
+      <div className="flex flex-wrap gap-2">
+        {paths.map((p) => (
+          <a key={p} href={`${API}/uploads/private/${p}`} target="_blank" rel="noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+            <img src={`${API}/uploads/private/${p}`} alt="doc" className="w-full h-full object-cover" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const Row = ({ icon: Icon, label, value }) => (
   <div className="flex items-center gap-3 py-2">
@@ -100,12 +117,27 @@ export default function AdminMemberDetail() {
   const [savingId, setSavingId] = useState(null);
   const [note, setNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [regStage, setRegStage] = useState("recibido");
+  const [savingRegStage, setSavingRegStage] = useState(false);
 
   useEffect(() => {
     api.get(`/admin/members/${userId}`)
-      .then(({ data }) => { setData(data); setNote(data.user?.admin_note || ""); })
+      .then(({ data }) => { setData(data); setNote(data.user?.admin_note || ""); setRegStage(data.user?.registro_stage || "recibido"); })
       .catch(() => setNotFound(true));
   }, [userId]);
+
+  const setRegistroStage = async (stage) => {
+    setSavingRegStage(true);
+    setRegStage(stage);
+    try {
+      await api.patch(`/admin/members/${userId}/registro-stage`, { stage });
+      toast.success("Estado del registro actualizado. Se notificó al arrendatario.");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    } finally {
+      setSavingRegStage(false);
+    }
+  };
 
   const setStage = async (propId, stage) => {
     setSavingId(propId);
@@ -174,14 +206,105 @@ export default function AdminMemberDetail() {
           <Row icon={BadgeCheck} label="Autenticación" value={user.auth_provider === "google" ? "Google" : "Correo/contraseña"} />
         </div>
         <div className="bg-white border border-stone-200 rounded-2xl p-6">
-          <h2 className="font-display font-semibold text-navy mb-3">Información fiscal y bancaria</h2>
-          <Row icon={FileText} label="RFC" value={fiscal_info?.rfc} />
-          <Row icon={FileText} label="Régimen fiscal" value={fiscal_info?.fiscal_regime} />
-          <Row icon={CreditCard} label="Banco" value={fiscal_info?.bank_name} />
-          <Row icon={CreditCard} label="Titular" value={fiscal_info?.account_holder} />
-          <Row icon={CreditCard} label="CLABE" value={fiscal_info?.clabe} />
+          {isLandlord ? (
+            <>
+              <h2 className="font-display font-semibold text-navy mb-3">Información fiscal y bancaria</h2>
+              <Row icon={FileText} label="RFC" value={fiscal_info?.rfc} />
+              <Row icon={FileText} label="Régimen fiscal" value={fiscal_info?.fiscal_regime} />
+              <Row icon={CreditCard} label="Banco" value={fiscal_info?.bank_name} />
+              <Row icon={CreditCard} label="Titular" value={fiscal_info?.account_holder} />
+              <Row icon={CreditCard} label="CLABE" value={fiscal_info?.clabe} />
+            </>
+          ) : (
+            <>
+              <h2 className="font-display font-semibold text-navy mb-3">Información fiscal del solicitante</h2>
+              {fiscal_info?.es_extranjero ? (
+                <>
+                  <Row icon={Globe} label="Extranjero" value="Sí" />
+                  <Row icon={FileText} label="# Pasaporte" value={fiscal_info?.pasaporte} />
+                </>
+              ) : (
+                <>
+                  <Row icon={FileText} label="RFC" value={fiscal_info?.rfc} />
+                  <Row icon={FileText} label="CURP" value={fiscal_info?.curp} />
+                  <Row icon={FileText} label="Régimen fiscal" value={fiscal_info?.fiscal_regime} />
+                </>
+              )}
+              <Row icon={User} label="Actividad económica" value={fiscal_info?.actividad_economica} />
+              <Row icon={CreditCard} label="Ingreso mensual" value={fiscal_info?.ingreso_mensual != null ? formatMXN(fiscal_info.ingreso_mensual) : null} />
+            </>
+          )}
         </div>
       </div>
+
+      {/* Revisión y validación del registro (arrendatario) */}
+      {!isLandlord && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-4" data-testid="member-registro-validation">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
+            {savingRegStage && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
+          </div>
+          <RadioGroup value={regStage} onValueChange={setRegistroStage} className="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="registro-stage-radiogroup">
+            {REVIEW_STAGE_OPTIONS.map((opt) => (
+              <label key={opt.value} htmlFor={`reg-${opt.value}`} className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${regStage === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}>
+                <RadioGroupItem value={opt.value} id={`reg-${opt.value}`} data-testid={`registro-stage-${opt.value}`} />
+                <span className="text-sm font-medium text-navy">{opt.label}</span>
+              </label>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
+
+      {/* Registro del arrendatario: ocupantes, mascotas, comprobantes, habitantes */}
+      {!isLandlord && fiscal_info && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-detail">
+          <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><Users className="w-5 h-5" /> Registro del arrendatario</h2>
+          <div className="grid sm:grid-cols-3 gap-3 mb-4">
+            <div className="rounded-xl bg-stone-50 border border-stone-200 p-3"><div className="text-xs text-stone-500">Adultos (18+ años)</div><div className="font-semibold text-navy">{fiscal_info.adultos_18 ?? 0}</div></div>
+            <div className="rounded-xl bg-stone-50 border border-stone-200 p-3"><div className="text-xs text-stone-500">Menores (12 a 17)</div><div className="font-semibold text-navy">{fiscal_info.menores_12_17 ?? 0}</div></div>
+            <div className="rounded-xl bg-stone-50 border border-stone-200 p-3"><div className="text-xs text-stone-500">Niños (0 a 11)</div><div className="font-semibold text-navy">{fiscal_info.ninos_0_11 ?? 0}</div></div>
+          </div>
+          <Row icon={PawPrint} label="Mascotas" value={fiscal_info.mascotas} />
+          {can_view_documents && <PrivatePhotos paths={fiscal_info.comprobantes_ingresos} label="Comprobantes de ingresos" />}
+          {can_view_documents && fiscal_info.es_extranjero && (
+            <>
+              <PrivatePhotos paths={fiscal_info.pasaporte_fotos} label="Foto del pasaporte" />
+              <PrivatePhotos paths={fiscal_info.migratorio_fotos} label="Documento migratorio (permanencia en México)" />
+            </>
+          )}
+
+          {(fiscal_info.cohabitantes || []).length > 0 && (
+            <div className="mt-5 pt-5 border-t border-stone-100">
+              <h3 className="font-semibold text-navy mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Personas que habitarán la propiedad</h3>
+              <div className="space-y-3">
+                {fiscal_info.cohabitantes.map((c, i) => (
+                  <div key={i} className="border border-stone-200 rounded-xl p-3" data-testid={`admin-cohab-${i}`}>
+                    <div className="text-sm font-medium text-navy mb-1 flex items-center gap-2">Habitante {i + 1}: {c.name || "—"}{c.es_extranjero && <Badge className="rounded-full bg-navy/10 text-navy hover:bg-navy/10 text-xs">Extranjero</Badge>}</div>
+                    <div className="grid sm:grid-cols-3 gap-x-6 gap-y-1 text-sm text-stone-600">
+                      {c.es_extranjero ? (
+                        <div><span className="text-stone-400">Pasaporte:</span> {c.pasaporte || "—"}</div>
+                      ) : (
+                        <>
+                          <div><span className="text-stone-400">RFC:</span> {c.rfc || "—"}</div>
+                          <div><span className="text-stone-400">CURP:</span> {c.curp || "—"}</div>
+                        </>
+                      )}
+                      <div><span className="text-stone-400">Ingreso:</span> {c.ingreso_mensual != null ? formatMXN(c.ingreso_mensual) : "—"}</div>
+                    </div>
+                    {can_view_documents && <PrivatePhotos paths={c.comprobantes} label="Comprobantes" />}
+                    {can_view_documents && c.es_extranjero && (
+                      <>
+                        <PrivatePhotos paths={c.pasaporte_fotos} label="Pasaporte" />
+                        <PrivatePhotos paths={c.migratorio_fotos} label="Documento migratorio" />
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Consent (tenant) */}
       {!isLandlord && (
