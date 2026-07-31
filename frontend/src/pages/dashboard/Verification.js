@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
-  CreditCard, Landmark, FileText, UserRound,
+  CreditCard, Landmark, FileText, UserRound, Users, X, Camera,
 } from "lucide-react";
 
 const REGIMENES = [
@@ -98,6 +98,58 @@ function DocRow({ item, onUploaded }) {
   );
 }
 
+// Subida de comprobantes de ingresos (fotos/PDF) a almacenamiento privado
+function IncomeProofs({ paths, onChange, testid }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  const handle = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setBusy(true);
+    try {
+      const added = [];
+      for (const f of files) {
+        const fd = new FormData();
+        fd.append("file", f);
+        const { data } = await api.post("/uploads/income-proof", fd);
+        added.push(data.path);
+      }
+      onChange([...(paths || []), ...added]);
+      toast.success("Comprobante(s) agregado(s)");
+    } catch (err) {
+      toast.error(apiError(err.response?.data?.detail));
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <Label>Comprobantes de ingresos</Label>
+      <input ref={inputRef} type="file" accept="image/*,.pdf" multiple hidden onChange={handle} data-testid={`${testid}-input`} />
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+        className="mt-1 w-full flex items-center gap-3 border-2 border-dashed border-stone-300 rounded-xl px-4 py-3 hover:border-terracotta transition-colors" data-testid={testid}>
+        <div className="w-9 h-9 rounded-lg bg-terracotta/10 flex items-center justify-center">
+          {busy ? <Loader2 className="w-4 h-4 text-terracotta animate-spin" /> : <Camera className="w-4 h-4 text-terracotta" />}
+        </div>
+        <span className="text-sm text-stone-600">{busy ? "Subiendo..." : "Subir fotos de comprobantes de ingresos"}</span>
+      </button>
+      {(paths || []).length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {paths.map((p) => (
+            <div key={p} className="relative w-20 h-20 rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+              <img src={`${API}/uploads/private/${p}`} alt="comprobante" className="w-full h-full object-cover" />
+              <button type="button" onClick={() => onChange(paths.filter((x) => x !== p))} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5"><X className="w-3 h-3 text-white" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Verification() {
   const { user } = useAuth();
   const category = user?.role === "arrendador" ? "arrendador" : "arrendatario";
@@ -109,7 +161,9 @@ export default function Verification() {
   const [savingFiscal, setSavingFiscal] = useState(false);
   const [fiscal, setFiscal] = useState({
     rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
-    phone: "", actividad_economica: "", curp: "",
+    phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
+    comprobantes_ingresos: [], share_housing: false,
+    cohabitante: { name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] },
   });
 
   const load = () => {
@@ -119,6 +173,14 @@ export default function Verification() {
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
       phone: data.phone || user?.phone || "",
+      ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
+      comprobantes_ingresos: data.comprobantes_ingresos || [],
+      share_housing: data.share_housing || false,
+      cohabitante: data.cohabitante ? {
+        name: data.cohabitante.name || "", rfc: data.cohabitante.rfc || "", curp: data.cohabitante.curp || "",
+        ingreso_mensual: data.cohabitante.ingreso_mensual != null ? String(data.cohabitante.ingreso_mensual) : "",
+        comprobantes: data.cohabitante.comprobantes || [],
+      } : { name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] },
     }))).catch(() => {});
   };
   useEffect(() => { load(); }, [category]); // eslint-disable-line
@@ -134,10 +196,22 @@ export default function Verification() {
     finally { setSavingConsent(false); }
   };
 
+  const setCohab = (k, v) => setFiscal((p) => ({ ...p, cohabitante: { ...p.cohabitante, [k]: v } }));
+
   const saveFiscal = async () => {
     setSavingFiscal(true);
     try {
-      const payload = { ...fiscal, ingreso_mensual: parseInt(fiscal.ingreso_mensual || "0", 10) || 0 };
+      const co = fiscal.cohabitante || {};
+      const payload = {
+        ...fiscal,
+        ingreso_mensual: parseInt(fiscal.ingreso_mensual || "0", 10) || 0,
+        share_housing: !!fiscal.share_housing,
+        cohabitante: fiscal.share_housing ? {
+          name: co.name || "", rfc: co.rfc || "", curp: co.curp || "",
+          ingreso_mensual: parseInt(co.ingreso_mensual || "0", 10) || 0,
+          comprobantes: co.comprobantes || [],
+        } : null,
+      };
       await api.patch("/users/me/fiscal", payload);
       toast.success("Información enviada a revisión");
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
@@ -148,6 +222,8 @@ export default function Verification() {
 
   const items = (summary.items || []).map((it) => ({ ...it, category }));
   const hasConsent = consent?.consent?.accepted;
+  const ingresoDisplay = fiscal.ingreso_mensual ? Number(fiscal.ingreso_mensual).toLocaleString("en-US") : "";
+  const coIngresoDisplay = fiscal.cohabitante?.ingreso_mensual ? Number(fiscal.cohabitante.ingreso_mensual).toLocaleString("en-US") : "";
 
   return (
     <div className="max-w-3xl">
@@ -164,34 +240,94 @@ export default function Verification() {
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-form">
           <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-4"><UserRound className="w-4 h-4 text-terracotta" /> Datos del solicitante</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Label>Nombre del solicitante</Label>
+              <Input data-testid="reg-nombre" value={user?.name || ""} disabled className="bg-stone-100 text-stone-700" />
+            </div>
+            <div>
+              <Label>RFC</Label>
+              <Input data-testid="reg-rfc" value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" />
+            </div>
+            <div>
+              <Label>CURP</Label>
+              <Input data-testid="reg-curp" maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" />
+              <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>
+            </div>
             <div>
               <Label>Teléfono</Label>
               <Input data-testid="reg-phone" type="tel" inputMode="tel" value={fiscal.phone} onChange={(e) => setFiscal({ ...fiscal, phone: e.target.value })} placeholder="5555550000" />
             </div>
             <div>
-              <Label>RFC</Label>
-              <Input data-testid="reg-rfc" value={fiscal.rfc} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase() })} placeholder="XAXX010101000" />
-            </div>
-            <div className="sm:col-span-2">
               <Label>Régimen fiscal</Label>
               <Select value={fiscal.fiscal_regime} onValueChange={(v) => setFiscal({ ...fiscal, fiscal_regime: v })}>
                 <SelectTrigger data-testid="reg-regime"><SelectValue placeholder="Selecciona tu régimen fiscal" /></SelectTrigger>
-                <SelectContent>
-                  {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>Actividad económica</Label>
-              <Input data-testid="reg-actividad" value={fiscal.actividad_economica} onChange={(e) => setFiscal({ ...fiscal, actividad_economica: e.target.value })} placeholder="Ej. Empleado, comerciante, profesionista" />
+              <Input data-testid="reg-actividad" value={fiscal.actividad_economica} onChange={(e) => setFiscal({ ...fiscal, actividad_economica: e.target.value })} placeholder="Ej. Empleado, comerciante" />
             </div>
             <div>
-              <Label>CURP</Label>
-              <Input data-testid="reg-curp" maxLength={18} value={fiscal.curp} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" />
-              <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>
+              <Label>Ingreso mensual neto</Label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+                  <Input data-testid="reg-ingreso" type="text" inputMode="numeric" value={ingresoDisplay} onChange={(e) => setFiscal({ ...fiscal, ingreso_mensual: e.target.value.replace(/\D/g, "") })} placeholder="20,000" className="pl-7" />
+                </div>
+                <span className="text-sm font-medium text-stone-500">MX</span>
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <IncomeProofs paths={fiscal.comprobantes_ingresos} onChange={(v) => setFiscal({ ...fiscal, comprobantes_ingresos: v })} testid="reg-comprobantes" />
             </div>
           </div>
-          <Button onClick={saveFiscal} disabled={savingFiscal} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
+
+          {/* Compartir vivienda con cohabitante */}
+          <div className="mt-5 pt-5 border-t border-stone-100">
+            {!fiscal.share_housing ? (
+              <Button type="button" variant="outline" className="rounded-full" onClick={() => setFiscal({ ...fiscal, share_housing: true })} data-testid="share-housing-btn">
+                <Users className="w-4 h-4 mr-2" /> Compartiré la vivienda con:
+              </Button>
+            ) : (
+              <div data-testid="cohabitante-form">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display font-semibold text-navy flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Compartiré la vivienda con:</h3>
+                  <Button type="button" variant="ghost" size="sm" className="text-stone-500" onClick={() => setFiscal({ ...fiscal, share_housing: false })} data-testid="remove-cohabitante-btn"><X className="w-4 h-4 mr-1" /> Quitar</Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <Label>Nombre completo</Label>
+                    <Input data-testid="co-nombre" value={fiscal.cohabitante.name} onChange={(e) => setCohab("name", e.target.value)} placeholder="Nombre del cohabitante" />
+                  </div>
+                  <div>
+                    <Label>RFC</Label>
+                    <Input data-testid="co-rfc" value={fiscal.cohabitante.rfc} onChange={(e) => setCohab("rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" />
+                  </div>
+                  <div>
+                    <Label>CURP</Label>
+                    <Input data-testid="co-curp" maxLength={18} value={fiscal.cohabitante.curp} onChange={(e) => setCohab("curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" />
+                    <p className="text-xs text-stone-400 mt-1">{(fiscal.cohabitante.curp || "").length}/18</p>
+                  </div>
+                  <div>
+                    <Label>Ingreso mensual neto</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+                        <Input data-testid="co-ingreso" type="text" inputMode="numeric" value={coIngresoDisplay} onChange={(e) => setCohab("ingreso_mensual", e.target.value.replace(/\D/g, ""))} placeholder="20,000" className="pl-7" />
+                      </div>
+                      <span className="text-sm font-medium text-stone-500">MX</span>
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <IncomeProofs paths={fiscal.cohabitante.comprobantes} onChange={(v) => setCohab("comprobantes", v)} testid="co-comprobantes" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button onClick={saveFiscal} disabled={savingFiscal} className="mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
             {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
           </Button>
         </div>

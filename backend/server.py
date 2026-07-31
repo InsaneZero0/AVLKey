@@ -1249,6 +1249,14 @@ CONSENT_TEXT = ("Autorizo de forma expresa a Réntalo en Línea a consultar mi h
                 "para mi solicitud de arrendamiento.")
 
 
+class Cohabitante(BaseModel):
+    name: Optional[str] = None
+    rfc: Optional[str] = None
+    curp: Optional[str] = None
+    ingreso_mensual: Optional[float] = None
+    comprobantes: Optional[List[str]] = None
+
+
 class FiscalInfo(BaseModel):
     rfc: Optional[str] = None
     fiscal_regime: Optional[str] = None
@@ -1258,6 +1266,10 @@ class FiscalInfo(BaseModel):
     phone: Optional[str] = None
     actividad_economica: Optional[str] = None
     curp: Optional[str] = None
+    ingreso_mensual: Optional[float] = None
+    comprobantes_ingresos: Optional[List[str]] = None
+    share_housing: Optional[bool] = None
+    cohabitante: Optional[Cohabitante] = None
 
 
 class ConsentInput(BaseModel):
@@ -1423,6 +1435,40 @@ async def update_fiscal(data: FiscalInfo, user: dict = Depends(get_current_user)
 async def get_fiscal(user: dict = Depends(get_current_user)):
     u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "fiscal_info": 1})
     return u.get("fiscal_info") or {}
+
+
+@api.post("/uploads/income-proof")
+async def upload_income_proof(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"
+    if ext not in ("jpg", "jpeg", "png", "webp", "gif", "pdf"):
+        raise HTTPException(status_code=400, detail="Formato no permitido (JPG, PNG, WEBP, GIF o PDF)")
+    data = await file.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="El archivo excede 10 MB")
+    path = f"{APP_NAME}/private/{user['id']}/{uuid.uuid4()}.{ext}"
+    ct = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
+    try:
+        put_object(path, data, ct)
+    except Exception as e:
+        logger.error(f"Storage upload error: {e}")
+        raise HTTPException(status_code=500, detail="No se pudo subir el archivo")
+    return {"path": path}
+
+
+@api.get("/uploads/private/{file_path:path}")
+async def get_private_media(file_path: str, user: dict = Depends(get_current_user)):
+    if not file_path.startswith(f"{APP_NAME}/private/"):
+        raise HTTPException(status_code=404, detail="No encontrado")
+    parts = file_path.split("/")
+    owner_id = parts[2] if len(parts) > 2 else ""
+    is_internal = user.get("account_type") == "internal" and has_perm(user, "consultar_documentos_sensibles")
+    if user["id"] != owner_id and not is_internal:
+        raise HTTPException(status_code=403, detail="Sin permiso para ver este archivo")
+    try:
+        data, ct = get_object(file_path)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Archivo no disponible")
+    return Response(content=data, media_type=ct)
 
 
 @api.post("/consent/credit-check")
