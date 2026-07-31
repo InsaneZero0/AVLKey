@@ -499,17 +499,10 @@ export default function Verification() {
                   <Label htmlFor="consent" className="cursor-pointer text-sm leading-relaxed">Acepto y autorizo expresamente la consulta de mi historial crediticio (versión {consent?.version}).</Label>
                 </div>
                 <Button onClick={submitConsent} disabled={savingConsent} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-consent-btn">
-                  {savingConsent ? <Loader2 className="w-4 h-4 animate-spin" /> : "Autorizar consulta"}
+                  {savingConsent ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
                 </Button>
               </>
             )}
-          </div>
-          <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6 flex items-start gap-3">
-            <CreditCard className="w-5 h-5 text-terracotta mt-0.5" />
-            <div>
-              <h2 className="font-display font-semibold text-navy">Tarjeta de pago</h2>
-              <p className="text-sm text-stone-500 mt-1">Registrarás una tarjeta válida de forma segura con Stripe al realizar tu primer pago desde la sección de Contratos. No almacenamos los datos de tu tarjeta.</p>
-            </div>
           </div>
         </>
       )}
