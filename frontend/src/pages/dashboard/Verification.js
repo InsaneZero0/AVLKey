@@ -239,8 +239,8 @@ export default function Verification() {
       {category === "arrendatario" && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-form">
           <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-4"><UserRound className="w-4 h-4 text-terracotta" /> Datos del solicitante</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="col-span-2 sm:col-span-1">
               <Label>Nombre del solicitante</Label>
               <Input data-testid="reg-nombre" value={user?.name || ""} disabled className="bg-stone-100 text-stone-700" />
             </div>
@@ -278,7 +278,7 @@ export default function Verification() {
                 <span className="text-sm font-medium text-stone-500">MX</span>
               </div>
             </div>
-            <div className="sm:col-span-2">
+            <div className="col-span-2 sm:col-span-3">
               <IncomeProofs paths={fiscal.comprobantes_ingresos} onChange={(v) => setFiscal({ ...fiscal, comprobantes_ingresos: v })} testid="reg-comprobantes" />
             </div>
           </div>
@@ -295,8 +295,8 @@ export default function Verification() {
                   <h3 className="font-display font-semibold text-navy flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Compartiré la vivienda con:</h3>
                   <Button type="button" variant="ghost" size="sm" className="text-stone-500" onClick={() => setFiscal({ ...fiscal, share_housing: false })} data-testid="remove-cohabitante-btn"><X className="w-4 h-4 mr-1" /> Quitar</Button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="col-span-2 sm:col-span-1">
                     <Label>Nombre completo</Label>
                     <Input data-testid="co-nombre" value={fiscal.cohabitante.name} onChange={(e) => setCohab("name", e.target.value)} placeholder="Nombre del cohabitante" />
                   </div>
@@ -319,7 +319,7 @@ export default function Verification() {
                       <span className="text-sm font-medium text-stone-500">MX</span>
                     </div>
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="col-span-2 sm:col-span-3">
                     <IncomeProofs paths={fiscal.cohabitante.comprobantes} onChange={(v) => setCohab("comprobantes", v)} testid="co-comprobantes" />
                   </div>
                 </div>
