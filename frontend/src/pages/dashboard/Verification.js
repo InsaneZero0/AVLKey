@@ -290,7 +290,7 @@ export default function Verification() {
             </div>
             <div>
               <Label>RFC</Label>
-              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={12} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase().slice(0, 12) })} placeholder="XAXX010101" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={13} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
             </div>
             <div>
               <Label>CURP</Label>
@@ -391,7 +391,7 @@ export default function Verification() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
-                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={12} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 12))} placeholder="XAXX010101" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 13))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
                         <Label>Ingreso mensual neto</Label>
