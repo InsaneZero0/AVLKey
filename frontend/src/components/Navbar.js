@@ -63,13 +63,20 @@ export default function Navbar() {
                   <span className="text-sm font-medium text-stone-700">{user.name?.split(" ")[0]}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs text-stone-500">{user.account_type === "internal" ? "Personal interno" : (user.role === "arrendador" ? "Arrendador" : "Arrendatario")}</div>
+              <DropdownMenuContent align="end" className="w-60">
+                <div className="px-2 py-1.5" data-testid="user-menu-header">
+                  <div className="text-sm font-medium text-navy truncate">{user.name}</div>
+                  <div className="text-xs text-stone-500">
+                    {user.account_type === "internal"
+                      ? "Personal interno"
+                      : `${user.public_id ? user.public_id + " · " : ""}${user.role === "arrendador" ? "Arrendador" : "Arrendatario"}`}
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate(user.account_type === "internal" ? "/admin" : "/panel")} data-testid="menu-panel">
                   <LayoutDashboard className="w-4 h-4 mr-2" /> {user.account_type === "internal" ? "Panel interno" : "Mi panel"}
                 </DropdownMenuItem>
-                {user.account_type !== "internal" && (
+                {user.account_type !== "internal" && user.role === "arrendador" && (
                   <DropdownMenuItem onClick={() => navigate("/panel/publicar")} data-testid="menu-publicar">
                     <Building2 className="w-4 h-4 mr-2" /> Publicar inmueble
                   </DropdownMenuItem>

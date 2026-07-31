@@ -196,8 +196,22 @@ async def next_member_no() -> int:
     return doc["seq"]
 
 
+async def next_folio(prefix: str) -> str:
+    ddmmyy = now_utc().strftime("%d%m%y")
+    key = f"folio_{prefix}_{ddmmyy}"
+    doc = await db.counters.find_one_and_update(
+        {"_id": key}, {"$inc": {"seq": 1}},
+        upsert=True, return_document=ReturnDocument.AFTER,
+    )
+    return f"{prefix}{ddmmyy}{doc['seq']:03d}"
+
+
 def public_id_for(user: dict) -> Optional[str]:
-    if user.get("account_type") == "internal" or user.get("member_no") is None:
+    if user.get("account_type") == "internal":
+        return None
+    if user.get("subscriber_id"):
+        return user["subscriber_id"]
+    if user.get("member_no") is None:
         return None
     prefix = "A" if user.get("role") == "arrendador" else "I"
     return f"{prefix}{user['member_no']:05d}"
@@ -385,6 +399,7 @@ async def register(data: RegisterInput, response: Response):
         "role": data.role,
         "account_type": "external",
         "member_no": await next_member_no(),
+        "subscriber_id": await next_folio("A" if data.role == "arrendador" else "I"),
         "staff_role": None,
         "phone": data.phone,
         "picture": None,
@@ -427,6 +442,7 @@ async def google_session(data: SessionInput, response: Response):
             "role": "arrendatario",
             "account_type": "external",
             "member_no": await next_member_no(),
+            "subscriber_id": await next_folio("I"),
             "staff_role": None,
             "phone": None,
             "picture": info.get("picture"),
@@ -577,6 +593,7 @@ async def create_property(data: PropertyInput, user: dict = Depends(get_current_
     prop = data.model_dump()
     prop.update({
         "id": new_id("prop"),
+        "public_id": await next_folio("P"),
         "owner_id": user["id"],
         "status": "disponible",
         "review_status": "pendiente",

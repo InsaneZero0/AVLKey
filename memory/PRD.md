@@ -55,6 +55,19 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Notificaciones in-app (campana con conteo) + recordatorios de visitas confirmadas en <48h; disponibilidad por inmueble; validación de fecha futura.
 - Verificado: backend 14/14 + suites previas; flujos frontend 100%.
 
+## Panel interno de administración (2026-07)
+- Cuenta owner superadmin: cpfzamora@yahoo.com.mx / digital2025 (staff_role superadmin).
+- Menú del panel interno reducido a: Resumen, Usuarios, Arrendadores, Arrendatarios, Propiedades en revisión.
+- Arrendadores/Arrendatarios: listado con folio, nombre, correo, teléfono; nombre clicable → expediente (/admin/miembro/:id).
+- Expediente del miembro: info personal, fiscal/bancaria, consentimiento (arrendatario), Documentos enviados (formato Verificación, solo Ver/Descargar), Propiedades con status, Observaciones (textarea máx. 50 → user.admin_note, notifica al arrendador), Revisión de validación (radio: Recibido, En revisión, Documentación faltante, Aprobado, Publicado, Rechazado → property.review_stage + notifica).
+- El arrendador ve status de validación (display_status) y observación (admin_note) dentro de cada inmueble en /panel/inmuebles.
+
+## Perfil / Registro (2026-07)
+- Registro pide tipo de cuenta (arrendatario/arrendador). Menú del arrendatario NO muestra "Publicar inmueble".
+- Barra superior del panel y menú de usuario muestran folio de subscriptor + nombre.
+- Folios (nuevos subscriptores/propiedades desde hoy): prefijo + DDMMYY + folio diario 3 dígitos. Arrendatario I, Arrendador A, Propiedad P (ej. I310726001, A310726001, P310726001). Usuarios/propiedades previos conservan su ID anterior (I/A + member_no).
+- Publicar inmueble: subtítulo "Esta información pasará al departamento de validación..."; botón "Enviar información"; subida de fotos desde dispositivo (POST /properties/upload-image, servidas en /api/media/{path}); documento que acredita propiedad (acreditacion_propiedad).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

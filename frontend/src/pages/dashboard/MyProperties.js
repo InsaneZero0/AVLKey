@@ -59,6 +59,7 @@ export default function MyProperties() {
                       <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[p.display_status] || "bg-stone-100 text-stone-600"}`} data-testid={`my-prop-status-${p.id}`}>{STATUS_LABEL[p.display_status] || STATUS_LABEL[p.status]}</Badge>
                     </div>
                     <h3 className="font-display font-semibold text-lg text-navy mt-2">{p.title}</h3>
+                    {p.public_id && <div className="text-xs font-mono text-stone-400" data-testid={`prop-folio-${p.id}`}>Folio: {p.public_id}</div>}
                     <div className="flex items-center gap-1.5 text-stone-500 text-sm"><MapPin className="w-3.5 h-3.5" />{p.city}</div>
                   </div>
                   <div className="font-display font-bold text-xl text-terracotta whitespace-nowrap">{formatMXN(p.price_month)}<span className="text-xs text-stone-400 font-normal">/mes</span></div>

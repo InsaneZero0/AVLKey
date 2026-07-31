@@ -77,7 +77,11 @@ export default function DashboardLayout() {
       </div>
 
       <main className="flex-1 lg:ml-64 pt-14 lg:pt-0">
-        <div className="hidden lg:flex items-center justify-end h-16 px-8 border-b border-stone-200 bg-white/60">
+        <div className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-stone-200 bg-white/60">
+          <div className="text-sm" data-testid="panel-topbar-user">
+            <span className="font-mono font-semibold text-navy">{user?.public_id || "—"}</span>
+            <span className="text-stone-500"> · {user?.name}</span>
+          </div>
           <NotificationBell />
         </div>
         <div className="max-w-6xl mx-auto p-5 sm:p-8">
