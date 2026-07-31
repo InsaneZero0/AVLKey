@@ -18,28 +18,31 @@ const Field = ({ label, testid, type = "text", inputMode, value, onChange, place
   </div>
 );
 
-const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hint }) => (
-  <div>
-    <Label>{label}</Label>
-    <div className="flex items-center gap-2">
-      <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
-        <Input
-          data-testid={testid}
-          type="text"
-          inputMode="numeric"
-          value={value}
-          disabled={disabled}
-          onChange={disabled ? undefined : (e) => onChange(e.target.value.replace(/\D/g, ""))}
-          placeholder={placeholder}
-          className={`pl-7 ${disabled ? "bg-stone-100 text-stone-600" : ""}`}
-        />
+const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hint }) => {
+  const display = value !== "" && value != null ? Number(value).toLocaleString("en-US") : "";
+  return (
+    <div>
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+          <Input
+            data-testid={testid}
+            type="text"
+            inputMode="numeric"
+            value={display}
+            disabled={disabled}
+            onChange={disabled ? undefined : (e) => onChange(e.target.value.replace(/\D/g, ""))}
+            placeholder={placeholder}
+            className={`pl-7 ${disabled ? "bg-stone-100 text-stone-600" : ""}`}
+          />
+        </div>
+        <span className="text-sm font-medium text-stone-500">MX</span>
       </div>
-      <span className="text-sm font-medium text-stone-500">MX</span>
+      {hint && <p className="text-xs text-stone-500 mt-1">{hint}</p>}
     </div>
-    {hint && <p className="text-xs text-stone-500 mt-1">{hint}</p>}
-  </div>
-);
+  );
+};
 
 export default function PropertyForm() {
   const navigate = useNavigate();
@@ -164,9 +167,9 @@ export default function PropertyForm() {
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Recámaras" testid="prop-bedrooms" type="text" inputMode="numeric" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/\D/g, ""))} placeholder="2" />
-            <Field label="Baños" testid="prop-bathrooms" type="text" inputMode="numeric" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/\D/g, ""))} placeholder="2" />
-            <Field label="Estac." testid="prop-parking" type="text" inputMode="numeric" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/\D/g, ""))} placeholder="1" />
+            <Field label="Recámaras" testid="prop-bedrooms" type="number" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} placeholder="2" />
+            <Field label="Baños" testid="prop-bathrooms" type="number" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} placeholder="2" />
+            <Field label="Estacionamientos" testid="prop-parking" type="number" value={form.parking} onChange={(e) => set("parking", e.target.value)} placeholder="1" />
             <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="85" />
           </div>
           <div>
