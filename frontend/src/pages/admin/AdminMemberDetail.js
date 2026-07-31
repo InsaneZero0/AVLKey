@@ -115,7 +115,9 @@ export default function AdminMemberDetail() {
         ...prev,
         properties: prev.properties.map((p) => (p.id === propId ? { ...p, review_stage: stage, display_status: stage } : p)),
       }));
-      toast.success("Estado de validación actualizado. Se notificó al arrendador.");
+      toast.success(stage === "publicado"
+        ? "Inmueble publicado. Ya es visible en el buscador."
+        : "Estado de validación actualizado. Se notificó al arrendador.");
     } catch (e) {
       toast.error(apiError(e.response?.data?.detail));
     } finally {
@@ -231,71 +233,63 @@ export default function AdminMemberDetail() {
         )}
       </div>
 
-      {/* Properties (landlord) */}
+      {/* Properties (landlord) — revisión y validación bajo cada propiedad */}
       {isLandlord && (
         <div>
-          <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><Building2 className="w-5 h-5" /> Propiedades registradas ({properties.length})</h2>
+          <h2 className="font-display font-semibold text-navy mb-1 flex items-center gap-2"><Building2 className="w-5 h-5" /> Propiedades registradas ({properties.length})</h2>
+          <p className="text-sm text-stone-500 mb-4">La propiedad solo se publica en el buscador cuando el estado <strong>Publicado</strong> está seleccionado.</p>
           {properties.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-2xl p-6 text-sm text-stone-400" data-testid="member-no-props">Sin propiedades registradas.</div>
           ) : (
-            <div className="space-y-3">
-              {properties.map((p) => (
-                <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-4 flex gap-4 items-center" data-testid={`member-prop-${p.id}`}>
-                  <img src={p.images?.[0]} alt={p.title} className="w-24 h-20 object-cover rounded-xl bg-stone-100" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className="rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta/10">{TYPE_LABEL[p.property_type]}</Badge>
-                      <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[p.display_status] || "bg-stone-100 text-stone-600"}`} data-testid={`member-prop-status-${p.id}`}>{STATUS_LABEL[p.display_status]}</Badge>
+            <div className="space-y-4">
+              {properties.map((p) => {
+                const current = p.review_stage || STAGE_FROM_DISPLAY[p.display_status] || "recibido";
+                return (
+                  <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-4" data-testid={`member-prop-${p.id}`}>
+                    <div className="flex gap-4 items-center">
+                      <img src={p.images?.[0]} alt={p.title} className="w-24 h-20 object-cover rounded-xl bg-stone-100" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta/10">{TYPE_LABEL[p.property_type]}</Badge>
+                          <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[p.display_status] || "bg-stone-100 text-stone-600"}`} data-testid={`member-prop-status-${p.id}`}>{STATUS_LABEL[p.display_status]}</Badge>
+                        </div>
+                        <h3 className="font-display font-semibold text-navy mt-1.5 truncate">{p.title}</h3>
+                        <div className="flex items-center gap-1.5 text-stone-500 text-sm"><MapPin className="w-3.5 h-3.5" />{p.city} · {p.applications_count} solicitud(es)</div>
+                      </div>
+                      <div className="text-right whitespace-nowrap">
+                        <div className="font-display font-bold text-lg text-terracotta">{formatMXN(p.price_month)}<span className="text-xs text-stone-400 font-normal">/mes</span></div>
+                        <Button variant="outline" size="sm" className="rounded-full mt-1" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
+                      </div>
                     </div>
-                    <h3 className="font-display font-semibold text-navy mt-1.5 truncate">{p.title}</h3>
-                    <div className="flex items-center gap-1.5 text-stone-500 text-sm"><MapPin className="w-3.5 h-3.5" />{p.city} · {p.applications_count} solicitud(es)</div>
+
+                    <div className="mt-4 pt-4 border-t border-stone-100" data-testid={`validation-card-${p.id}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación</span>
+                        {savingId === p.id && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
+                      </div>
+                      <RadioGroup
+                        value={current}
+                        onValueChange={(v) => setStage(p.id, v)}
+                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                        data-testid={`stage-radiogroup-${p.id}`}
+                      >
+                        {REVIEW_STAGE_OPTIONS.map((opt) => (
+                          <label
+                            key={opt.value}
+                            htmlFor={`${p.id}-${opt.value}`}
+                            className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${current === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}
+                          >
+                            <RadioGroupItem value={opt.value} id={`${p.id}-${opt.value}`} data-testid={`stage-${p.id}-${opt.value}`} />
+                            <span className="text-sm font-medium text-navy">{opt.label}</span>
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    </div>
                   </div>
-                  <div className="text-right whitespace-nowrap">
-                    <div className="font-display font-bold text-lg text-terracotta">{formatMXN(p.price_month)}<span className="text-xs text-stone-400 font-normal">/mes</span></div>
-                    <Button variant="outline" size="sm" className="rounded-full mt-1" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Validation review radio buttons — final section */}
-      {isLandlord && properties.length > 0 && (
-        <div data-testid="validation-review">
-          <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><ClipboardCheck className="w-5 h-5" /> Revisión de validación</h2>
-          <p className="text-sm text-stone-500 mb-4">Selecciona el estado de validación de cada inmueble. El arrendador recibirá una notificación con su status.</p>
-          <div className="space-y-4">
-            {properties.map((p) => {
-              const current = p.review_stage || STAGE_FROM_DISPLAY[p.display_status] || "recibido";
-              return (
-                <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-5" data-testid={`validation-card-${p.id}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="font-medium text-navy truncate">{p.title}</div>
-                    {savingId === p.id && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
-                  </div>
-                  <RadioGroup
-                    value={current}
-                    onValueChange={(v) => setStage(p.id, v)}
-                    className="grid grid-cols-2 sm:grid-cols-3 gap-3"
-                    data-testid={`stage-radiogroup-${p.id}`}
-                  >
-                    {REVIEW_STAGE_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        htmlFor={`${p.id}-${opt.value}`}
-                        className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${current === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}
-                      >
-                        <RadioGroupItem value={opt.value} id={`${p.id}-${opt.value}`} data-testid={`stage-${p.id}-${opt.value}`} />
-                        <span className="text-sm font-medium text-navy">{opt.label}</span>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
     </div>

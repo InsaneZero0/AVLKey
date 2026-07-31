@@ -624,7 +624,7 @@ async def list_properties(
     query = {}
     if status:
         query["status"] = status
-    query["review_status"] = {"$ne": "rechazada"}
+    query["review_stage"] = "publicado"
     if property_type and property_type != "todos":
         query["property_type"] = property_type
     if state and state != "todos":
@@ -1851,6 +1851,11 @@ async def seed():
     # Migrate legacy docs
     await db.users.update_many({"account_type": {"$exists": False}}, {"$set": {"account_type": "external", "staff_role": None}})
     await db.properties.update_many({"review_status": {"$exists": False}}, {"$set": {"review_status": "aprobada"}})
+    # Propiedades existentes aprobadas sin etapa -> publicadas (para no ocultarlas del buscador)
+    await db.properties.update_many(
+        {"review_stage": {"$exists": False}, "review_status": "aprobada"},
+        {"$set": {"review_stage": "publicado"}},
+    )
 
     # Backfill member_no for existing external users (stable, ordered by creation)
     pending = await db.users.find(
@@ -1862,7 +1867,7 @@ async def seed():
     if await db.properties.count_documents({}) == 0:
         for sp in SEED_PROPERTIES:
             doc = dict(sp)
-            doc.update({"id": new_id("prop"), "owner_id": landlord["id"], "status": "disponible", "review_status": "aprobada", "created_at": now_utc().isoformat()})
+            doc.update({"id": new_id("prop"), "owner_id": landlord["id"], "status": "disponible", "review_status": "aprobada", "review_stage": "publicado", "created_at": now_utc().isoformat()})
             await db.properties.insert_one(doc)
     logger.info("Seed completo")
 

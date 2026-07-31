@@ -75,6 +75,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Mantenimiento = 3% de la renta, calculado automáticamente y no editable (disabled).
 - Verificado por testing_agent (iteration_7, frontend 100%).
 
+## Publicación gated por estado (2026-07)
+- Revisión y validación (radios) ahora se muestran bajo cada propiedad en el expediente del arrendador (panel interno).
+- El buscador público (GET /properties) filtra review_stage == "publicado"; una propiedad solo es visible cuando el admin selecciona "Publicado".
+- Migración: propiedades aprobadas existentes y seeds -> review_stage "publicado".
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
