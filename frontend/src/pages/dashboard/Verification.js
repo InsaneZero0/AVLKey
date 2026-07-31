@@ -262,6 +262,10 @@ export default function Verification() {
         })),
       };
       await api.patch("/users/me/fiscal", payload);
+      if (category === "arrendatario" && accepted && !consent?.consent?.accepted) {
+        await api.post("/consent/credit-check", { accepted: true, consent_text: consent?.text, consent_version: consent?.version });
+        api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
+      }
       toast.success("Información enviada a revisión");
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
     finally { setSavingFiscal(false); }
@@ -498,9 +502,6 @@ export default function Verification() {
                   <Checkbox id="consent" checked={accepted} onCheckedChange={(v) => setAccepted(!!v)} data-testid="consent-checkbox" />
                   <Label htmlFor="consent" className="cursor-pointer text-sm leading-relaxed">Acepto y autorizo expresamente la consulta de mi historial crediticio (versión {consent?.version}).</Label>
                 </div>
-                <Button onClick={submitConsent} disabled={savingConsent} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-consent-btn">
-                  {savingConsent ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
-                </Button>
               </>
             )}
           </div>
