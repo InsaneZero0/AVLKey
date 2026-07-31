@@ -1269,7 +1269,7 @@ class FiscalInfo(BaseModel):
     ingreso_mensual: Optional[float] = None
     comprobantes_ingresos: Optional[List[str]] = None
     share_housing: Optional[bool] = None
-    cohabitante: Optional[Cohabitante] = None
+    cohabitantes: Optional[List[Cohabitante]] = None
 
 
 class ConsentInput(BaseModel):

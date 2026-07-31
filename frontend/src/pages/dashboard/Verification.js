@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
-  CreditCard, Landmark, FileText, UserRound, Users, X, Camera,
+  CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus,
 } from "lucide-react";
 
 const REGIMENES = [
@@ -162,8 +162,7 @@ export default function Verification() {
   const [fiscal, setFiscal] = useState({
     rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
     phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
-    comprobantes_ingresos: [], share_housing: false,
-    cohabitante: { name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] },
+    comprobantes_ingresos: [], cohabitantes: [],
   });
 
   const load = () => {
@@ -175,12 +174,11 @@ export default function Verification() {
       phone: data.phone || user?.phone || "",
       ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
       comprobantes_ingresos: data.comprobantes_ingresos || [],
-      share_housing: data.share_housing || false,
-      cohabitante: data.cohabitante ? {
-        name: data.cohabitante.name || "", rfc: data.cohabitante.rfc || "", curp: data.cohabitante.curp || "",
-        ingreso_mensual: data.cohabitante.ingreso_mensual != null ? String(data.cohabitante.ingreso_mensual) : "",
-        comprobantes: data.cohabitante.comprobantes || [],
-      } : { name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] },
+      cohabitantes: (data.cohabitantes || []).map((c) => ({
+        name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
+        ingreso_mensual: c.ingreso_mensual != null ? String(c.ingreso_mensual) : "",
+        comprobantes: c.comprobantes || [],
+      })),
     }))).catch(() => {});
   };
   useEffect(() => { load(); }, [category]); // eslint-disable-line
@@ -196,21 +194,21 @@ export default function Verification() {
     finally { setSavingConsent(false); }
   };
 
-  const setCohab = (k, v) => setFiscal((p) => ({ ...p, cohabitante: { ...p.cohabitante, [k]: v } }));
+  const setCohab = (idx, k, v) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.map((c, i) => (i === idx ? { ...c, [k]: v } : c)) }));
+  const addCohab = () => setFiscal((p) => ({ ...p, cohabitantes: [...p.cohabitantes, { name: "", rfc: "", curp: "", ingreso_mensual: "", comprobantes: [] }] }));
+  const removeCohab = (idx) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.filter((_, i) => i !== idx) }));
 
   const saveFiscal = async () => {
     setSavingFiscal(true);
     try {
-      const co = fiscal.cohabitante || {};
       const payload = {
         ...fiscal,
         ingreso_mensual: parseInt(fiscal.ingreso_mensual || "0", 10) || 0,
-        share_housing: !!fiscal.share_housing,
-        cohabitante: fiscal.share_housing ? {
-          name: co.name || "", rfc: co.rfc || "", curp: co.curp || "",
-          ingreso_mensual: parseInt(co.ingreso_mensual || "0", 10) || 0,
-          comprobantes: co.comprobantes || [],
-        } : null,
+        cohabitantes: fiscal.cohabitantes.map((c) => ({
+          name: c.name || "", rfc: c.rfc || "", curp: c.curp || "",
+          ingreso_mensual: parseInt(c.ingreso_mensual || "0", 10) || 0,
+          comprobantes: c.comprobantes || [],
+        })),
       };
       await api.patch("/users/me/fiscal", payload);
       toast.success("Información enviada a revisión");
@@ -223,7 +221,6 @@ export default function Verification() {
   const items = (summary.items || []).map((it) => ({ ...it, category }));
   const hasConsent = consent?.consent?.accepted;
   const ingresoDisplay = fiscal.ingreso_mensual ? Number(fiscal.ingreso_mensual).toLocaleString("en-US") : "";
-  const coIngresoDisplay = fiscal.cohabitante?.ingreso_mensual ? Number(fiscal.cohabitante.ingreso_mensual).toLocaleString("en-US") : "";
 
   return (
     <div className="max-w-3xl">
@@ -283,53 +280,48 @@ export default function Verification() {
             </div>
           </div>
 
-          {/* Compartir vivienda con cohabitante */}
-          <div className="mt-5 pt-5 border-t border-stone-100">
-            {!fiscal.share_housing ? (
-              <Button type="button" variant="outline" className="rounded-full" onClick={() => setFiscal({ ...fiscal, share_housing: true })} data-testid="share-housing-btn">
-                <Users className="w-4 h-4 mr-2" /> Compartiré la vivienda con:
-              </Button>
-            ) : (
-              <div data-testid="cohabitante-form">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-semibold text-navy flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Compartiré la vivienda con:</h3>
-                  <Button type="button" variant="ghost" size="sm" className="text-stone-500" onClick={() => setFiscal({ ...fiscal, share_housing: false })} data-testid="remove-cohabitante-btn"><X className="w-4 h-4 mr-1" /> Quitar</Button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="col-span-2 sm:col-span-1">
-                    <Label>Nombre completo</Label>
-                    <Input data-testid="co-nombre" value={fiscal.cohabitante.name} onChange={(e) => setCohab("name", e.target.value)} placeholder="Nombre del cohabitante" />
-                  </div>
-                  <div>
-                    <Label>RFC</Label>
-                    <Input data-testid="co-rfc" value={fiscal.cohabitante.rfc} onChange={(e) => setCohab("rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" />
-                  </div>
-                  <div>
-                    <Label>CURP</Label>
-                    <Input data-testid="co-curp" maxLength={18} value={fiscal.cohabitante.curp} onChange={(e) => setCohab("curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" />
-                    <p className="text-xs text-stone-400 mt-1">{(fiscal.cohabitante.curp || "").length}/18</p>
-                  </div>
-                  <div>
-                    <Label>Ingreso mensual neto</Label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
-                        <Input data-testid="co-ingreso" type="text" inputMode="numeric" value={coIngresoDisplay} onChange={(e) => setCohab("ingreso_mensual", e.target.value.replace(/\D/g, ""))} placeholder="20,000" className="pl-7" />
+          {/* Personas que habitarán la propiedad */}
+          {fiscal.cohabitantes.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-stone-100 space-y-4" data-testid="cohabitantes-list">
+              <h3 className="font-display font-semibold text-navy flex items-center gap-2"><Users className="w-4 h-4 text-terracotta" /> Personas que habitarán la propiedad</h3>
+              {fiscal.cohabitantes.map((c, idx) => {
+                const coDisp = c.ingreso_mensual ? Number(c.ingreso_mensual).toLocaleString("en-US") : "";
+                return (
+                  <div key={idx} className="border border-stone-200 rounded-xl p-4" data-testid={`cohabitante-form-${idx}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-stone-600">Habitante {idx + 1}</span>
+                      <Button type="button" variant="ghost" size="sm" className="text-stone-500" onClick={() => removeCohab(idx)} data-testid={`remove-cohabitante-${idx}`}><X className="w-4 h-4 mr-1" /> Quitar</Button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="col-span-2 sm:col-span-1"><Label>Nombre completo</Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
+                      <div><Label>RFC</Label><Input data-testid={`co-rfc-${idx}`} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase())} placeholder="XAXX010101000" /></div>
+                      <div><Label>CURP</Label><Input data-testid={`co-curp-${idx}`} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" /></div>
+                      <div>
+                        <Label>Ingreso mensual neto</Label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-medium pointer-events-none">$</span>
+                            <Input data-testid={`co-ingreso-${idx}`} type="text" inputMode="numeric" value={coDisp} onChange={(e) => setCohab(idx, "ingreso_mensual", e.target.value.replace(/\D/g, ""))} placeholder="20,000" className="pl-7" />
+                          </div>
+                          <span className="text-sm font-medium text-stone-500">MX</span>
+                        </div>
                       </div>
-                      <span className="text-sm font-medium text-stone-500">MX</span>
+                      <div className="col-span-2 sm:col-span-3"><IncomeProofs paths={c.comprobantes} onChange={(v) => setCohab(idx, "comprobantes", v)} testid={`co-comprobantes-${idx}`} /></div>
                     </div>
                   </div>
-                  <div className="col-span-2 sm:col-span-3">
-                    <IncomeProofs paths={fiscal.cohabitante.comprobantes} onChange={(v) => setCohab("comprobantes", v)} testid="co-comprobantes" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
-          <Button onClick={saveFiscal} disabled={savingFiscal} className="mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
-            {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
-          </Button>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button onClick={saveFiscal} disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-registro-btn">
+              {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
+            </Button>
+            <Button type="button" variant="outline" className="rounded-full" onClick={addCohab} data-testid="add-habitante-btn">
+              <Plus className="w-4 h-4 mr-1" /> Agregar habitante
+            </Button>
+          </div>
         </div>
       )}
 
