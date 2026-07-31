@@ -181,9 +181,13 @@ export default function Verification() {
     es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [], phone_code: "+52",
   });
 
-  const load = () => {
+  const reloadDocs = () => {
     api.get(`/my/documents?category=${category}`).then(({ data }) => setSummary(data)).catch(() => setSummary({ items: [] }));
     api.get("/my/alerts").then(({ data }) => setAlerts(data)).catch(() => {});
+  };
+
+  const load = () => {
+    reloadDocs();
     if (category === "arrendatario") api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
@@ -449,7 +453,7 @@ export default function Verification() {
 
       <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
         <h2 className="font-display font-semibold text-navy mb-2">Documentos del contratante principal</h2>
-        {items.map((it) => <DocRow key={it.key} item={it} onUploaded={load} />)}
+        {items.map((it) => <DocRow key={it.key} item={it} onUploaded={reloadDocs} />)}
       </div>
 
       {category === "arrendador" && (
