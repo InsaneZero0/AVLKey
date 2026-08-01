@@ -97,6 +97,8 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Habitantes (adultos 18+): campo de Fotografía de INE (ine_fotos). RFC limitado a 12 caracteres (solicitante y habitantes). Teléfono con selector de prefijo por país (default +52) limitado a 10 dígitos (phone_code).
 - Backend FiscalInfo/Cohabitante: adultos_18, menores_12_17, ninos_0_11, mascotas, es_extranjero, pasaporte, pasaporte_fotos, migratorio_fotos, phone_code, cohabitante.ine_fotos.
 - Panel interno (AdminMemberDetail): expediente del arrendatario muestra toda la info fiscal, teléfono con prefijo, ocupantes, mascotas, comprobantes/INE/pasaporte/migratorio (fotos privadas), habitantes, consentimiento crediticio y documentos enviados. Radio de validación del registro (Recibido, En revisión, Documentación faltante, Aprobado, Publicado, Rechazado) → user.registro_stage; PATCH /api/admin/members/{id}/registro-stage, notifica al arrendatario (banner de estatus arriba de su Registro).
+- Habitantes: teléfono con prefijo de país (10 dígitos, default +52) y parentesco con el contratante principal (Cohabitante.phone, phone_code, parentesco). Se muestran en el expediente admin.
+- AdminMemberDetail robusto para cuentas duales: bloques de validación/registro/consentimiento del arrendatario se muestran cuando showTenant (rol arrendatario o existe fiscal_info de arrendatario/consentimiento), aunque la cuenta figure como arrendador.
 - Registro (frontend): comprobantes del solicitante quitados de "Datos del solicitante" (van en Documentos). Botón único "Enviar información" al final (envía datos fiscales + consentimiento). Consentimiento crediticio arriba de "Documentos del contratante principal". Sin apartado de "Tarjeta de pago".
 
 ## Notes

@@ -174,6 +174,7 @@ export default function AdminMemberDetail() {
 
   const { user, properties, documents_summary, can_view_documents, fiscal_info, consent } = data;
   const isLandlord = user.role === "arrendador";
+  const showTenant = !isLandlord || !!(fiscal_info && (fiscal_info.curp || (fiscal_info.cohabitantes || []).length > 0 || fiscal_info.mascotas || fiscal_info.adultos_18 != null || fiscal_info.es_extranjero)) || !!consent;
   const docItems = documents_summary?.items || [];
 
   return (
@@ -238,7 +239,7 @@ export default function AdminMemberDetail() {
       </div>
 
       {/* Revisión y validación del registro (arrendatario) */}
-      {!isLandlord && (
+      {showTenant && (
         <div className="bg-white border border-stone-200 rounded-2xl p-4" data-testid="member-registro-validation">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
@@ -256,7 +257,7 @@ export default function AdminMemberDetail() {
       )}
 
       {/* Registro del arrendatario: ocupantes, mascotas, comprobantes, habitantes */}
-      {!isLandlord && fiscal_info && (
+      {showTenant && fiscal_info && (
         <div className="bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-detail">
           <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><Users className="w-5 h-5" /> Registro del arrendatario</h2>
           <div className="grid sm:grid-cols-3 gap-3 mb-4">
@@ -310,7 +311,7 @@ export default function AdminMemberDetail() {
       )}
 
       {/* Consent (tenant) */}
-      {!isLandlord && (
+      {showTenant && (
         <div className="bg-white border border-stone-200 rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-2"><ShieldAlert className="w-5 h-5 text-navy" /><h2 className="font-display font-semibold text-navy">Consentimiento de historial crediticio</h2></div>
           {consent ? (
