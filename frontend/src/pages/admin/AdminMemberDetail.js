@@ -349,6 +349,10 @@ export default function AdminMemberDetail() {
                   <span className="font-display font-bold text-lg text-terracotta" data-testid="ingreso-total-value">${ingresoTotal.toLocaleString("en-US")} MX</span>
                 </div>
                 <p className="text-xs text-stone-500 mt-1">Solicitante: ${solicitanteIngreso.toLocaleString("en-US")} MX + habitantes: ${habitantesIngreso.toLocaleString("en-US")} MX</p>
+                <div className="mt-3 flex items-center justify-between gap-3 flex-wrap rounded-xl bg-navy/5 border border-navy/10 p-3">
+                  <span className="text-sm font-medium text-navy">Capacidad de pago mensual (30%)</span>
+                  <span className="font-display font-bold text-lg text-navy" data-testid="capacidad-pago-value">${Math.round(ingresoTotal * 0.3).toLocaleString("en-US")} MX</span>
+                </div>
               </div>
             )}
           </div>
