@@ -201,7 +201,7 @@ export default function AdminMemberDetail() {
         <div className="bg-white border border-stone-200 rounded-2xl p-6">
           <h2 className="font-display font-semibold text-navy mb-3">Información personal</h2>
           <Row icon={Mail} label="Correo" value={user.email} />
-          <Row icon={Phone} label="Teléfono" value={user.phone} />
+          <Row icon={Phone} label="Teléfono" value={(fiscal_info?.phone || user.phone) ? `${fiscal_info?.phone_code ? fiscal_info.phone_code + " " : ""}${fiscal_info?.phone || user.phone}` : null} />
           <Row icon={User} label="Registrado" value={formatDate(user.created_at)} />
           <Row icon={BadgeCheck} label="Autenticación" value={user.auth_provider === "google" ? "Google" : "Correo/contraseña"} />
         </div>
