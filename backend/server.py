@@ -1454,6 +1454,17 @@ async def get_fiscal(user: dict = Depends(get_current_user)):
     return u.get("fiscal_info") or {}
 
 
+@api.post("/users/me/registro/submit")
+async def submit_registro(user: dict = Depends(get_current_user)):
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    updates = {"registro_submitted": True}
+    if not fresh.get("registro_stage"):
+        updates["registro_stage"] = "recibido"
+    await db.users.update_one({"id": user["id"]}, {"$set": updates})
+    updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return with_perms(updated)
+
+
 @api.post("/uploads/income-proof")
 async def upload_income_proof(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"

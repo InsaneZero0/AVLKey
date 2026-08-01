@@ -10,8 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
-  CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus,
+  CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus, Save, Send,
 } from "lucide-react";
 
 const REGIMENES = [
@@ -169,9 +173,83 @@ function IncomeProofs({ paths, onChange, testid, label = "Comprobantes de ingres
   );
 }
 
+function RegistroResumen({ user, fiscal, consent, items }) {
+  const money = (n) => `$${Number(n || 0).toLocaleString("en-US")} MX`;
+  const Field = ({ label, value }) => (
+    <div><div className="text-xs text-stone-400">{label}</div><div className="text-sm text-navy font-medium break-words">{value || "—"}</div></div>
+  );
+  const total = Number(fiscal.ingreso_mensual || 0) + (fiscal.cohabitantes || []).reduce((s, c) => s + Number(c.ingreso_mensual || 0), 0);
+  return (
+    <div className="mt-6 space-y-6" data-testid="registro-resumen">
+      <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-800 flex items-start gap-2">
+        <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+        <span>Tu solicitud de registro fue enviada a validación. Ya no puedes modificar los datos; te notificaremos el resultado de tu validación en tu perfil.</span>
+      </div>
+      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+        <h2 className="font-display font-semibold text-navy mb-4 flex items-center gap-2"><UserRound className="w-5 h-5 text-terracotta" /> Datos del solicitante</h2>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Field label="Nombre" value={user?.name} />
+          {fiscal.es_extranjero ? <Field label="Pasaporte" value={fiscal.pasaporte} /> : <><Field label="RFC" value={fiscal.rfc} /><Field label="CURP" value={fiscal.curp} /></>}
+          <Field label="Teléfono" value={fiscal.phone ? `${fiscal.phone_code || ""} ${fiscal.phone}` : ""} />
+          <Field label="Régimen fiscal" value={fiscal.fiscal_regime} />
+          <Field label="Actividad económica" value={fiscal.actividad_economica} />
+          <Field label="Ingreso mensual" value={money(fiscal.ingreso_mensual)} />
+          <Field label="Adultos (18+)" value={String(fiscal.adultos_18 || 0)} />
+          <Field label="Menores (12-17)" value={String(fiscal.menores_12_17 || 0)} />
+          <Field label="Niños (0-11)" value={String(fiscal.ninos_0_11 || 0)} />
+          <Field label="Mascotas" value={fiscal.mascotas} />
+        </div>
+      </div>
+      {(fiscal.cohabitantes || []).length > 0 && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-6">
+          <h2 className="font-display font-semibold text-navy mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-terracotta" /> Habitantes</h2>
+          <div className="space-y-3">
+            {fiscal.cohabitantes.map((c, i) => (
+              <div key={i} className="border border-stone-200 rounded-xl p-3">
+                <div className="text-sm font-medium text-navy mb-2">Habitante {i + 1}: {c.name || "—"}</div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {c.es_extranjero ? <Field label="Pasaporte" value={c.pasaporte} /> : <><Field label="RFC" value={c.rfc} /><Field label="CURP" value={c.curp} /></>}
+                  <Field label="Teléfono" value={c.phone ? `${c.phone_code || ""} ${c.phone}` : ""} />
+                  <Field label="Parentesco" value={c.parentesco} />
+                  <Field label="Ingreso" value={money(c.ingreso_mensual)} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
+            <span className="text-sm font-medium text-navy">Ingreso mensual total</span>
+            <span className="font-display font-bold text-terracotta">{money(total)}</span>
+          </div>
+        </div>
+      )}
+      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+        <h2 className="font-display font-semibold text-navy mb-3 flex items-center gap-2"><FileText className="w-5 h-5 text-terracotta" /> Documentos</h2>
+        <div className="space-y-2">
+          {items.map((it) => {
+            const st = it.document ? statusMap[it.document.status] : null;
+            return (
+              <div key={it.key} className="flex items-center justify-between text-sm border-b border-stone-100 pb-2 last:border-0">
+                <span className="text-navy">{it.label}{it.required && <span className="text-red-500"> *</span>}</span>
+                <Badge className={`rounded-full ${st ? st.cls : "bg-stone-100 text-stone-500"}`}>{st ? st.label : "Pendiente"}</Badge>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {consent?.consent?.accepted && (
+        <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-green-800 flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" /> Autorización de consulta de historial crediticio registrada.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Verification() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const category = user?.role === "arrendador" ? "arrendador" : "arrendatario";
+  const [submitted, setSubmitted] = useState(!!user?.registro_submitted);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [summary, setSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [consent, setConsent] = useState(null);
@@ -220,6 +298,7 @@ export default function Verification() {
     }))).catch(() => {});
   };
   useEffect(() => { load(); }, [category]); // eslint-disable-line
+  useEffect(() => { setSubmitted(!!user?.registro_submitted); }, [user]);
 
   // Ajusta el número de habitantes según adultos 18+ declarados (excluye al solicitante)
   useEffect(() => {
@@ -247,16 +326,18 @@ export default function Verification() {
   const toggleCohabExtranjero = (idx, v) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.map((c, i) => (i === idx ? { ...c, es_extranjero: v, ...(v ? { rfc: "", curp: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) } : c)) }));
   const toggleExtranjero = (v) => setFiscal((p) => ({ ...p, es_extranjero: v, ...(v ? { rfc: "", curp: "", fiscal_regime: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) }));
 
-  const saveFiscal = async () => {
-    const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || !(c.phone || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
-    if (invalid) { toast.error("Cada habitante requiere nombre, teléfono y RFC/CURP (o pasaporte si es extranjero)"); return; }
-    if (category === "arrendatario") {
-      if (fiscal.es_extranjero) {
-        if (!(fiscal.pasaporte || "").trim()) { toast.error("El pasaporte del solicitante es obligatorio"); return; }
-      } else if (!(fiscal.rfc || "").trim() || !(fiscal.curp || "").trim()) {
-        toast.error("El RFC y CURP del solicitante son obligatorios"); return;
+  const saveFiscal = async (submit = false) => {
+    if (submit) {
+      const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || !(c.phone || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
+      if (invalid) { toast.error("Cada habitante requiere nombre, teléfono y RFC/CURP (o pasaporte si es extranjero)"); return; }
+      if (category === "arrendatario") {
+        if (fiscal.es_extranjero) {
+          if (!(fiscal.pasaporte || "").trim()) { toast.error("El pasaporte del solicitante es obligatorio"); return; }
+        } else if (!(fiscal.rfc || "").trim() || !(fiscal.curp || "").trim()) {
+          toast.error("El RFC y CURP del solicitante son obligatorios"); return;
+        }
+        if (!(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
       }
-      if (!(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
     }
     setSavingFiscal(true);
     try {
@@ -281,7 +362,15 @@ export default function Verification() {
         await api.post("/consent/credit-check", { accepted: true, consent_text: consent?.text, consent_version: consent?.version });
         api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
       }
-      toast.success("Información enviada a revisión");
+      if (submit) {
+        await api.post("/users/me/registro/submit");
+        setConfirmOpen(false);
+        await refresh();
+        setSubmitted(true);
+        toast.success("Información enviada a validación");
+      } else {
+        toast.success("Información guardada. Puedes seguir editándola.");
+      }
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
     finally { setSavingFiscal(false); }
   };
@@ -312,7 +401,11 @@ export default function Verification() {
         </div>
       )}
 
-      {category === "arrendatario" && (
+      {category === "arrendatario" && submitted && (
+        <RegistroResumen user={user} fiscal={fiscal} consent={consent} items={items} />
+      )}
+
+      {category === "arrendatario" && !submitted && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-form">
           <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-4"><UserRound className="w-4 h-4 text-terracotta" /> Datos del solicitante</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -510,16 +603,37 @@ export default function Verification() {
         </div>
       )}
 
-      <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
-        <h2 className="font-display font-semibold text-navy mb-2">Documentos del contratante principal</h2>
-        {items.map((it) => <DocRow key={it.key} item={it} onUploaded={reloadDocs} />)}
-      </div>
+      {!submitted && (
+        <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
+          <h2 className="font-display font-semibold text-navy mb-2">Documentos del contratante principal</h2>
+          {items.map((it) => <DocRow key={it.key} item={it} onUploaded={reloadDocs} />)}
+        </div>
+      )}
 
-      {category === "arrendatario" && (
-        <div className="mt-6 flex justify-end" data-testid="registro-submit-bottom">
-          <Button onClick={saveFiscal} disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="save-registro-btn">
-            {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
+      {category === "arrendatario" && !submitted && (
+        <div className="mt-6 flex flex-wrap justify-end gap-3" data-testid="registro-actions">
+          <Button variant="outline" onClick={() => saveFiscal(false)} disabled={savingFiscal} className="rounded-full px-8" data-testid="save-draft-btn">
+            <Save className="w-4 h-4 mr-1" /> Guardar
           </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogTrigger asChild>
+              <Button disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-registro-btn">
+                {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Send className="w-4 h-4 mr-1" /> Enviar información</>)}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent data-testid="submit-confirm-dialog">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Información importante para tu validación</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Al enviar, tu información pasará a validación y <strong>ya no podrás modificar los datos</strong>. ¿Estás seguro de enviar?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="submit-cancel-btn">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => saveFiscal(true)} className="bg-terracotta hover:bg-terracotta-hover" data-testid="submit-accept-btn">Aceptar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
 

@@ -101,6 +101,7 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - AdminMemberDetail: debajo de Observaciones se muestra "Ingreso mensual total (capacidad de pago)" = ingreso del solicitante + suma de ingresos de habitantes, formato $X,XXX MX.
 - AdminMemberDetail: bloque de radios de validación del registro movido al FINAL de la hoja. El estatus (registro_stage) y las observaciones (admin_note) se muestran al arrendatario en su perfil (/panel/perfil, tarjeta "Estatus de tu registro").
 - AdminMemberDetail robusto para cuentas duales: bloques de validación/registro/consentimiento del arrendatario se muestran cuando showTenant (rol arrendatario o existe fiscal_info de arrendatario/consentimiento), aunque la cuenta figure como arrendador.
+- Registro (frontend): dos botones — "Guardar" (borrador editable, sin validación estricta) y "Enviar información" (AlertDialog de confirmación → valida obligatorios, POST /api/users/me/registro/submit marca registro_submitted=true y estado inicial "recibido"). Al enviar, el formulario se reemplaza por un RESUMEN de solo lectura (RegistroResumen) no editable. Teléfono del solicitante y de cada habitante obligatorio; RFC/CURP obligatorios (o pasaporte si extranjero).
 - Registro (frontend): comprobantes del solicitante quitados de "Datos del solicitante" (van en Documentos). Botón único "Enviar información" al final (envía datos fiscales + consentimiento). Consentimiento crediticio arriba de "Documentos del contratante principal". Sin apartado de "Tarjeta de pago".
 
 ## Notes
