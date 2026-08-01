@@ -54,6 +54,7 @@ export const STATUS_LABEL = {
   recibido: "Recibido",
   doc_faltante: "Documentación faltante",
   aprobado: "Aprobado",
+  autorizado: "Autorizado",
   publicado: "Publicado",
   rechazado: "Rechazado",
 };
@@ -67,12 +68,22 @@ export const REVIEW_STAGE_OPTIONS = [
   { value: "rechazado", label: "Rechazado" },
 ];
 
+export const REGISTRO_STAGE_OPTIONS = [
+  { value: "recibido", label: "Recibido" },
+  { value: "en_revision", label: "En revisión" },
+  { value: "doc_faltante", label: "Documentación faltante" },
+  { value: "aprobado", label: "Aprobado" },
+  { value: "autorizado", label: "Autorizado" },
+  { value: "rechazado", label: "Rechazado" },
+];
+
 export const PROPERTY_STATUS_COLOR = {
   recibida: "bg-blue-100 text-blue-700",
   recibido: "bg-blue-100 text-blue-700",
   en_revision: "bg-amber-100 text-amber-700",
   doc_faltante: "bg-orange-100 text-orange-700",
   aprobado: "bg-emerald-100 text-emerald-700",
+  autorizado: "bg-emerald-100 text-emerald-700",
   publicada: "bg-green-100 text-green-700",
   publicado: "bg-green-100 text-green-700",
   pausada: "bg-stone-100 text-stone-600",

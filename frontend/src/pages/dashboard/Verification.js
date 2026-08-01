@@ -381,6 +381,7 @@ export default function Verification() {
   const items = (summary.items || []).map((it) => ({ ...it, category }));
   const hasConsent = consent?.consent?.accepted;
   const ingresoDisplay = fiscal.ingreso_mensual ? Number(fiscal.ingreso_mensual).toLocaleString("en-US") : "";
+  const capacidadPago = Math.round((Number(fiscal.ingreso_mensual || 0) + (fiscal.cohabitantes || []).reduce((s, c) => s + Number(c.ingreso_mensual || 0), 0)) * 0.3);
 
   return (
     <div className="max-w-3xl">
@@ -394,11 +395,13 @@ export default function Verification() {
       )}
 
       {category === "arrendatario" && user?.registro_stage && (
-        <div className="mt-3 flex items-center gap-3 rounded-xl bg-white border border-stone-200 p-4" data-testid="registro-status-banner">
+        <div className="mt-3 flex items-center gap-3 flex-wrap rounded-xl bg-white border border-stone-200 p-4" data-testid="registro-status-banner">
           <span className="text-sm font-medium text-navy">Estatus de tu registro:</span>
           <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[user.registro_stage] || "bg-stone-100 text-stone-600"}`} data-testid="registro-status-badge">
             {STATUS_LABEL[user.registro_stage] || user.registro_stage}
           </Badge>
+          <span className="text-sm font-medium text-navy sm:ml-auto">Capacidad de pago:</span>
+          <span className="font-display font-bold text-terracotta" data-testid="registro-capacidad-pago">${capacidadPago.toLocaleString("en-US")} MX</span>
         </div>
       )}
 

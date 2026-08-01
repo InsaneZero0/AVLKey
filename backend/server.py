@@ -1706,10 +1706,10 @@ async def admin_review_property(property_id: str, data: ReviewDecision, actor: d
     return {"ok": True}
 
 
-REVIEW_STAGES = ["recibido", "en_revision", "doc_faltante", "aprobado", "publicado", "rechazado"]
+REVIEW_STAGES = ["recibido", "en_revision", "doc_faltante", "aprobado", "autorizado", "publicado", "rechazado"]
 REVIEW_STAGE_LABELS = {
     "recibido": "Recibido", "en_revision": "En revisión", "doc_faltante": "Documentación faltante",
-    "aprobado": "Aprobado", "publicado": "Publicado", "rechazado": "Rechazado",
+    "aprobado": "Aprobado", "autorizado": "Autorizado", "publicado": "Publicado", "rechazado": "Rechazado",
 }
 
 
