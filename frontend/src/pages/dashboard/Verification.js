@@ -44,6 +44,11 @@ const PHONE_CODES = [
   { name: "Brasil", code: "+55" },
 ];
 
+const PARENTESCOS = [
+  "Cónyuge", "Pareja", "Hijo(a)", "Padre", "Madre", "Hermano(a)",
+  "Abuelo(a)", "Nieto(a)", "Tío(a)", "Sobrino(a)", "Primo(a)", "Amigo(a)", "Otro",
+];
+
 const statusMap = {
   pendiente: { label: "En revisión", cls: "bg-amber-100 text-amber-700" },
   aprobado: { label: "Aprobado", cls: "bg-green-100 text-green-700" },
@@ -208,6 +213,7 @@ export default function Verification() {
         ingreso_mensual: c.ingreso_mensual != null ? String(c.ingreso_mensual) : "",
         comprobantes: c.comprobantes || [],
         ine_fotos: c.ine_fotos || [],
+        phone: c.phone || "", phone_code: c.phone_code || "+52", parentesco: c.parentesco || "",
         es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
         pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
       })),
@@ -257,6 +263,7 @@ export default function Verification() {
           ingreso_mensual: parseInt(c.ingreso_mensual || "0", 10) || 0,
           comprobantes: c.comprobantes || [],
           ine_fotos: c.ine_fotos || [],
+          phone: c.phone || "", phone_code: c.phone_code || "+52", parentesco: c.parentesco || "",
           es_extranjero: !!c.es_extranjero, pasaporte: c.pasaporte || "",
           pasaporte_fotos: c.pasaporte_fotos || [], migratorio_fotos: c.migratorio_fotos || [],
         })),
@@ -407,6 +414,23 @@ export default function Verification() {
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
                       <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 13))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div>
+                        <Label>Teléfono</Label>
+                        <div className="flex items-center gap-2">
+                          <Select value={c.phone_code || "+52"} onValueChange={(v) => setCohab(idx, "phone_code", v)}>
+                            <SelectTrigger data-testid={`co-phone-code-${idx}`} className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                            <SelectContent className="max-h-64">{PHONE_CODES.map((p) => <SelectItem key={p.name} value={p.code}>{p.code} · {p.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                          <Input data-testid={`co-phone-${idx}`} type="tel" inputMode="numeric" maxLength={10} value={c.phone || ""} onChange={(e) => setCohab(idx, "phone", e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="5555550000" className="flex-1" />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Parentesco con el contratante principal</Label>
+                        <Select value={c.parentesco || ""} onValueChange={(v) => setCohab(idx, "parentesco", v)}>
+                          <SelectTrigger data-testid={`co-parentesco-${idx}`}><SelectValue placeholder="Selecciona" /></SelectTrigger>
+                          <SelectContent>{PARENTESCOS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
                       <div>
                         <Label>Ingreso mensual neto</Label>
                         <div className="flex items-center gap-2">

@@ -1256,6 +1256,9 @@ class Cohabitante(BaseModel):
     ingreso_mensual: Optional[float] = None
     comprobantes: Optional[List[str]] = None
     ine_fotos: Optional[List[str]] = None
+    phone: Optional[str] = None
+    phone_code: Optional[str] = None
+    parentesco: Optional[str] = None
     es_extranjero: Optional[bool] = None
     pasaporte: Optional[str] = None
     pasaporte_fotos: Optional[List[str]] = None
