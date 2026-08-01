@@ -13,6 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
   CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus, Save, Send,
@@ -612,9 +613,16 @@ export default function Verification() {
 
       {category === "arrendatario" && !submitted && (
         <div className="mt-6 flex flex-wrap justify-end gap-3" data-testid="registro-actions">
-          <Button variant="outline" onClick={() => saveFiscal(false)} disabled={savingFiscal} className="rounded-full px-8" data-testid="save-draft-btn">
-            <Save className="w-4 h-4 mr-1" /> Guardar
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={() => saveFiscal(false)} disabled={savingFiscal} className="rounded-full px-8" data-testid="save-draft-btn">
+                  <Save className="w-4 h-4 mr-1" /> Guardar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent data-testid="save-draft-tooltip">Guarda y puedes agregar o modificar.</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogTrigger asChild>
               <Button disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-registro-btn">
