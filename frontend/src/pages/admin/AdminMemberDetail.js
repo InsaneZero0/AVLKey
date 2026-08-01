@@ -238,24 +238,6 @@ export default function AdminMemberDetail() {
         </div>
       </div>
 
-      {/* Revisión y validación del registro (arrendatario) */}
-      {showTenant && (
-        <div className="bg-white border border-stone-200 rounded-2xl p-4" data-testid="member-registro-validation">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
-            {savingRegStage && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
-          </div>
-          <RadioGroup value={regStage} onValueChange={setRegistroStage} className="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="registro-stage-radiogroup">
-            {REVIEW_STAGE_OPTIONS.map((opt) => (
-              <label key={opt.value} htmlFor={`reg-${opt.value}`} className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${regStage === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}>
-                <RadioGroupItem value={opt.value} id={`reg-${opt.value}`} data-testid={`registro-stage-${opt.value}`} />
-                <span className="text-sm font-medium text-navy">{opt.label}</span>
-              </label>
-            ))}
-          </RadioGroup>
-        </div>
-      )}
-
       {/* Registro del arrendatario: ocupantes, mascotas, comprobantes, habitantes */}
       {showTenant && fiscal_info && (
         <div className="bg-white border border-stone-200 rounded-2xl p-6" data-testid="tenant-registro-detail">
@@ -418,6 +400,24 @@ export default function AdminMemberDetail() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Revisión y validación del registro (arrendatario) — al final de la hoja */}
+      {showTenant && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-4" data-testid="member-registro-validation">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
+            {savingRegStage && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
+          </div>
+          <RadioGroup value={regStage} onValueChange={setRegistroStage} className="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="registro-stage-radiogroup">
+            {REVIEW_STAGE_OPTIONS.map((opt) => (
+              <label key={opt.value} htmlFor={`reg-${opt.value}`} className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${regStage === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}>
+                <RadioGroupItem value={opt.value} id={`reg-${opt.value}`} data-testid={`registro-stage-${opt.value}`} />
+                <span className="text-sm font-medium text-navy">{opt.label}</span>
+              </label>
+            ))}
+          </RadioGroup>
         </div>
       )}
     </div>
