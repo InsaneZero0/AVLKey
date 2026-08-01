@@ -175,6 +175,9 @@ export default function AdminMemberDetail() {
   const { user, properties, documents_summary, can_view_documents, fiscal_info, consent } = data;
   const isLandlord = user.role === "arrendador";
   const showTenant = !isLandlord || !!(fiscal_info && (fiscal_info.curp || (fiscal_info.cohabitantes || []).length > 0 || fiscal_info.mascotas || fiscal_info.adultos_18 != null || fiscal_info.es_extranjero)) || !!consent;
+  const solicitanteIngreso = Number(fiscal_info?.ingreso_mensual || 0);
+  const habitantesIngreso = (fiscal_info?.cohabitantes || []).reduce((s, c) => s + Number(c.ingreso_mensual || 0), 0);
+  const ingresoTotal = solicitanteIngreso + habitantesIngreso;
   const docItems = documents_summary?.items || [];
 
   return (
@@ -338,6 +341,16 @@ export default function AdminMemberDetail() {
                 </Button>
               </div>
             </div>
+
+            {showTenant && (
+              <div className="mt-5 pt-5 border-t border-stone-100" data-testid="ingreso-total-card">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <span className="text-sm font-medium text-navy flex items-center gap-2"><CreditCard className="w-4 h-4 text-terracotta" /> Ingreso mensual total (capacidad de pago)</span>
+                  <span className="font-display font-bold text-lg text-terracotta" data-testid="ingreso-total-value">${ingresoTotal.toLocaleString("en-US")} MX</span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">Solicitante: ${solicitanteIngreso.toLocaleString("en-US")} MX + habitantes: ${habitantesIngreso.toLocaleString("en-US")} MX</p>
+              </div>
+            )}
           </div>
         )}
       </div>
