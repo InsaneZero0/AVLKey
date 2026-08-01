@@ -250,6 +250,7 @@ export default function Verification() {
   const saveFiscal = async () => {
     const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
     if (invalid) { toast.error("Completa nombre y RFC/CURP (o pasaporte si es extranjero) de cada habitante"); return; }
+    if (category === "arrendatario" && !(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
     setSavingFiscal(true);
     try {
       const payload = {
@@ -322,7 +323,7 @@ export default function Verification() {
               {!fiscal.es_extranjero && <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>}
             </div>
             <div>
-              <Label>Teléfono</Label>
+              <Label>Teléfono <span className="text-red-500">*</span></Label>
               <div className="flex items-center gap-2">
                 <Select value={fiscal.phone_code} onValueChange={(v) => setFiscal({ ...fiscal, phone_code: v })}>
                   <SelectTrigger data-testid="reg-phone-code" className="w-24 shrink-0"><SelectValue /></SelectTrigger>
