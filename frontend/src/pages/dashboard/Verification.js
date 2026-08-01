@@ -248,9 +248,16 @@ export default function Verification() {
   const toggleExtranjero = (v) => setFiscal((p) => ({ ...p, es_extranjero: v, ...(v ? { rfc: "", curp: "", fiscal_regime: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) }));
 
   const saveFiscal = async () => {
-    const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
-    if (invalid) { toast.error("Completa nombre y RFC/CURP (o pasaporte si es extranjero) de cada habitante"); return; }
-    if (category === "arrendatario" && !(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
+    const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || !(c.phone || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
+    if (invalid) { toast.error("Cada habitante requiere nombre, teléfono y RFC/CURP (o pasaporte si es extranjero)"); return; }
+    if (category === "arrendatario") {
+      if (fiscal.es_extranjero) {
+        if (!(fiscal.pasaporte || "").trim()) { toast.error("El pasaporte del solicitante es obligatorio"); return; }
+      } else if (!(fiscal.rfc || "").trim() || !(fiscal.curp || "").trim()) {
+        toast.error("El RFC y CURP del solicitante son obligatorios"); return;
+      }
+      if (!(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
+    }
     setSavingFiscal(true);
     try {
       const payload = {
@@ -314,11 +321,11 @@ export default function Verification() {
               <Input data-testid="reg-nombre" value={user?.name || ""} disabled className="bg-stone-100 text-stone-700" />
             </div>
             <div>
-              <Label>RFC</Label>
+              <Label>RFC {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
               <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={13} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
             </div>
             <div>
-              <Label>CURP</Label>
+              <Label>CURP {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
               <Input data-testid="reg-curp" disabled={fiscal.es_extranjero} maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
               {!fiscal.es_extranjero && <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>}
             </div>
@@ -416,7 +423,7 @@ export default function Verification() {
                       <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 13))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
-                        <Label>Teléfono</Label>
+                        <Label>Teléfono <span className="text-red-500">*</span></Label>
                         <div className="flex items-center gap-2">
                           <Select value={c.phone_code || "+52"} onValueChange={(v) => setCohab(idx, "phone_code", v)}>
                             <SelectTrigger data-testid={`co-phone-code-${idx}`} className="w-24 shrink-0"><SelectValue /></SelectTrigger>
