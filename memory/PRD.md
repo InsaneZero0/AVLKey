@@ -92,6 +92,7 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 
 ## Inmuebles del arrendador (2026-08-02)
 - Verificación del arrendador: dos botones — "Guardar" (borrador editable, tooltip) y "Enviar información" (AlertDialog de confirmación → saveFiscal(true) → POST /api/users/me/registro/submit). Tras enviar, el formulario fiscal/bancario queda bloqueado (fieldset disabled) con aviso de envío.
+- PropertyForm (Publicar inmueble): botón "Guardar" (borrador, review_stage="borrador", no público) además de "Enviar información" (review_stage="recibido" → validación). PropertyInput acepta review_stage.
 - AdminMemberDetail (arrendador): cada propiedad muestra toda la info del formulario (descripción, tipo, colonia, ciudad, estado, dirección, renta, mantenimiento, recámaras/baños/estac/m², amueblado, pet friendly, amenidades, fotos) SIN mapa, antes de los radios de validación. En MyProperties la info se muestra siempre; fotos apiladas verticalmente bajo la principal. Mapa eliminado.
 - MyProperties: botón "Detalles" por inmueble que despliega toda la info del formulario de publicación (descripción, tipo, colonia, ciudad, estado, dirección, renta, mantenimiento, recámaras/baños/estac/m², amueblado, pet friendly, amenidades, fotos) + mapa de ubicación.
 - Nuevo componente /app/frontend/src/components/MapEmbed.js (Google Maps embed sin API key vía maps.google.com/maps?q=...&output=embed).

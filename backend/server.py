@@ -329,6 +329,7 @@ class PropertyInput(BaseModel):
     pets_allowed: bool = False
     amenities: List[str] = []
     images: List[str] = []
+    review_stage: Optional[str] = None
 
 
 class ApplicationInput(BaseModel):

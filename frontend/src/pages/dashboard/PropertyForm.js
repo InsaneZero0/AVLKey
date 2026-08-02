@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera } from "lucide-react";
+import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera, Save } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
   <div>
@@ -85,7 +86,7 @@ export default function PropertyForm() {
     }
   };
 
-  const submit = async (e) => {
+  const submit = async (e, isDraft = false) => {
     e.preventDefault();
     if (!form.title || !form.city || !form.price_month) { toast.error("Completa título, ciudad y renta"); return; }
     setLoading(true);
@@ -101,6 +102,7 @@ export default function PropertyForm() {
         area_m2: parseFloat(form.area_m2) || 0,
         amenities: form.amenities.split(",").map((a) => a.trim()).filter(Boolean),
         images: form.images,
+        review_stage: isDraft ? "borrador" : "recibido",
       };
       await api.post("/properties", payload);
       if (ownershipFile) {
@@ -114,7 +116,7 @@ export default function PropertyForm() {
           toast.error("El inmueble se registró, pero no se pudo subir el documento de propiedad. Súbelo en Verificación.");
         }
       }
-      toast.success("¡Información enviada al departamento de validación!");
+      toast.success(isDraft ? "Borrador guardado. Podrás editarlo y enviarlo después." : "¡Información enviada al departamento de validación!");
       navigate("/panel/inmuebles");
     } catch (err) {
       toast.error(apiError(err.response?.data?.detail));
@@ -240,6 +242,16 @@ export default function PropertyForm() {
 
         <div className="flex gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/panel/inmuebles")} className="rounded-full">Cancelar</Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="outline" onClick={(e) => submit(e, true)} disabled={loading} className="rounded-full" data-testid="save-draft-property-btn">
+                  <Save className="w-4 h-4 mr-1" /> Guardar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Guarda como borrador; podrás editarlo y enviarlo después.</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button type="submit" disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover flex-1" data-testid="submit-property-btn">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar información"}
           </Button>
