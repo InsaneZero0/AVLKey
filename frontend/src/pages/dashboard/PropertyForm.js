@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera } from "lucide-react";
+import { MapEmbed } from "@/components/MapEmbed";
 
 const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
   <div>
@@ -154,6 +155,13 @@ export default function PropertyForm() {
             <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="CDMX" />
           </div>
           <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Calle y número (opcional)" />
+          <div>
+            <Label>Ubicación en el mapa</Label>
+            <MapEmbed address={[form.address, form.colonia, form.city, form.state, "México"].filter(Boolean).join(", ")} />
+            {![form.address, form.colonia, form.city, form.state].some(Boolean) && (
+              <p className="text-xs text-stone-500 mt-1">Ingresa la dirección, colonia o ciudad para ver el mapa.</p>
+            )}
+          </div>
         </section>
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">

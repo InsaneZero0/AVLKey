@@ -90,6 +90,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Encabezado informativo en Registro: "Al llenar y enviar la siguiente información, esta pasará a revisión, te estaremos notificando tu status en tu perfil."
 - Formulario "Datos del solicitante": Nombre (fijo/read-only), RFC, CURP (18), Teléfono, Régimen fiscal (selector SAT), Actividad económica, Ingreso mensual neto ($ + MX + coma miles), Comprobantes de ingresos (subida privada), y botón "Compartiré la vivienda con:" (sub-formulario cohabitante con misma info). Almacenamiento privado: POST /uploads/income-proof + GET /uploads/private/{path} (solo dueño o interno con permiso). FiscalInfo con phone, actividad_economica, curp, ingreso_mensual, comprobantes_ingresos, share_housing, cohabitante.
 
+## Inmuebles del arrendador (2026-08-02)
+- MyProperties: botón "Detalles" por inmueble que despliega toda la info del formulario de publicación (descripción, tipo, colonia, ciudad, estado, dirección, renta, mantenimiento, recámaras/baños/estac/m², amueblado, pet friendly, amenidades, fotos) + mapa de ubicación.
+- Nuevo componente /app/frontend/src/components/MapEmbed.js (Google Maps embed sin API key vía maps.google.com/maps?q=...&output=embed).
+- PropertyForm: mapa de ubicación en tiempo real bajo el campo de dirección.
+
 ## Solicitudes + Análisis de Riesgo (2026-08-02)
 - POST /api/applications ahora calcula el riesgo AUTOMÁTICAMENTE desde el registro del arrendatario: compute_risk_auto(total_income, rent_total, num_occupants, registro_stage, has_consent). total_income = ingreso solicitante + suma habitantes; rent_total = price_month + maintenance_fee; factores: relación ingreso/renta, estado del registro (autorizado/aprobado/en_revision/recibido/doc_faltante/rechazado), consentimiento, ocupantes. Score 0-100 → bajo(≥70)/medio(≥45)/alto.
 - App doc guarda income_total, cohabitants_income, capacity(30%), num_occupants, registro_stage, has_consent, risk_score/level, income_ratio. Notifica al arrendador.

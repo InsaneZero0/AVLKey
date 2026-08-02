@@ -9,11 +9,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, Trash2, Inbox, Building2, Loader2, MapPin, MessageSquare } from "lucide-react";
+import { PlusCircle, Trash2, Inbox, Building2, Loader2, MapPin, MessageSquare, Bed, Bath, Car, Maximize, Sofa, PawPrint } from "lucide-react";
+import { MapEmbed } from "@/components/MapEmbed";
 
 export default function MyProperties() {
   const navigate = useNavigate();
   const [props, setProps] = useState(null);
+  const [openId, setOpenId] = useState(null);
 
   const load = () => api.get("/my/properties").then(({ data }) => setProps(data)).catch(() => setProps([]));
   useEffect(() => { load(); }, []);
@@ -77,6 +79,7 @@ export default function MyProperties() {
                     <Inbox className="w-4 h-4" /> {p.applications_count} solicitud(es)
                   </button>
                   <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="rounded-full" onClick={() => setOpenId(openId === p.id ? null : p.id)} data-testid={`details-${p.id}`}>{openId === p.id ? "Ocultar" : "Detalles"}</Button>
                     <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -95,6 +98,47 @@ export default function MyProperties() {
                     </AlertDialog>
                   </div>
                 </div>
+
+                {openId === p.id && (
+                  <div className="mt-4 pt-4 border-t border-stone-100 space-y-4" data-testid={`prop-details-${p.id}`}>
+                    {p.description && (
+                      <div><div className="text-xs text-stone-400">Descripción</div><p className="text-sm text-navy whitespace-pre-line">{p.description}</p></div>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                      <div><div className="text-xs text-stone-400">Tipo</div><div className="text-navy font-medium">{TYPE_LABEL[p.property_type]}</div></div>
+                      <div><div className="text-xs text-stone-400">Colonia</div><div className="text-navy font-medium">{p.colonia || "—"}</div></div>
+                      <div><div className="text-xs text-stone-400">Ciudad</div><div className="text-navy font-medium">{p.city || "—"}</div></div>
+                      <div><div className="text-xs text-stone-400">Estado</div><div className="text-navy font-medium">{p.state || "—"}</div></div>
+                      <div className="col-span-2"><div className="text-xs text-stone-400">Dirección</div><div className="text-navy font-medium">{p.address || "—"}</div></div>
+                      <div><div className="text-xs text-stone-400">Renta mensual</div><div className="text-navy font-medium">{formatMXN(p.price_month)}</div></div>
+                      <div><div className="text-xs text-stone-400">Mantenimiento (3%)</div><div className="text-navy font-medium">{formatMXN(p.maintenance_fee || 0)}</div></div>
+                    </div>
+                    <div className="flex flex-wrap gap-4 text-sm text-stone-600">
+                      <span className="flex items-center gap-1.5"><Bed className="w-4 h-4 text-terracotta" /> {p.bedrooms || 0} rec.</span>
+                      <span className="flex items-center gap-1.5"><Bath className="w-4 h-4 text-terracotta" /> {p.bathrooms || 0} baños</span>
+                      <span className="flex items-center gap-1.5"><Car className="w-4 h-4 text-terracotta" /> {p.parking || 0} estac.</span>
+                      <span className="flex items-center gap-1.5"><Maximize className="w-4 h-4 text-terracotta" /> {p.area_m2 || 0} m²</span>
+                      {p.furnished && <span className="flex items-center gap-1.5"><Sofa className="w-4 h-4 text-terracotta" /> Amueblado</span>}
+                      {p.pets_allowed && <span className="flex items-center gap-1.5"><PawPrint className="w-4 h-4 text-terracotta" /> Pet friendly</span>}
+                    </div>
+                    {p.amenities?.length > 0 && (
+                      <div>
+                        <div className="text-xs text-stone-400 mb-1">Amenidades</div>
+                        <div className="flex flex-wrap gap-2">{p.amenities.map((a) => <Badge key={a} className="rounded-full bg-stone-100 text-stone-600 hover:bg-stone-100">{a}</Badge>)}</div>
+                      </div>
+                    )}
+                    {p.images?.length > 0 && (
+                      <div>
+                        <div className="text-xs text-stone-400 mb-1">Fotos ({p.images.length})</div>
+                        <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={i} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-xs text-stone-400 mb-1">Ubicación en el mapa</div>
+                      <MapEmbed address={[p.address, p.colonia, p.city, p.state, "México"].filter(Boolean).join(", ")} height={200} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
