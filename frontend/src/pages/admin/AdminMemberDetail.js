@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
   MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck, MessageSquare,
-  Users, Globe, PawPrint,
+  Users, Globe, PawPrint, Bed, Bath, Car, Maximize, Sofa,
 } from "lucide-react";
 
 const PrivatePhotos = ({ paths, label }) => {
@@ -387,6 +387,41 @@ export default function AdminMemberDetail() {
                         <div className="font-display font-bold text-lg text-terracotta">{formatMXN(p.price_month)}<span className="text-xs text-stone-400 font-normal">/mes</span></div>
                         <Button variant="outline" size="sm" className="rounded-full mt-1" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
                       </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-stone-100 space-y-4" data-testid={`member-prop-details-${p.id}`}>
+                      {p.description && (
+                        <div><div className="text-xs text-stone-400">Descripción</div><p className="text-sm text-navy whitespace-pre-line">{p.description}</p></div>
+                      )}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                        <div><div className="text-xs text-stone-400">Tipo</div><div className="text-navy font-medium">{TYPE_LABEL[p.property_type]}</div></div>
+                        <div><div className="text-xs text-stone-400">Colonia</div><div className="text-navy font-medium">{p.colonia || "—"}</div></div>
+                        <div><div className="text-xs text-stone-400">Ciudad</div><div className="text-navy font-medium">{p.city || "—"}</div></div>
+                        <div><div className="text-xs text-stone-400">Estado</div><div className="text-navy font-medium">{p.state || "—"}</div></div>
+                        <div className="col-span-2"><div className="text-xs text-stone-400">Dirección</div><div className="text-navy font-medium">{p.address || "—"}</div></div>
+                        <div><div className="text-xs text-stone-400">Renta mensual</div><div className="text-navy font-medium">{formatMXN(p.price_month)}</div></div>
+                        <div><div className="text-xs text-stone-400">Mantenimiento (3%)</div><div className="text-navy font-medium">{formatMXN(p.maintenance_fee || 0)}</div></div>
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-sm text-stone-600">
+                        <span className="flex items-center gap-1.5"><Bed className="w-4 h-4 text-terracotta" /> {p.bedrooms || 0} rec.</span>
+                        <span className="flex items-center gap-1.5"><Bath className="w-4 h-4 text-terracotta" /> {p.bathrooms || 0} baños</span>
+                        <span className="flex items-center gap-1.5"><Car className="w-4 h-4 text-terracotta" /> {p.parking || 0} estac.</span>
+                        <span className="flex items-center gap-1.5"><Maximize className="w-4 h-4 text-terracotta" /> {p.area_m2 || 0} m²</span>
+                        {p.furnished && <span className="flex items-center gap-1.5"><Sofa className="w-4 h-4 text-terracotta" /> Amueblado</span>}
+                        {p.pets_allowed && <span className="flex items-center gap-1.5"><PawPrint className="w-4 h-4 text-terracotta" /> Pet friendly</span>}
+                      </div>
+                      {p.amenities?.length > 0 && (
+                        <div>
+                          <div className="text-xs text-stone-400 mb-1">Amenidades</div>
+                          <div className="flex flex-wrap gap-2">{p.amenities.map((a) => <Badge key={a} className="rounded-full bg-stone-100 text-stone-600 hover:bg-stone-100">{a}</Badge>)}</div>
+                        </div>
+                      )}
+                      {p.images?.length > 0 && (
+                        <div>
+                          <div className="text-xs text-stone-400 mb-1">Fotos ({p.images.length})</div>
+                          <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={i} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-stone-100" data-testid={`validation-card-${p.id}`}>
