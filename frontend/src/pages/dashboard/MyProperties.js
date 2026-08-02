@@ -15,7 +15,6 @@ import { MapEmbed } from "@/components/MapEmbed";
 export default function MyProperties() {
   const navigate = useNavigate();
   const [props, setProps] = useState(null);
-  const [openId, setOpenId] = useState(null);
 
   const load = () => api.get("/my/properties").then(({ data }) => setProps(data)).catch(() => setProps([]));
   useEffect(() => { load(); }, []);
@@ -79,7 +78,6 @@ export default function MyProperties() {
                     <Inbox className="w-4 h-4" /> {p.applications_count} solicitud(es)
                   </button>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="rounded-full" onClick={() => setOpenId(openId === p.id ? null : p.id)} data-testid={`details-${p.id}`}>{openId === p.id ? "Ocultar" : "Detalles"}</Button>
                     <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -99,8 +97,7 @@ export default function MyProperties() {
                   </div>
                 </div>
 
-                {openId === p.id && (
-                  <div className="mt-4 pt-4 border-t border-stone-100 space-y-4" data-testid={`prop-details-${p.id}`}>
+                <div className="mt-4 pt-4 border-t border-stone-100 space-y-4" data-testid={`prop-details-${p.id}`}>
                     {p.description && (
                       <div><div className="text-xs text-stone-400">Descripción</div><p className="text-sm text-navy whitespace-pre-line">{p.description}</p></div>
                     )}
@@ -138,7 +135,6 @@ export default function MyProperties() {
                       <MapEmbed address={[p.address, p.colonia, p.city, p.state, "México"].filter(Boolean).join(", ")} height={200} />
                     </div>
                   </div>
-                )}
               </div>
             </div>
           ))}
