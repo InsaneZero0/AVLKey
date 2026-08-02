@@ -46,7 +46,7 @@ export default function AdminApplications() {
                   <span className="text-xs text-stone-400">{formatDate(a.created_at)}</span>
                 </div>
                 <h3 className="font-display font-semibold text-navy mt-2">{a.tenant_name} → {a.property_title}</h3>
-                <p className="text-sm text-stone-500">Ingreso {formatMXN(a.monthly_income)} · Relación {a.income_ratio}x</p>
+                <p className="text-sm text-stone-500">Ingreso total {formatMXN(a.income_total || a.monthly_income)} · Capacidad {formatMXN(a.capacity || 0)} · Renta {formatMXN(a.property_price)} · Relación {a.income_ratio}x · {a.num_occupants || 1} ocupante(s)</p>
               </div>
               <div className={`px-3 py-1.5 rounded-lg ${riskColor[a.risk_level]}`}>
                 <div className="flex items-center gap-1.5 text-sm font-semibold"><ShieldCheck className="w-4 h-4" />{RISK_LABEL[a.risk_level]}{a.risk_overridden && " *"}</div>

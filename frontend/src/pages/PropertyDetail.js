@@ -40,6 +40,11 @@ export default function PropertyDetail() {
   const [vTime, setVTime] = useState("10:00");
   const [vNote, setVNote] = useState("");
   const [busy, setBusy] = useState([]);
+  const [myFiscal, setMyFiscal] = useState(null);
+
+  useEffect(() => {
+    if (user && open) api.get("/my/fiscal").then(({ data }) => setMyFiscal(data)).catch(() => setMyFiscal({}));
+  }, [user, open]);
 
   useEffect(() => {
     if (user && visitOpen) api.get(`/properties/${id}/visits/busy`).then(({ data }) => setBusy(data)).catch(() => {});
@@ -67,19 +72,18 @@ export default function PropertyDetail() {
 
   const submitApplication = async () => {
     if (!user) { navigate("/login"); return; }
-    if (!form.monthly_income) { toast.error("Ingresa tu ingreso mensual"); return; }
     setSubmitting(true);
     try {
       await api.post("/applications", {
         property_id: id,
-        monthly_income: parseFloat(form.monthly_income),
+        monthly_income: 0,
         occupation: form.occupation,
         employment_type: form.employment_type,
-        num_occupants: parseInt(form.num_occupants) || 1,
+        num_occupants: 1,
         has_guarantor: form.has_guarantor,
         message: form.message,
       });
-      toast.success("¡Solicitud enviada! El arrendador la revisará pronto.");
+      toast.success("¡Solicitud enviada! Se calculó tu perfil de riesgo automáticamente.");
       setOpen(false);
       navigate("/panel/solicitudes");
     } catch (e) {
@@ -102,6 +106,9 @@ export default function PropertyDetail() {
 
   const isTenant = user?.role === "arrendatario";
   const canApply = !user || isTenant;
+  const rentTotal = prop.price_month + (prop.maintenance_fee || 0);
+  const totalIncome = myFiscal ? Number(myFiscal.ingreso_mensual || 0) + (myFiscal.cohabitantes || []).reduce((s, c) => s + Number(c.ingreso_mensual || 0), 0) : 0;
+  const capacidadPago = Math.round(totalIncome * 0.3);
 
   return (
     <div className="App">
@@ -188,26 +195,22 @@ export default function PropertyDetail() {
                       <DialogTitle className="font-display text-xl">Solicitud de arrendamiento</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
-                      <div>
-                        <Label>Ingreso mensual (MXN)</Label>
-                        <Input data-testid="app-income" type="number" value={form.monthly_income} onChange={(e) => setForm({ ...form, monthly_income: e.target.value })} placeholder="45000" />
+                      <div className="rounded-xl bg-navy/5 border border-navy/10 p-4" data-testid="app-capacity-panel">
+                        <p className="text-sm text-navy">Tu perfil de riesgo se calcula automáticamente con la información de tu <strong>Registro</strong> (ingresos de todos los habitantes y documentos validados) frente a la renta.</p>
+                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                          <div><div className="text-xs text-stone-500">Tu capacidad de pago (30%)</div><div className="font-display font-bold text-terracotta" data-testid="app-capacidad">{formatMXN(capacidadPago)}</div></div>
+                          <div><div className="text-xs text-stone-500">Renta + mantenimiento</div><div className="font-display font-bold text-navy">{formatMXN(rentTotal)}</div></div>
+                        </div>
+                        {totalIncome > 0 && capacidadPago < rentTotal && (
+                          <p className="text-xs text-amber-700 mt-2">Tu capacidad de pago es menor a la renta; esto puede aumentar tu nivel de riesgo.</p>
+                        )}
+                        {myFiscal && totalIncome === 0 && (
+                          <p className="text-xs text-amber-700 mt-2">Completa tu <strong>Registro</strong> (ingresos y documentos) para mejorar tu evaluación.</p>
+                        )}
                       </div>
                       <div>
                         <Label>Ocupación</Label>
                         <Input data-testid="app-occupation" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} placeholder="Ej. Ingeniero de software" />
-                      </div>
-                      <div>
-                        <Label>Situación laboral</Label>
-                        <Select value={form.employment_type} onValueChange={(v) => setForm({ ...form, employment_type: v })}>
-                          <SelectTrigger data-testid="app-employment"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {EMPLOYMENT_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Número de ocupantes</Label>
-                        <Input data-testid="app-occupants" type="number" value={form.num_occupants} onChange={(e) => setForm({ ...form, num_occupants: e.target.value })} />
                       </div>
                       <div className="flex items-center gap-2">
                         <Checkbox id="guarantor" checked={form.has_guarantor} onCheckedChange={(v) => setForm({ ...form, has_guarantor: !!v })} data-testid="app-guarantor" />

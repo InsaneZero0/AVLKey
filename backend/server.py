@@ -381,6 +381,35 @@ def compute_risk(income: float, rent: float, employment_type: str, has_guarantor
     return score, level, round(ratio, 2)
 
 
+def compute_risk_auto(total_income, rent, num_occupants, registro_stage, has_consent):
+    """Riesgo basado en reglas: ingresos (solicitante + habitantes) vs renta,
+    estado de validación del registro (documentos) y consentimiento."""
+    score = 0
+    ratio = (total_income / rent) if rent > 0 else 0
+    if ratio >= 3:
+        score += 45
+    elif ratio >= 2.5:
+        score += 36
+    elif ratio >= 2:
+        score += 26
+    elif ratio >= 1.5:
+        score += 14
+    stage_pts = {"autorizado": 35, "aprobado": 30, "en_revision": 12, "recibido": 8, "doc_faltante": 0, "rechazado": -25}
+    score += stage_pts.get(registro_stage or "", 0)
+    if has_consent:
+        score += 10
+    if num_occupants and num_occupants > 5:
+        score -= 8
+    score = max(0, min(100, score))
+    if score >= 70:
+        level = "bajo"
+    elif score >= 45:
+        level = "medio"
+    else:
+        level = "alto"
+    return score, level, round(ratio, 2)
+
+
 # ---------------------------------------------------------------------------
 # Auth endpoints
 # ---------------------------------------------------------------------------
@@ -764,7 +793,17 @@ async def create_application(data: ApplicationInput, user: dict = Depends(get_cu
     existing = await db.applications.find_one({"property_id": data.property_id, "tenant_id": user["id"], "status": {"$in": ["pendiente", "en_revision", "aprobada"]}})
     if existing:
         raise HTTPException(status_code=400, detail="Ya tienes una solicitud activa para este inmueble")
-    score, level, ratio = compute_risk(data.monthly_income, prop["price_month"], data.employment_type, data.has_guarantor, data.num_occupants)
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    fi = fresh.get("fiscal_info") or {}
+    cohab_income = sum(float(c.get("ingreso_mensual") or 0) for c in (fi.get("cohabitantes") or []))
+    total_income = float(fi.get("ingreso_mensual") or 0) + cohab_income
+    num_occ = int((fi.get("adultos_18") or 0) + (fi.get("menores_12_17") or 0) + (fi.get("ninos_0_11") or 0)) or (data.num_occupants or 1)
+    rent_total = float(prop["price_month"]) + float(prop.get("maintenance_fee") or 0)
+    registro_stage = fresh.get("registro_stage")
+    consent_doc = await db.consents.find_one({"user_id": user["id"], "type": "credit_check"})
+    has_consent = bool(consent_doc)
+    score, level, ratio = compute_risk_auto(total_income, rent_total, num_occ, registro_stage, has_consent)
+    capacity = round(total_income * 0.30, 2)
     app_doc = data.model_dump()
     app_doc.update({
         "id": new_id("app"),
@@ -773,6 +812,13 @@ async def create_application(data: ApplicationInput, user: dict = Depends(get_cu
         "owner_id": prop["owner_id"],
         "property_title": prop["title"],
         "property_price": prop["price_month"],
+        "monthly_income": total_income,
+        "income_total": total_income,
+        "cohabitants_income": cohab_income,
+        "capacity": capacity,
+        "num_occupants": num_occ,
+        "registro_stage": registro_stage,
+        "has_consent": has_consent,
         "risk_score": score,
         "risk_level": level,
         "income_ratio": ratio,
@@ -781,6 +827,8 @@ async def create_application(data: ApplicationInput, user: dict = Depends(get_cu
     })
     await db.applications.insert_one(dict(app_doc))
     app_doc.pop("_id", None)
+    await notify(prop["owner_id"], "solicitud", "Nueva solicitud de arrendamiento",
+                 f"{user['name']} envió una solicitud para '{prop['title']}'.", "/panel/solicitudes")
     return app_doc
 
 

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
-import { formatMXN, formatDate, STATUS_LABEL } from "@/lib/constants";
+import { formatMXN, formatDate, STATUS_LABEL, RISK_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, Loader2, Search, ArrowRight } from "lucide-react";
+import { ClipboardList, Loader2, Search, ArrowRight, ShieldCheck } from "lucide-react";
 
 const statusColor = { pendiente: "bg-amber-100 text-amber-700", en_revision: "bg-blue-100 text-blue-700", aprobada: "bg-green-100 text-green-700", rechazada: "bg-red-100 text-red-700" };
+const riskColor = { bajo: "bg-green-100 text-green-700", medio: "bg-amber-100 text-amber-700", alto: "bg-red-100 text-red-700" };
 
 export default function MyApplications() {
   const navigate = useNavigate();
@@ -37,12 +38,13 @@ export default function MyApplications() {
           {apps.map((a) => (
             <div key={a.id} className="bg-white border border-stone-200 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4" data-testid={`my-application-${a.id}`}>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`rounded-full ${statusColor[a.status]}`}>{STATUS_LABEL[a.status]}</Badge>
+                  {a.risk_level && <Badge className={`rounded-full ${riskColor[a.risk_level]}`} data-testid={`risk-${a.id}`}><ShieldCheck className="w-3 h-3 mr-1" />{RISK_LABEL[a.risk_level]}</Badge>}
                   <span className="text-xs text-stone-400">{formatDate(a.created_at)}</span>
                 </div>
                 <h3 className="font-display font-semibold text-lg text-navy mt-2">{a.property_title}</h3>
-                <p className="text-sm text-stone-500">Renta: {formatMXN(a.property_price)}/mes · Ingreso declarado: {formatMXN(a.monthly_income)}</p>
+                <p className="text-sm text-stone-500">Renta: {formatMXN(a.property_price)}/mes · Ingreso total: {formatMXN(a.income_total || a.monthly_income)} · Capacidad: {formatMXN(a.capacity || 0)}</p>
               </div>
               {a.status === "aprobada" && (
                 <Button variant="outline" className="rounded-full" onClick={() => navigate("/panel/contratos")} data-testid={`view-contract-${a.id}`}>
