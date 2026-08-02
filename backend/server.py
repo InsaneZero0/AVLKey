@@ -304,10 +304,20 @@ class SessionInput(BaseModel):
     session_id: str
 
 
+class ActividadEconomica(BaseModel):
+    actividad: Optional[str] = None
+    descripcion: Optional[str] = Field(default=None, max_length=20)
+    fecha_inicio: Optional[str] = None
+    fecha_fin: Optional[str] = None
+    empresa: Optional[str] = Field(default=None, max_length=25)
+    jefe: Optional[str] = Field(default=None, max_length=25)
+
+
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     role: Optional[str] = None
+    actividad_economica_detalle: Optional[ActividadEconomica] = None
 
 
 class PropertyInput(BaseModel):
@@ -599,6 +609,8 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
         updates["phone"] = data.phone
     if data.role in ("arrendador", "arrendatario"):
         updates["role"] = data.role
+    if data.actividad_economica_detalle is not None:
+        updates["actividad_economica_detalle"] = data.actividad_economica_detalle.model_dump()
     if updates:
         await db.users.update_one({"id": user["id"]}, {"$set": updates})
     updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})

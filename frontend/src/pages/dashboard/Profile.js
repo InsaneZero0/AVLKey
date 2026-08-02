@@ -6,14 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Building2, User, ClipboardCheck, MessageSquare } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, ClipboardCheck, MessageSquare, Briefcase } from "lucide-react";
 import { STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
+
+const ACTIVIDAD_OPTIONS = [
+  "Empleado",
+  "Empleado de gobierno",
+  "Profesionista",
+  "Comerciante",
+  "Otro",
+];
 
 export default function Profile() {
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "" });
   const [loading, setLoading] = useState(false);
-  const [roleLoading, setRoleLoading] = useState(false);
+
+  const isTenant = user?.role === "arrendatario";
+  const [actividad, setActividad] = useState({
+    actividad: user?.actividad_economica_detalle?.actividad || "",
+    descripcion: user?.actividad_economica_detalle?.descripcion || "",
+    fecha_inicio: user?.actividad_economica_detalle?.fecha_inicio || "",
+    fecha_fin: user?.actividad_economica_detalle?.fecha_fin || "",
+    empresa: user?.actividad_economica_detalle?.empresa || "",
+    jefe: user?.actividad_economica_detalle?.jefe || "",
+  });
+  const [actLoading, setActLoading] = useState(false);
 
   const save = async () => {
     setLoading(true);
@@ -25,15 +44,14 @@ export default function Profile() {
     finally { setLoading(false); }
   };
 
-  const switchRole = async () => {
-    const newRole = user.role === "arrendador" ? "arrendatario" : "arrendador";
-    setRoleLoading(true);
+  const saveActividad = async () => {
+    setActLoading(true);
     try {
-      const { data } = await api.patch("/users/me", { role: newRole });
+      const { data } = await api.patch("/users/me", { actividad_economica_detalle: actividad });
       setUser(data);
-      toast.success(`Ahora eres ${newRole}`);
+      toast.success("Actividad económica guardada");
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
-    finally { setRoleLoading(false); }
+    finally { setActLoading(false); }
   };
 
   return (
@@ -61,6 +79,74 @@ export default function Profile() {
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar cambios"}
         </Button>
       </div>
+
+      {isTenant && (
+        <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6 space-y-5" data-testid="actividad-economica-section">
+          <div className="flex items-center gap-3">
+            <Briefcase className="w-5 h-5 text-terracotta" />
+            <h2 className="font-display font-semibold text-navy">Actividad económica</h2>
+          </div>
+
+          <div>
+            <Label>Actividad actual</Label>
+            <Select value={actividad.actividad} onValueChange={(v) => setActividad({ ...actividad, actividad: v })}>
+              <SelectTrigger data-testid="actividad-select" className="mt-1">
+                <SelectValue placeholder="Selecciona una opción" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVIDAD_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o} data-testid={`actividad-option-${o}`}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Descripción <span className="text-stone-400 text-xs">({actividad.descripcion.length}/20)</span></Label>
+            <Input
+              data-testid="actividad-descripcion"
+              maxLength={20}
+              value={actividad.descripcion}
+              onChange={(e) => setActividad({ ...actividad, descripcion: e.target.value.slice(0, 20) })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Fecha de inicio</Label>
+              <Input type="date" data-testid="actividad-fecha-inicio" value={actividad.fecha_inicio} onChange={(e) => setActividad({ ...actividad, fecha_inicio: e.target.value })} />
+            </div>
+            <div>
+              <Label>Fecha de fin</Label>
+              <Input type="date" data-testid="actividad-fecha-fin" value={actividad.fecha_fin} onChange={(e) => setActividad({ ...actividad, fecha_fin: e.target.value })} />
+            </div>
+          </div>
+
+          <div>
+            <Label>Nombre de la empresa / Razón social <span className="text-stone-400 text-xs">({actividad.empresa.length}/25)</span></Label>
+            <Input
+              data-testid="actividad-empresa"
+              maxLength={25}
+              value={actividad.empresa}
+              onChange={(e) => setActividad({ ...actividad, empresa: e.target.value.slice(0, 25) })}
+            />
+          </div>
+
+          <div>
+            <Label>Nombre del jefe inmediato <span className="text-stone-400 text-xs">({actividad.jefe.length}/25)</span></Label>
+            <Input
+              data-testid="actividad-jefe"
+              maxLength={25}
+              value={actividad.jefe}
+              onChange={(e) => setActividad({ ...actividad, jefe: e.target.value.slice(0, 25) })}
+            />
+          </div>
+
+          <Button onClick={saveActividad} disabled={actLoading} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-actividad-btn">
+            {actLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar actividad económica"}
+          </Button>
+        </div>
+      )}
 
       {(user?.registro_stage || user?.admin_note) && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6" data-testid="profile-registro-status">
