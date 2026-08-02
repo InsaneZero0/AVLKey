@@ -652,14 +652,51 @@ export default function Verification() {
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
           <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-1"><Landmark className="w-4 h-4 text-terracotta" /> Información fiscal y bancaria</h2>
           <p className="text-sm text-stone-500 mb-4">La cuenta bancaria se usará para recibir los pagos de renta.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {submitted && (
+            <div className="mb-4 rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-green-800 flex items-start gap-2" data-testid="arrendador-enviado">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> Tu información fue enviada al administrador para validación. Ya no puedes modificarla.
+            </div>
+          )}
+          <fieldset disabled={submitted} className="grid grid-cols-1 sm:grid-cols-2 gap-4 disabled:opacity-70">
             <div><Label>RFC</Label><Input data-testid="fiscal-rfc" value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value })} /></div>
             <div><Label>Régimen fiscal</Label><Input data-testid="fiscal-regime" value={fiscal.fiscal_regime || ""} onChange={(e) => setFiscal({ ...fiscal, fiscal_regime: e.target.value })} /></div>
             <div><Label>Banco</Label><Input data-testid="fiscal-bank" value={fiscal.bank_name || ""} onChange={(e) => setFiscal({ ...fiscal, bank_name: e.target.value })} /></div>
             <div><Label>Titular de la cuenta</Label><Input data-testid="fiscal-holder" value={fiscal.account_holder || ""} onChange={(e) => setFiscal({ ...fiscal, account_holder: e.target.value })} /></div>
             <div className="sm:col-span-2"><Label>CLABE interbancaria</Label><Input data-testid="fiscal-clabe" value={fiscal.clabe || ""} onChange={(e) => setFiscal({ ...fiscal, clabe: e.target.value })} placeholder="18 dígitos" /></div>
-          </div>
-          <Button onClick={saveFiscal} className="mt-4 rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-fiscal-btn">Guardar</Button>
+          </fieldset>
+          {!submitted && (
+            <div className="mt-5 flex flex-wrap justify-end gap-3" data-testid="arrendador-actions">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={() => saveFiscal(false)} disabled={savingFiscal} className="rounded-full px-8" data-testid="save-fiscal-btn">
+                      <Save className="w-4 h-4 mr-1" /> Guardar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Guarda y puedes modificar antes de enviar.</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={savingFiscal} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-arrendador-btn">
+                    {savingFiscal ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Send className="w-4 h-4 mr-1" /> Enviar información</>)}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent data-testid="submit-arrendador-dialog">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Información importante para tu validación</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Al enviar, tu información pasará al administrador para validación y <strong>ya no podrás modificar los datos</strong>. ¿Estás seguro de enviar?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="submit-arrendador-cancel">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => saveFiscal(true)} className="bg-terracotta hover:bg-terracotta-hover" data-testid="submit-arrendador-accept">Aceptar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
       )}
     </div>
