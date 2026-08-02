@@ -10,7 +10,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PlusCircle, Trash2, Inbox, Building2, Loader2, MapPin, MessageSquare, Bed, Bath, Car, Maximize, Sofa, PawPrint } from "lucide-react";
-import { MapEmbed } from "@/components/MapEmbed";
 
 export default function MyProperties() {
   const navigate = useNavigate();
@@ -130,10 +129,6 @@ export default function MyProperties() {
                         <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={i} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
                       </div>
                     )}
-                    <div>
-                      <div className="text-xs text-stone-400 mb-1">Ubicación en el mapa</div>
-                      <MapEmbed address={[p.address, p.colonia, p.city, p.state, "México"].filter(Boolean).join(", ")} height={200} />
-                    </div>
                   </div>
               </div>
             </div>
