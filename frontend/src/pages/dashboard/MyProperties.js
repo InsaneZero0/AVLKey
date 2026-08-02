@@ -50,7 +50,11 @@ export default function MyProperties() {
         <div className="space-y-4">
           {props.map((p) => (
             <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-4 flex flex-col sm:flex-row gap-4" data-testid={`my-property-${p.id}`}>
-              <img src={p.images?.[0]} alt={p.title} className="w-full sm:w-40 h-32 object-cover rounded-xl bg-stone-100" />
+              <div className="w-full sm:w-40 shrink-0 flex flex-col gap-2" data-testid={`prop-photos-${p.id}`}>
+                {(p.images?.length ? p.images : [null]).map((im, i) => (
+                  <img key={i} src={im || undefined} alt={p.title} className="w-full h-32 object-cover rounded-xl bg-stone-100" />
+                ))}
+              </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -121,12 +125,6 @@ export default function MyProperties() {
                       <div>
                         <div className="text-xs text-stone-400 mb-1">Amenidades</div>
                         <div className="flex flex-wrap gap-2">{p.amenities.map((a) => <Badge key={a} className="rounded-full bg-stone-100 text-stone-600 hover:bg-stone-100">{a}</Badge>)}</div>
-                      </div>
-                    )}
-                    {p.images?.length > 0 && (
-                      <div>
-                        <div className="text-xs text-stone-400 mb-1">Fotos ({p.images.length})</div>
-                        <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={i} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
                       </div>
                     )}
                   </div>
