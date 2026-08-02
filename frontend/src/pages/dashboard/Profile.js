@@ -85,20 +85,18 @@ export default function Profile() {
         </div>
       )}
 
-      <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-2">
-          {user?.role === "arrendador" ? <User className="w-5 h-5 text-navy" /> : <Building2 className="w-5 h-5 text-navy" />}
-          <h2 className="font-display font-semibold text-navy">Cambiar de rol</h2>
+      {user?.role === "arrendador" && (
+        <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <User className="w-5 h-5 text-navy" />
+            <h2 className="font-display font-semibold text-navy">Cambiar de rol</h2>
+          </div>
+          <p className="text-sm text-stone-500 mb-4">Cambia a arrendatario para buscar y solicitar inmuebles.</p>
+          <Button variant="outline" onClick={switchRole} disabled={roleLoading} className="rounded-full" data-testid="switch-role-btn">
+            {roleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Convertirme en arrendatario"}
+          </Button>
         </div>
-        <p className="text-sm text-stone-500 mb-4">
-          {user?.role === "arrendador"
-            ? "Cambia a arrendatario para buscar y solicitar inmuebles."
-            : "Cambia a arrendador para publicar y administrar tus inmuebles."}
-        </p>
-        <Button variant="outline" onClick={switchRole} disabled={roleLoading} className="rounded-full" data-testid="switch-role-btn">
-          {roleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Convertirme en ${user?.role === "arrendador" ? "arrendatario" : "arrendador"}`}
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
