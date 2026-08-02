@@ -1514,6 +1514,15 @@ async def submit_registro(user: dict = Depends(get_current_user)):
     return with_perms(updated)
 
 
+@api.delete("/users/me/registro")
+async def delete_registro(user: dict = Depends(get_current_user)):
+    await db.users.update_one({"id": user["id"]}, {"$set": {"fiscal_info": None}, "$unset": {"registro_submitted": "", "registro_stage": "", "admin_note": ""}})
+    await db.consents.delete_many({"user_id": user["id"]})
+    await db.documents.delete_many({"user_id": user["id"], "category": "arrendatario"})
+    updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return with_perms(updated)
+
+
 @api.post("/uploads/income-proof")
 async def upload_income_proof(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"

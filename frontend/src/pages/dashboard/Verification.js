@@ -16,7 +16,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Loader2, Upload, FileCheck2, Eye, AlertTriangle, ShieldCheck, CheckCircle2,
-  CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus, Save, Send,
+  CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus, Save, Send, Trash2,
 } from "lucide-react";
 
 const REGIMENES = [
@@ -174,7 +174,7 @@ function IncomeProofs({ paths, onChange, testid, label = "Comprobantes de ingres
   );
 }
 
-function RegistroResumen({ user, fiscal, consent, items }) {
+function RegistroResumen({ user, fiscal, consent, items, onDelete }) {
   const money = (n) => `$${Number(n || 0).toLocaleString("en-US")} MX`;
   const Field = ({ label, value }) => (
     <div><div className="text-xs text-stone-400">{label}</div><div className="text-sm text-navy font-medium break-words">{value || "—"}</div></div>
@@ -242,6 +242,27 @@ function RegistroResumen({ user, fiscal, consent, items }) {
           <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" /> Autorización de consulta de historial crediticio registrada.
         </div>
       )}
+      <div className="flex justify-end pt-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="rounded-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" data-testid="delete-registro-btn">
+              <Trash2 className="w-4 h-4 mr-1" /> Eliminar registro
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent data-testid="delete-registro-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Eliminar registro</AlertDialogTitle>
+              <AlertDialogDescription>
+                Toda tu información será borrada de tu perfil y podrás realizar un registro nuevo. ¿Deseas continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="delete-registro-cancel">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700" data-testid="delete-registro-accept">Aceptar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
@@ -327,6 +348,26 @@ export default function Verification() {
   const toggleCohabExtranjero = (idx, v) => setFiscal((p) => ({ ...p, cohabitantes: p.cohabitantes.map((c, i) => (i === idx ? { ...c, es_extranjero: v, ...(v ? { rfc: "", curp: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) } : c)) }));
   const toggleExtranjero = (v) => setFiscal((p) => ({ ...p, es_extranjero: v, ...(v ? { rfc: "", curp: "", fiscal_regime: "" } : { pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [] }) }));
 
+  const deleteRegistro = async () => {
+    try {
+      await api.delete("/users/me/registro");
+      setFiscal({
+        phone: "", actividad_economica: "", curp: "", rfc: "", fiscal_regime: "", ingreso_mensual: "",
+        comprobantes_ingresos: [], cohabitantes: [],
+        adultos_18: "", menores_12_17: "", ninos_0_11: "", mascotas: "",
+        es_extranjero: false, pasaporte: "", pasaporte_fotos: [], migratorio_fotos: [], phone_code: "+52",
+      });
+      setConsent((c) => (c ? { ...c, consent: null } : c));
+      setAccepted(false);
+      setSubmitted(false);
+      reloadDocs();
+      await refresh();
+      toast.success("Registro eliminado. Puedes realizar un registro nuevo.");
+    } catch (e) {
+      toast.error(apiError(e.response?.data?.detail));
+    }
+  };
+
   const saveFiscal = async (submit = false) => {
     if (submit) {
       const invalid = fiscal.cohabitantes.some((c) => !(c.name || "").trim() || !(c.phone || "").trim() || (c.es_extranjero ? !(c.pasaporte || "").trim() : (!(c.rfc || "").trim() || !(c.curp || "").trim())));
@@ -406,7 +447,7 @@ export default function Verification() {
       )}
 
       {category === "arrendatario" && submitted && (
-        <RegistroResumen user={user} fiscal={fiscal} consent={consent} items={items} />
+        <RegistroResumen user={user} fiscal={fiscal} consent={consent} items={items} onDelete={deleteRegistro} />
       )}
 
       {category === "arrendatario" && !submitted && (
