@@ -634,9 +634,9 @@ export default function Verification() {
             </AlertDialogTrigger>
             <AlertDialogContent data-testid="submit-confirm-dialog">
               <AlertDialogHeader>
-                <AlertDialogTitle>Información importante para tu validación</AlertDialogTitle>
+                <AlertDialogTitle>Revisa la información</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Al enviar, tu información pasará a validación y <strong>ya no podrás modificar los datos</strong>. ¿Estás seguro de enviar?
+                  Después de enviar <strong>no podrás modificar</strong>. ¿Estás seguro de enviar?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
