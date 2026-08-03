@@ -318,6 +318,7 @@ class ProfileUpdate(BaseModel):
     phone: Optional[str] = None
     role: Optional[str] = None
     actividad_economica_detalle: Optional[ActividadEconomica] = None
+    empleos_anteriores: Optional[List[ActividadEconomica]] = None
 
 
 class PropertyInput(BaseModel):
@@ -611,6 +612,8 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
         updates["role"] = data.role
     if data.actividad_economica_detalle is not None:
         updates["actividad_economica_detalle"] = data.actividad_economica_detalle.model_dump()
+    if data.empleos_anteriores is not None:
+        updates["empleos_anteriores"] = [e.model_dump() for e in data.empleos_anteriores]
     if updates:
         await db.users.update_one({"id": user["id"]}, {"$set": updates})
     updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
