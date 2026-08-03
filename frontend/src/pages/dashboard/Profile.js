@@ -12,6 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, ClipboardCheck, MessageSquare, Briefcase, History, Save, Send } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
 
 const ACTIVIDAD_OPTIONS = [
@@ -188,9 +189,16 @@ export default function Profile() {
             </div>
           ) : (
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button variant="outline" onClick={() => saveAll(false)} disabled={loading} className="rounded-full px-8" data-testid="save-draft-btn">
-                <Save className="w-4 h-4 mr-1" /> Guardar
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={() => saveAll(false)} disabled={loading} className="rounded-full px-8" data-testid="save-draft-btn">
+                      <Save className="w-4 h-4 mr-1" /> Guardar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent data-testid="save-draft-tooltip">Al guardar podrás modificar posteriormente.</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogTrigger asChild>
                   <Button disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-info-btn">
