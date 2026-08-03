@@ -177,7 +177,7 @@ export default function PropertyForm() {
             <Field label="Recámaras" testid="prop-bedrooms" type="number" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} placeholder="0" />
             <Field label="Baños" testid="prop-bathrooms" type="number" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} placeholder="0" />
             <Field label="Estacionamientos" testid="prop-parking" type="number" value={form.parking} onChange={(e) => set("parking", e.target.value)} placeholder="0" />
-            <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="85" />
+            <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="0" />
           </div>
           <div>
             <Label>Amenidades (separadas por coma)</Label>
