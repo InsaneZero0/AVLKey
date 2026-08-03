@@ -1295,7 +1295,6 @@ DOC_REQUIREMENTS = {
     "arrendador": [
         {"key": "identificacion", "label": "Identificación oficial", "required": True},
         {"key": "comprobante_domicilio", "label": "Comprobante de domicilio", "required": True},
-        {"key": "rfc", "label": "RFC", "required": True},
         {"key": "constancia_fiscal", "label": "Constancia de situación fiscal", "required": True},
         {"key": "acreditacion_propiedad", "label": "Documento que acredite la propiedad", "required": True},
         {"key": "facultad_legal", "label": "Facultad legal para rentar (si aplica)", "required": False},
