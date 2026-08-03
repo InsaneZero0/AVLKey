@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, FileCheck2, Upload, Camera, Save } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MapEmbed } from "@/components/MapEmbed";
 
 const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
   <div>
@@ -154,6 +155,12 @@ export default function PropertyForm() {
             <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="CDMX" />
           </div>
           <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Calle y número (opcional)" />
+          {[form.address, form.colonia, form.city, form.state].filter(Boolean).join(", ").trim() && (
+            <div className="pt-1" data-testid="prop-map-wrapper">
+              <Label className="text-stone-500">Ubicación en el mapa</Label>
+              <MapEmbed address={[form.address, form.colonia, form.city, form.state].filter(Boolean).join(", ")} />
+            </div>
+          )}
         </section>
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
