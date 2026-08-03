@@ -13,8 +13,27 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
   MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck, MessageSquare,
-  Users, Globe, PawPrint, Bed, Bath, Car, Maximize, Sofa,
+  Users, Globe, PawPrint, Bed, Bath, Car, Maximize, Sofa, Briefcase,
 } from "lucide-react";
+
+const ActividadBlock = ({ title, a }) => {
+  const empty = !a || !(a.actividad || a.descripcion || a.empresa || a.jefe || a.fecha_inicio || a.fecha_fin);
+  return (
+    <div className="mt-4 pt-4 border-t border-stone-100 first:mt-0 first:pt-0 first:border-t-0">
+      <h3 className="font-semibold text-navy mb-2">{title}</h3>
+      {empty ? <p className="text-sm text-stone-400">Sin información.</p> : (
+        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-stone-700">
+          <div><span className="text-stone-400">Actividad:</span> {a.actividad || "—"}</div>
+          <div><span className="text-stone-400">Descripción:</span> {a.descripcion || "—"}</div>
+          <div><span className="text-stone-400">Fecha de inicio:</span> {a.fecha_inicio || "—"}</div>
+          <div><span className="text-stone-400">Fecha de fin:</span> {a.fecha_fin || "—"}</div>
+          <div><span className="text-stone-400">Empresa / Razón social:</span> {a.empresa || "—"}</div>
+          <div><span className="text-stone-400">Jefe inmediato:</span> {a.jefe || "—"}</div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PrivatePhotos = ({ paths, label }) => {
   if (!paths || paths.length === 0) return null;
@@ -125,6 +144,13 @@ export default function AdminMemberDetail() {
       .then(({ data }) => { setData(data); setNote(data.user?.admin_note || ""); setRegStage(data.user?.registro_stage || "recibido"); })
       .catch(() => setNotFound(true));
   }, [userId]);
+
+  useEffect(() => {
+    if (data && window.location.hash === "#actividad-economica") {
+      const el = document.getElementById("actividad-economica");
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 150);
+    }
+  }, [data]);
 
   const setRegistroStage = async (stage) => {
     setSavingRegStage(true);
@@ -305,6 +331,17 @@ export default function AdminMemberDetail() {
               <p className="text-stone-500 italic">"{consent.consent_text}"</p>
             </div>
           ) : <p className="text-sm text-stone-400">Sin consentimiento registrado.</p>}
+        </div>
+      )}
+
+      {/* Actividad económica y empleos anteriores (solo cuando el arrendatario ya envió) */}
+      {showTenant && user.actividad_economica_submitted && (
+        <div id="actividad-economica" className="bg-white border border-stone-200 rounded-2xl p-6 scroll-mt-24" data-testid="admin-actividad-economica">
+          <h2 className="font-display font-semibold text-navy mb-2 flex items-center gap-2"><Briefcase className="w-5 h-5 text-terracotta" /> Actividad económica y empleos anteriores</h2>
+          <ActividadBlock title="Actividad económica actual" a={user.actividad_economica_detalle} />
+          {(user.empleos_anteriores || []).map((e, i) => (
+            <ActividadBlock key={i} title={`Empleo anterior ${i + 1}`} a={e} />
+          ))}
         </div>
       )}
 

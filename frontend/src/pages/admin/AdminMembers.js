@@ -51,11 +51,12 @@ export default function AdminMembers({ role }) {
               <th className="text-left px-6 py-3">Nombre</th>
               <th className="text-left px-6 py-3">Correo</th>
               <th className="text-left px-6 py-3">Teléfono</th>
+              {!isLandlord && <th className="text-left px-6 py-3">Actividad económica</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {filtered.length === 0 && (
-              <tr><td colSpan={4} className="px-6 py-10 text-center text-stone-400">Sin resultados</td></tr>
+              <tr><td colSpan={isLandlord ? 4 : 5} className="px-6 py-10 text-center text-stone-400">Sin resultados</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} data-testid={`member-row-${u.id}`}>
@@ -63,6 +64,13 @@ export default function AdminMembers({ role }) {
                 <td className="px-6 py-4"><Link to={`/admin/miembro/${u.id}`} className="font-medium text-navy hover:text-terracotta hover:underline transition-colors" data-testid={`member-name-${u.id}`}>{u.name}</Link></td>
                 <td className="px-6 py-4 text-stone-600">{u.email}</td>
                 <td className="px-6 py-4 text-stone-600">{u.phone || "—"}</td>
+                {!isLandlord && (
+                  <td className="px-6 py-4">
+                    {u.actividad_economica_submitted ? (
+                      <Link to={`/admin/miembro/${u.id}#actividad-economica`} className="text-terracotta hover:underline font-medium" data-testid={`member-actividad-link-${u.id}`}>Ver actividad económica</Link>
+                    ) : <span className="text-stone-400">Sin enviar</span>}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

@@ -120,6 +120,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Registro (frontend): dos botones — "Guardar" (borrador editable, sin validación estricta) y "Enviar información" (AlertDialog de confirmación → valida obligatorios, POST /api/users/me/registro/submit marca registro_submitted=true y estado inicial "recibido"). Al enviar, el formulario se reemplaza por un RESUMEN de solo lectura (RegistroResumen) no editable. Teléfono del solicitante y de cada habitante obligatorio; RFC/CURP obligatorios (o pasaporte si extranjero).
 - Registro (frontend): comprobantes del solicitante quitados de "Datos del solicitante" (van en Documentos). Botón único "Enviar información" al final (envía datos fiscales + consentimiento). Consentimiento crediticio arriba de "Documentos del contratante principal". Sin apartado de "Tarjeta de pago".
 
+## Actividad económica del arrendatario (2026-08-03)
+- Perfil del arrendatario (/panel/perfil): sección "Actividad económica actual" (selector Empleado/Empleado de gobierno/Profesionista/Comerciante/Otro, descripción máx.20, fecha inicio/fin date pickers, empresa máx.25, jefe inmediato máx.25) + dos formularios idénticos "Empleos anteriores". Se conserva el campo simple fiscal_info.actividad_economica.
+- Botones del perfil (solo arrendatario): se quitaron los 3 botones individuales; ahora "Guardar" (borrador, tooltip "Al guardar podrás modificar posteriormente.") y "Enviar información" (AlertDialog "Revisa la información... no podrás modificar") que fija actividad_economica_submitted=true y bloquea los campos (fieldset disabled). Arrendador conserva "Guardar cambios".
+- Backend: ProfileUpdate + PATCH /users/me aceptan actividad_economica_detalle (ActividadEconomica), empleos_anteriores (List[ActividadEconomica]) y actividad_economica_submitted (bool).
+- Panel interno: la lista de Arrendatarios (/admin/arrendatarios) tiene columna "Actividad económica" con link "Ver actividad económica" (→ /admin/miembro/:id#actividad-economica) cuando el arrendatario ya envió, o "Sin enviar". El expediente (AdminMemberDetail) muestra la sección "Actividad económica y empleos anteriores" (ancla + scroll) solo cuando actividad_economica_submitted.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
