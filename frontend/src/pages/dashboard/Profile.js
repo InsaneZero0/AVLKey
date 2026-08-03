@@ -15,6 +15,20 @@ import { Loader2, ClipboardCheck, MessageSquare, Briefcase, History, Save, Send 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
 
+const PHONE_CODES = [
+  { name: "México", code: "+52" },
+  { name: "Estados Unidos / Canadá", code: "+1" },
+  { name: "España", code: "+34" },
+  { name: "Colombia", code: "+57" },
+  { name: "Argentina", code: "+54" },
+  { name: "Perú", code: "+51" },
+  { name: "Chile", code: "+56" },
+  { name: "Guatemala", code: "+502" },
+  { name: "Venezuela", code: "+58" },
+  { name: "Ecuador", code: "+593" },
+  { name: "Brasil", code: "+55" },
+];
+
 const ACTIVIDAD_OPTIONS = [
   "Empleado",
   "Empleado de gobierno",
@@ -74,7 +88,7 @@ function ActividadFields({ value, onChange, prefix }) {
 
 export default function Profile() {
   const { user, setUser } = useAuth();
-  const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "" });
+  const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "", phone_code: user?.phone_code || "+52" });
   const [loading, setLoading] = useState(false);
 
   const isTenant = user?.role === "arrendatario";
@@ -110,6 +124,7 @@ export default function Profile() {
       const payload = {
         name: form.name,
         phone: form.phone,
+        phone_code: form.phone_code,
         actividad_economica_detalle: actividad,
         empleos_anteriores: empleos,
       };
@@ -142,7 +157,13 @@ export default function Profile() {
           </div>
           <div>
             <Label>Teléfono</Label>
-            <Input data-testid="profile-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <div className="flex items-center gap-2">
+              <Select value={form.phone_code} onValueChange={(v) => setForm({ ...form, phone_code: v })}>
+                <SelectTrigger data-testid="profile-phone-code" className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                <SelectContent className="max-h-64">{PHONE_CODES.map((c) => <SelectItem key={c.name} value={c.code}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
+              </Select>
+              <Input data-testid="profile-phone" type="tel" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="5555550000" className="flex-1" />
+            </div>
           </div>
         </fieldset>
         {!isTenant && (

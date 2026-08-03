@@ -316,6 +316,7 @@ class ActividadEconomica(BaseModel):
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
+    phone_code: Optional[str] = None
     role: Optional[str] = None
     actividad_economica_detalle: Optional[ActividadEconomica] = None
     empleos_anteriores: Optional[List[ActividadEconomica]] = None
@@ -609,6 +610,8 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
         updates["name"] = data.name
     if data.phone is not None:
         updates["phone"] = data.phone
+    if data.phone_code is not None:
+        updates["phone_code"] = data.phone_code
     if data.role in ("arrendador", "arrendatario"):
         updates["role"] = data.role
     if data.actividad_economica_detalle is not None:
