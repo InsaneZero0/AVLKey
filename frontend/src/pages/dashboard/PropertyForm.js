@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, ImagePlus, FileCheck2, Upload, Camera, Save } from "lucide-react";
+import { Loader2, X, FileCheck2, Upload, Camera, Save } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
@@ -48,7 +48,6 @@ const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hin
 export default function PropertyForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
   const [ownershipFile, setOwnershipFile] = useState(null);
   const [uploadingImg, setUploadingImg] = useState(false);
   const [form, setForm] = useState({
@@ -62,7 +61,6 @@ export default function PropertyForm() {
 
   const addImage = (url) => {
     if (url && !form.images.includes(url)) set("images", [...form.images, url]);
-    setImageUrl("");
   };
   const removeImage = (url) => set("images", form.images.filter((i) => i !== url));
 
@@ -203,10 +201,6 @@ export default function PropertyForm() {
               onChange={(e) => { uploadImages(e.target.files); e.target.value = ""; }}
             />
           </label>
-          <div className="flex gap-2">
-            <Input data-testid="prop-image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="O pega una URL de imagen" />
-            <Button type="button" variant="outline" onClick={() => addImage(imageUrl)} className="rounded-full whitespace-nowrap" data-testid="add-image-url-btn"><ImagePlus className="w-4 h-4 mr-1" /> Agregar</Button>
-          </div>
           {form.images.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2" data-testid="selected-images">
               {form.images.map((im) => (
