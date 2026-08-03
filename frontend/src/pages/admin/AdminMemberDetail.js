@@ -240,9 +240,9 @@ export default function AdminMemberDetail() {
             <>
               <h2 className="font-display font-semibold text-navy mb-3">Información fiscal y bancaria</h2>
               <Row icon={FileText} label="RFC" value={fiscal_info?.rfc} />
-              <Row icon={FileText} label="Régimen fiscal" value={fiscal_info?.fiscal_regime} />
               <Row icon={CreditCard} label="Banco" value={fiscal_info?.bank_name} />
               <Row icon={CreditCard} label="Titular" value={fiscal_info?.account_holder} />
+              <Row icon={CreditCard} label="Número de cuenta" value={fiscal_info?.account_number} />
               <Row icon={CreditCard} label="CLABE" value={fiscal_info?.clabe} />
             </>
           ) : (

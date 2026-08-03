@@ -1340,6 +1340,7 @@ class FiscalInfo(BaseModel):
     fiscal_regime: Optional[str] = None
     bank_name: Optional[str] = None
     account_holder: Optional[str] = None
+    account_number: Optional[str] = None
     clabe: Optional[str] = None
     phone: Optional[str] = None
     phone_code: Optional[str] = None

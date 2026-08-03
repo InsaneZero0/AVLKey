@@ -700,9 +700,9 @@ export default function Verification() {
           )}
           <fieldset disabled={submitted} className="grid grid-cols-1 sm:grid-cols-2 gap-4 disabled:opacity-70">
             <div><Label>RFC</Label><Input data-testid="fiscal-rfc" value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value })} /></div>
-            <div><Label>Régimen fiscal</Label><Input data-testid="fiscal-regime" value={fiscal.fiscal_regime || ""} onChange={(e) => setFiscal({ ...fiscal, fiscal_regime: e.target.value })} /></div>
             <div><Label>Banco</Label><Input data-testid="fiscal-bank" value={fiscal.bank_name || ""} onChange={(e) => setFiscal({ ...fiscal, bank_name: e.target.value })} /></div>
             <div><Label>Titular de la cuenta</Label><Input data-testid="fiscal-holder" value={fiscal.account_holder || ""} onChange={(e) => setFiscal({ ...fiscal, account_holder: e.target.value })} /></div>
+            <div><Label>Número de cuenta bancaria</Label><Input data-testid="fiscal-account-number" inputMode="numeric" value={fiscal.account_number || ""} onChange={(e) => setFiscal({ ...fiscal, account_number: e.target.value.replace(/\D/g, "") })} placeholder="Número de cuenta" /></div>
             <div className="sm:col-span-2"><Label>CLABE interbancaria</Label><Input data-testid="fiscal-clabe" value={fiscal.clabe || ""} onChange={(e) => setFiscal({ ...fiscal, clabe: e.target.value })} placeholder="18 dígitos" /></div>
           </fieldset>
           {!submitted && (
