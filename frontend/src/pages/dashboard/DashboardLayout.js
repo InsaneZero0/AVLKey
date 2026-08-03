@@ -14,21 +14,24 @@ export default function DashboardLayout() {
 
   const doLogout = async () => { await logout(); navigate("/"); };
 
-  const links = [
-    ...(!isLandlord ? [{ to: "/panel/verificacion", label: "Registro", icon: FileCheck2 }] : []),
-    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
-    ...(isLandlord ? [
-      { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2 },
-      { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle },
-      { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox },
-    ] : [
-      { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList },
-      { to: "/panel/favoritos", label: "Favoritos", icon: Heart },
-    ]),
+  const links = isLandlord ? [
+    { to: "/panel/perfil", label: "Mi perfil", icon: User },
+    { to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 },
+    { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle },
+    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2 },
+    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox },
     { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
     { to: "/panel/contratos", label: "Contratos", icon: FileText },
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
-    ...(isLandlord ? [{ to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 }] : []),
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
+  ] : [
+    { to: "/panel/verificacion", label: "Registro", icon: FileCheck2 },
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
+    { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList },
+    { to: "/panel/favoritos", label: "Favoritos", icon: Heart },
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
+    { to: "/panel/contratos", label: "Contratos", icon: FileText },
+    { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
     { to: "/panel/perfil", label: "Mi perfil", icon: User },
   ];
 
