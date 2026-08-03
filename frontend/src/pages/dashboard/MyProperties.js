@@ -26,6 +26,21 @@ export default function MyProperties() {
     } catch { toast.error("No se pudo eliminar"); }
   };
 
+  const sendToAdmin = async (p) => {
+    try {
+      await api.put(`/properties/${p.id}`, {
+        title: p.title, description: p.description || "", property_type: p.property_type,
+        address: p.address || "", city: p.city, state: p.state || "", colonia: p.colonia || "",
+        price_month: p.price_month, deposit: 0, maintenance_fee: p.maintenance_fee || 0,
+        bedrooms: p.bedrooms || 0, bathrooms: p.bathrooms || 0, parking: p.parking || 0, area_m2: p.area_m2 || 0,
+        furnished: !!p.furnished, pets_allowed: !!p.pets_allowed, amenities: p.amenities || [], images: p.images || [],
+        review_stage: "recibido",
+      });
+      toast.success("¡Información enviada al departamento de validación!");
+      load();
+    } catch { toast.error("No se pudo enviar la información"); }
+  };
+
   if (!props) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
   return (
@@ -81,6 +96,26 @@ export default function MyProperties() {
                     <Inbox className="w-4 h-4" /> {p.applications_count} solicitud(es)
                   </button>
                   <div className="flex gap-2">
+                    {p.display_status === "borrador" && (
+                      <>
+                        <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/panel/publicar/${p.id}`)} data-testid={`edit-${p.id}`}>Editar</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid={`send-${p.id}`}>Enviar información</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent data-testid={`send-dialog-${p.id}`}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Enviar información al administrador</AlertDialogTitle>
+                              <AlertDialogDescription>Tu inmueble pasará al departamento de validación. Después de enviar ya no aparecerá como borrador editable.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel data-testid={`send-cancel-${p.id}`}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => sendToAdmin(p)} className="bg-terracotta hover:bg-terracotta-hover" data-testid={`send-accept-${p.id}`}>Enviar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
                     <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/inmueble/${p.id}`)}>Ver</Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

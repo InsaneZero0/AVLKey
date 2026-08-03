@@ -64,6 +64,7 @@ function AppRoutes() {
         <Route index element={<Overview />} />
         <Route path="inmuebles" element={<MyProperties />} />
         <Route path="publicar" element={<PropertyForm />} />
+        <Route path="publicar/:id" element={<PropertyForm />} />
         <Route path="recibidas" element={<Applications />} />
         <Route path="solicitudes" element={<MyApplications />} />
         <Route path="contratos" element={<Contracts />} />

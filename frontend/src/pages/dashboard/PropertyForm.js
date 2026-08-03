@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import api, { apiError, API } from "@/lib/api";
 import { PROPERTY_TYPES } from "@/lib/constants";
@@ -48,6 +48,8 @@ const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hin
 
 export default function PropertyForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
   const [loading, setLoading] = useState(false);
   const [ownershipFile, setOwnershipFile] = useState(null);
   const [uploadingImg, setUploadingImg] = useState(false);
@@ -56,6 +58,23 @@ export default function PropertyForm() {
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
     furnished: false, pets_allowed: false, amenities: "", images: [],
   });
+
+  useEffect(() => {
+    if (!id) return;
+    api.get(`/properties/${id}`).then(({ data }) => {
+      setForm({
+        title: data.title || "", description: data.description || "", property_type: data.property_type || "departamento",
+        city: data.city || "", state: data.state || "", colonia: data.colonia || "", address: data.address || "",
+        price_month: data.price_month != null ? String(data.price_month) : "",
+        bedrooms: data.bedrooms != null ? String(data.bedrooms) : "",
+        bathrooms: data.bathrooms != null ? String(data.bathrooms) : "",
+        parking: data.parking != null ? String(data.parking) : "",
+        area_m2: data.area_m2 != null ? String(data.area_m2) : "",
+        furnished: !!data.furnished, pets_allowed: !!data.pets_allowed,
+        amenities: (data.amenities || []).join(", "), images: data.images || [],
+      });
+    }).catch(() => toast.error("No se pudo cargar el inmueble"));
+  }, [id]);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const maintenance = Math.round((parseInt(form.price_month, 10) || 0) * 0.03);
@@ -103,7 +122,11 @@ export default function PropertyForm() {
         images: form.images,
         review_stage: isDraft ? "borrador" : "recibido",
       };
-      await api.post("/properties", payload);
+      if (isEdit) {
+        await api.put(`/properties/${id}`, payload);
+      } else {
+        await api.post("/properties", payload);
+      }
       if (ownershipFile) {
         const fd = new FormData();
         fd.append("file", ownershipFile);
@@ -126,7 +149,7 @@ export default function PropertyForm() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Publicar inmueble</h1>
+      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">{isEdit ? "Editar inmueble" : "Publicar inmueble"}</h1>
       <p className="text-stone-500 mt-1">Esta información pasará al departamento de validación y te estaremos enviando una notificación de tu status.</p>
 
       <form onSubmit={submit} className="mt-8 space-y-8">
