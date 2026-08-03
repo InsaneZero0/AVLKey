@@ -106,18 +106,7 @@ export default function Profile() {
 
   const setEmpleo = (i, v) => setEmpleos(empleos.map((e, idx) => (idx === i ? v : e)));
 
-  // Arrendador: solo guarda nombre/teléfono
-  const save = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.patch("/users/me", form);
-      setUser(data);
-      toast.success("Perfil actualizado");
-    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
-    finally { setLoading(false); }
-  };
-
-  // Arrendatario: guarda todo (borrador) o envía (bloquea)
+  // Guarda perfil (borrador) o envía (bloquea). Aplica a arrendador y arrendatario.
   const saveAll = async (doSubmit = false) => {
     setLoading(true);
     try {
@@ -127,9 +116,11 @@ export default function Profile() {
         phone_code: form.phone_code,
         rfc: form.rfc,
         curp: form.curp,
-        actividad_economica_detalle: actividad,
-        empleos_anteriores: empleos,
       };
+      if (isTenant) {
+        payload.actividad_economica_detalle = actividad;
+        payload.empleos_anteriores = empleos;
+      }
       if (doSubmit) payload.actividad_economica_submitted = true;
       const { data } = await api.patch("/users/me", payload);
       setUser(data);
@@ -152,7 +143,7 @@ export default function Profile() {
           )}
           <span className="text-sm text-stone-500">{user?.email}</span>
         </div>
-        <fieldset disabled={isTenant && submitted} className="space-y-5 disabled:opacity-70">
+        <fieldset disabled={submitted} className="space-y-5 disabled:opacity-70">
           <div>
             <Label>Nombre completo</Label>
             <Input data-testid="profile-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -176,11 +167,6 @@ export default function Profile() {
             <Input data-testid="profile-curp" maxLength={18} value={form.curp} onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase().slice(0, 18) })} placeholder="XAXX010101HDFXXX00" />
           </div>
         </fieldset>
-        {!isTenant && (
-          <Button onClick={save} disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-profile-btn">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar cambios"}
-          </Button>
-        )}
       </div>
 
       {isTenant && (
@@ -212,46 +198,46 @@ export default function Profile() {
               ))}
             </fieldset>
           </div>
-
-          {submitted ? (
-            <div className="mt-6 flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800" data-testid="perfil-enviado-note">
-              <Send className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>Tu información fue enviada para validación y ya no puede modificarse.</span>
-            </div>
-          ) : (
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={() => saveAll(false)} disabled={loading} className="rounded-full px-8" data-testid="save-draft-btn">
-                      <Save className="w-4 h-4 mr-1" /> Guardar
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent data-testid="save-draft-tooltip">Al guardar podrás modificar posteriormente.</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-info-btn">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Send className="w-4 h-4 mr-1" /> Enviar información</>)}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent data-testid="submit-confirm-dialog">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Revisa la información</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Después de enviar <strong>no podrás modificar</strong>. ¿Estás seguro de enviar?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel data-testid="submit-cancel-btn">Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => saveAll(true)} className="bg-terracotta hover:bg-terracotta-hover" data-testid="submit-accept-btn">Aceptar</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
         </>
+      )}
+
+      {submitted ? (
+        <div className="mt-6 flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800" data-testid="perfil-enviado-note">
+          <Send className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>Tu información fue enviada para validación y ya no puede modificarse.</span>
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={() => saveAll(false)} disabled={loading} className="rounded-full px-8" data-testid="save-draft-btn">
+                  <Save className="w-4 h-4 mr-1" /> Guardar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent data-testid="save-draft-tooltip">Al guardar podrás modificar posteriormente.</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogTrigger asChild>
+              <Button disabled={loading} className="rounded-full bg-terracotta hover:bg-terracotta-hover px-8" data-testid="submit-info-btn">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Send className="w-4 h-4 mr-1" /> Enviar cambios</>)}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent data-testid="submit-confirm-dialog">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revisa la información</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Después de enviar <strong>no podrás modificar</strong>. ¿Estás seguro de enviar?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="submit-cancel-btn">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => saveAll(true)} className="bg-terracotta hover:bg-terracotta-hover" data-testid="submit-accept-btn">Aceptar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       )}
 
       {(user?.registro_stage || user?.admin_note) && (
