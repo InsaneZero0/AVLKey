@@ -88,7 +88,7 @@ function ActividadFields({ value, onChange, prefix }) {
 
 export default function Profile() {
   const { user, setUser } = useAuth();
-  const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "", phone_code: user?.phone_code || "+52" });
+  const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "", phone_code: user?.phone_code || "+52", rfc: user?.rfc || "", curp: user?.curp || "" });
   const [loading, setLoading] = useState(false);
 
   const isTenant = user?.role === "arrendatario";
@@ -125,6 +125,8 @@ export default function Profile() {
         name: form.name,
         phone: form.phone,
         phone_code: form.phone_code,
+        rfc: form.rfc,
+        curp: form.curp,
         actividad_economica_detalle: actividad,
         empleos_anteriores: empleos,
       };
@@ -164,6 +166,14 @@ export default function Profile() {
               </Select>
               <Input data-testid="profile-phone" type="tel" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="5555550000" className="flex-1" />
             </div>
+          </div>
+          <div>
+            <Label>RFC <span className="text-stone-400 text-xs">({form.rfc.length}/13)</span></Label>
+            <Input data-testid="profile-rfc" maxLength={13} value={form.rfc} onChange={(e) => setForm({ ...form, rfc: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" />
+          </div>
+          <div>
+            <Label>CURP <span className="text-stone-400 text-xs">({form.curp.length}/18)</span></Label>
+            <Input data-testid="profile-curp" maxLength={18} value={form.curp} onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase().slice(0, 18) })} placeholder="XAXX010101HDFXXX00" />
           </div>
         </fieldset>
         {!isTenant && (
