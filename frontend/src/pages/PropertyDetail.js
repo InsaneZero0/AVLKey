@@ -43,8 +43,8 @@ export default function PropertyDetail() {
   const [myFiscal, setMyFiscal] = useState(null);
 
   useEffect(() => {
-    if (user && open) api.get("/my/fiscal").then(({ data }) => setMyFiscal(data)).catch(() => setMyFiscal({}));
-  }, [user, open]);
+    if (user && user.role === "arrendatario") api.get("/my/fiscal").then(({ data }) => setMyFiscal(data)).catch(() => setMyFiscal({}));
+  }, [user]);
 
   useEffect(() => {
     if (user && visitOpen) api.get(`/properties/${id}/visits/busy`).then(({ data }) => setBusy(data)).catch(() => {});
@@ -109,6 +109,7 @@ export default function PropertyDetail() {
   const rentTotal = prop.price_month + (prop.maintenance_fee || 0);
   const totalIncome = myFiscal ? Number(myFiscal.ingreso_mensual || 0) + (myFiscal.cohabitantes || []).reduce((s, c) => s + Number(c.ingreso_mensual || 0), 0) : 0;
   const capacidadPago = Math.round(totalIncome * 0.3);
+  const insufficient = isTenant && totalIncome > 0 && capacidadPago < prop.price_month;
 
   return (
     <div className="App">
@@ -178,15 +179,21 @@ export default function PropertyDetail() {
 
               {prop.owner && (
                 <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-4">
-                  <div className="w-10 h-10 rounded-full bg-navy text-white flex items-center justify-center font-medium">{prop.owner.name?.[0]}</div>
-                  <div><div className="text-sm font-medium text-navy">{prop.owner.name}</div><div className="text-xs text-stone-500">Arrendador verificado</div></div>
+                  <div className="w-10 h-10 rounded-full bg-navy text-white flex items-center justify-center font-medium">{(prop.owner.public_id || "A")[0]}</div>
+                  <div><div className="text-sm font-medium text-navy font-mono" data-testid="detail-owner-id">ID: {prop.owner.public_id || "—"}</div><div className="text-xs text-stone-500">Arrendador verificado</div></div>
+                </div>
+              )}
+
+              {insufficient && (
+                <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3" data-testid="insufficient-capacity-note">
+                  Tu capacidad de pago (30% de tus ingresos) es menor a la renta mensual. No puedes solicitar arrendamiento ni agendar una visita.
                 </div>
               )}
 
               {canApply ? (
                 <Dialog open={open} onOpenChange={setOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base" data-testid="apply-btn">
+                    <Button className="w-full mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base" data-testid="apply-btn" disabled={insufficient}>
                       Solicitar arrendamiento
                     </Button>
                   </DialogTrigger>
@@ -237,7 +244,7 @@ export default function PropertyDetail() {
               {canApply && (
                 <Dialog open={visitOpen} onOpenChange={setVisitOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full mt-3 rounded-full h-11 border-terracotta/40 text-terracotta hover:bg-terracotta/5 hover:text-terracotta" data-testid="schedule-visit-btn">
+                    <Button variant="outline" className="w-full mt-3 rounded-full h-11 border-terracotta/40 text-terracotta hover:bg-terracotta/5 hover:text-terracotta" data-testid="schedule-visit-btn" disabled={insufficient}>
                       <CalendarClock className="w-4 h-4 mr-2" /> Agendar una visita
                     </Button>
                   </DialogTrigger>

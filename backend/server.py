@@ -636,8 +636,8 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
 # Properties
 # ---------------------------------------------------------------------------
 async def enrich_property(prop: dict) -> dict:
-    owner = await db.users.find_one({"id": prop["owner_id"]}, {"_id": 0, "name": 1, "picture": 1, "phone": 1})
-    prop["owner"] = {"name": owner.get("name"), "picture": owner.get("picture")} if owner else None
+    owner = await db.users.find_one({"id": prop["owner_id"]}, {"_id": 0})
+    prop["owner"] = {"public_id": public_id_for(owner), "name": owner.get("name"), "picture": owner.get("picture")} if owner else None
     return prop
 
 
