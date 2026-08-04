@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -185,9 +186,23 @@ export default function PropertyDetail() {
               )}
 
               {canApply ? (
+                insufficient ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="block mt-5" tabIndex={0} data-testid="apply-btn-wrapper">
+                          <Button className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base pointer-events-none" data-testid="apply-btn" disabled>
+                            Solicitar arrendamiento
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent data-testid="apply-capacity-tooltip">Tu capacidad de pago es hasta: {formatMXN(capacidadPago)}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
                 <Dialog open={open} onOpenChange={setOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base" data-testid="apply-btn" disabled={insufficient}>
+                    <Button className="w-full mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base" data-testid="apply-btn">
                       Solicitar arrendamiento
                     </Button>
                   </DialogTrigger>
@@ -229,6 +244,7 @@ export default function PropertyDetail() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                )
               ) : (
                 <div className="mt-5 text-sm text-stone-500 bg-stone-50 rounded-xl p-4 flex items-start gap-2">
                   <Building className="w-4 h-4 mt-0.5" /> Inicia sesión como arrendatario para enviar una solicitud.
