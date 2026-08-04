@@ -184,12 +184,6 @@ export default function PropertyDetail() {
                 </div>
               )}
 
-              {insufficient && (
-                <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3" data-testid="insufficient-capacity-note">
-                  Tu capacidad de pago (30% de tus ingresos) es menor a la renta mensual. No puedes solicitar arrendamiento ni agendar una visita.
-                </div>
-              )}
-
               {canApply ? (
                 <Dialog open={open} onOpenChange={setOpen}>
                   <DialogTrigger asChild>
