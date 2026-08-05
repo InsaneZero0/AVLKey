@@ -295,8 +295,7 @@ export default function AdminMemberDetail() {
         <div className="bg-white border border-stone-200 rounded-2xl p-6">
           {isLandlord ? (
             <>
-              <h2 className="font-display font-semibold text-navy mb-3">Información fiscal y bancaria</h2>
-              <Row icon={FileText} label="RFC" value={fiscal_info?.rfc} />
+              <h2 className="font-display font-semibold text-navy mb-3">Información bancaria</h2>
               <Row icon={CreditCard} label="Banco" value={fiscal_info?.bank_name} />
               <Row icon={CreditCard} label="Titular" value={fiscal_info?.account_holder} />
               <Row icon={CreditCard} label="Número de cuenta" value={fiscal_info?.account_number} />

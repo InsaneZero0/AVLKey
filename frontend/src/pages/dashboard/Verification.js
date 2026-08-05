@@ -692,7 +692,7 @@ export default function Verification({ onPersistPersonal } = {}) {
 
       {category === "arrendador" && (
         <div className="mt-6 bg-white border border-stone-200 rounded-2xl p-6">
-          <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-1"><Landmark className="w-4 h-4 text-terracotta" /> Información fiscal y bancaria</h2>
+          <h2 className="font-display font-semibold text-navy flex items-center gap-2 mb-1"><Landmark className="w-4 h-4 text-terracotta" /> Información bancaria</h2>
           <p className="text-sm text-stone-500 mb-4">La cuenta bancaria se usará para recibir los pagos de renta.</p>
           {submitted && (
             <div className="mb-4 rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-green-800 flex items-start gap-2" data-testid="arrendador-enviado">
@@ -700,7 +700,6 @@ export default function Verification({ onPersistPersonal } = {}) {
             </div>
           )}
           <fieldset disabled={submitted} className="grid grid-cols-1 sm:grid-cols-2 gap-4 disabled:opacity-70">
-            <div><Label>RFC</Label><Input data-testid="fiscal-rfc" value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value })} /></div>
             <div><Label>Banco</Label><Input data-testid="fiscal-bank" value={fiscal.bank_name || ""} onChange={(e) => setFiscal({ ...fiscal, bank_name: e.target.value })} /></div>
             <div><Label>Titular de la cuenta</Label><Input data-testid="fiscal-holder" value={fiscal.account_holder || ""} onChange={(e) => setFiscal({ ...fiscal, account_holder: e.target.value })} /></div>
             <div><Label>Número de cuenta bancaria</Label><Input data-testid="fiscal-account-number" inputMode="numeric" value={fiscal.account_number || ""} onChange={(e) => setFiscal({ ...fiscal, account_number: e.target.value.replace(/\D/g, "") })} placeholder="Número de cuenta" /></div>
