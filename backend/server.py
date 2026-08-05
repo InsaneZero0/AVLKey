@@ -1179,8 +1179,12 @@ async def formalize_visit(visit_id: str, data: FormalizeVisit, user: dict = Depe
     return serialize_visit(v, user["id"], prop)
 
 
+class ContractFromVisit(BaseModel):
+    start_date: Optional[str] = None
+
+
 @api.post("/visits/{visit_id}/create-contract")
-async def create_contract_from_visit(visit_id: str, user: dict = Depends(get_current_user)):
+async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = ContractFromVisit(), user: dict = Depends(get_current_user)):
     v = await db.visits.find_one({"id": visit_id}, {"_id": 0})
     if not v:
         raise HTTPException(status_code=404, detail="Visita no encontrada")
@@ -1189,13 +1193,23 @@ async def create_contract_from_visit(visit_id: str, user: dict = Depends(get_cur
     prop = await db.properties.find_one({"id": v["property_id"]}, {"_id": 0})
     if not prop:
         raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    start = now_utc()
+    if data.start_date:
+        try:
+            sd = datetime.fromisoformat(data.start_date)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Fecha inválida")
+        min_d = (start + timedelta(days=4)).date()
+        max_d = (start + timedelta(days=10)).date()
+        if sd.date() < min_d or sd.date() > max_d:
+            raise HTTPException(status_code=400, detail="La fecha debe estar dentro de la ventana permitida (del 4º al 10º día).")
+        start = sd
     existing = await db.contracts.find_one(
         {"property_id": v["property_id"], "tenant_id": v["tenant_id"], "status": {"$in": ["borrador", "por_firmar", "activo"]}},
         {"_id": 0})
     if existing:
         return {"ok": True, "contract": existing, "existing": True}
     commission = round(prop["price_month"] * 0.05, 2)
-    start = now_utc()
     contract = {
         "id": new_id("ctr"),
         "application_id": None,
