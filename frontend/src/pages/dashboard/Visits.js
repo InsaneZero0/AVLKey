@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Loader2, CalendarClock, Check, X, RefreshCw, MapPin, Ban, CheckCircle2, UserX, History,
+  Loader2, CalendarClock, Check, X, RefreshCw, MapPin, Ban, CheckCircle2, UserX, History, FileText,
 } from "lucide-react";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
@@ -163,6 +164,14 @@ export default function Visits() {
                         <Button size="sm" variant="outline" className="rounded-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => act(v.id, "cancel", {})} data-testid={`tenant-cancel-${v.id}`}><Ban className="w-4 h-4 mr-1" /> Cancelar</Button>
                       </>
                     )}
+                  </div>
+                )}
+
+                {landlord && v.status === "completada" && (
+                  <div className="mt-4 pt-4 border-t border-stone-100">
+                    <Button size="sm" className="rounded-full bg-terracotta hover:bg-terracotta-hover" onClick={() => createContract(v)} data-testid={`make-contract-${v.id}`}>
+                      <FileText className="w-4 h-4 mr-1" /> ¿Quieres hacer un contrato de arrendamiento con: {v.tenant_name}?
+                    </Button>
                   </div>
                 )}
               </div>

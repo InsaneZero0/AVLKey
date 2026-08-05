@@ -1179,6 +1179,50 @@ async def formalize_visit(visit_id: str, data: FormalizeVisit, user: dict = Depe
     return serialize_visit(v, user["id"], prop)
 
 
+@api.post("/visits/{visit_id}/create-contract")
+async def create_contract_from_visit(visit_id: str, user: dict = Depends(get_current_user)):
+    v = await db.visits.find_one({"id": visit_id}, {"_id": 0})
+    if not v:
+        raise HTTPException(status_code=404, detail="Visita no encontrada")
+    if v["landlord_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    prop = await db.properties.find_one({"id": v["property_id"]}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    existing = await db.contracts.find_one(
+        {"property_id": v["property_id"], "tenant_id": v["tenant_id"], "status": {"$in": ["borrador", "por_firmar", "activo"]}},
+        {"_id": 0})
+    if existing:
+        return {"ok": True, "contract": existing, "existing": True}
+    commission = round(prop["price_month"] * 0.05, 2)
+    start = now_utc()
+    contract = {
+        "id": new_id("ctr"),
+        "application_id": None,
+        "property_id": v["property_id"],
+        "property_title": prop["title"],
+        "tenant_id": v["tenant_id"],
+        "tenant_name": v["tenant_name"],
+        "landlord_id": user["id"],
+        "landlord_name": user["name"],
+        "monthly_rent": prop["price_month"],
+        "deposit": prop.get("deposit", 0),
+        "commission": commission,
+        "maintenance_fund": prop.get("maintenance_fee", 0),
+        "start_date": start.date().isoformat(),
+        "end_date": (start + timedelta(days=365)).date().isoformat(),
+        "term_months": 12,
+        "status": "borrador",
+        "created_at": now_utc().isoformat(),
+    }
+    await db.contracts.insert_one(dict(contract))
+    contract.pop("_id", None)
+    await db.properties.update_one({"id": v["property_id"]}, {"$set": {"status": "en_proceso"}})
+    await notify(v["tenant_id"], "contrato", "Nuevo contrato de arrendamiento",
+                 f"El arrendador inició un contrato de arrendamiento para '{prop['title']}'.", "/panel/contratos")
+    return {"ok": True, "contract": contract}
+
+
 def serialize_visit(v: dict, viewer_id: str, prop: Optional[dict] = None) -> dict:
     v = dict(v)
     v.pop("_id", None)
