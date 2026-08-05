@@ -140,6 +140,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - AdminContracts.js: tabla con folio del inmueble, badge de estado y botón "Revisar / ajustar" → diálogo con selector de estado + textarea editable del texto del contrato + "Guardar ajustes".
 - Verificado: backend (curl) contrato va a admin, arrendatario no lo ve, admin ajusta ok; frontend (screenshot) diálogo de revisión renderiza el contrato ficticio.
 
+## Contrato en expediente del arrendatario + link de revisión (2026-08-05)
+- El expediente del arrendatario (AdminMemberDetail) ahora muestra una sección "Contratos" con cada contrato (folio del inmueble, renta, inicio, badge de estado) y botón "Abrir y revisar".
+- El botón navega a /admin/contratos?open={id}; AdminContracts lee el query param y abre automáticamente el diálogo de revisión/ajuste con el texto del contrato genérico cargado.
+- Backend: /admin/members/{id} ahora devuelve `contracts` (contratos donde tenant_id == miembro). Se conserva build_contract_text (contrato genérico de prueba). Verificado con screenshots (sección + auto-apertura del diálogo).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

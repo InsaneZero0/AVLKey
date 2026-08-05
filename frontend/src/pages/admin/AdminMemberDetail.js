@@ -255,7 +255,7 @@ export default function AdminMemberDetail() {
   if (notFound) return <div className="text-center py-20 text-stone-500">Usuario no encontrado.</div>;
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
-  const { user, properties, documents_summary, can_view_documents, fiscal_info, consent } = data;
+  const { user, properties, documents_summary, can_view_documents, fiscal_info, consent, contracts } = data;
   const isLandlord = user.role === "arrendador";
   const showTenant = !isLandlord || !!(fiscal_info && (fiscal_info.curp || (fiscal_info.cohabitantes || []).length > 0 || fiscal_info.mascotas || fiscal_info.adultos_18 != null || fiscal_info.es_extranjero)) || !!consent;
   const solicitanteIngreso = Number(fiscal_info?.ingreso_mensual || 0);
@@ -387,6 +387,30 @@ export default function AdminMemberDetail() {
               <p className="text-stone-500 italic">"{consent.consent_text}"</p>
             </div>
           ) : <p className="text-sm text-stone-400">Sin consentimiento registrado.</p>}
+        </div>
+      )}
+
+      {/* Contratos del arrendatario — link para abrir y revisar */}
+      {showTenant && (contracts || []).length > 0 && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-6" data-testid="member-contracts">
+          <div className="flex items-center gap-2 mb-3"><FileText className="w-5 h-5 text-terracotta" /><h2 className="font-display font-semibold text-navy">Contratos</h2></div>
+          <div className="space-y-3">
+            {contracts.map((c) => (
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 border border-stone-200 rounded-xl p-4" data-testid={`member-contract-${c.id}`}>
+                <div>
+                  <div className="font-medium text-navy">{c.property_title}</div>
+                  <div className="text-xs text-stone-500 mt-0.5">
+                    {c.property_public_id ? <span className="font-bold text-red-600">{c.property_public_id}</span> : null}
+                    {c.property_public_id ? " · " : ""}Renta {formatMXN(c.monthly_rent)} · Inicio {formatDate(c.start_date)}
+                  </div>
+                  <Badge className="rounded-full bg-amber-100 text-amber-700 mt-1.5">{STATUS_LABEL[c.status] || c.status}</Badge>
+                </div>
+                <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate(`/admin/contratos?open=${c.id}`)} data-testid={`open-contract-${c.id}`}>
+                  <Eye className="w-4 h-4 mr-1" /> Abrir y revisar
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -1944,6 +1944,7 @@ async def admin_member_detail(user_id: str, viewer: dict = Depends(require_permi
         docs = await db.documents.find({"user_id": user_id, "current": True, "is_deleted": False}, {"_id": 0}).to_list(200)
         documents_summary = doc_summary(docs, category)
     consent = await db.consents.find_one({"user_id": user_id, "type": "credit_check"}, {"_id": 0}, sort=[("timestamp", -1)])
+    contracts = await db.contracts.find({"tenant_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return {
         "user": u,
         "properties": props,
@@ -1952,6 +1953,7 @@ async def admin_member_detail(user_id: str, viewer: dict = Depends(require_permi
         "category": category,
         "fiscal_info": u.get("fiscal_info"),
         "consent": consent,
+        "contracts": contracts,
     }
 
 

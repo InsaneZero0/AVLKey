@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { formatMXN, formatDate, STATUS_LABEL } from "@/lib/constants";
@@ -29,6 +30,7 @@ export default function AdminContracts() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const load = () => api.get("/admin/contracts").then(({ data }) => setContracts(data)).catch(() => setContracts([]));
   useEffect(() => { load(); }, []);
@@ -38,6 +40,14 @@ export default function AdminContracts() {
     setText(c.contract_text || "");
     setStatus(c.status || "en_revision_admin");
   };
+
+  useEffect(() => {
+    const id = searchParams.get("open");
+    if (id && contracts) {
+      const c = contracts.find((x) => x.id === id);
+      if (c) { openEdit(c); setSearchParams({}, { replace: true }); }
+    }
+  }, [contracts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
     setSaving(true);
