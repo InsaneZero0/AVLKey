@@ -457,6 +457,20 @@ export default function AdminMemberDetail() {
       {/* Properties (landlord) — revisión y validación bajo cada propiedad */}
       {isLandlord && (
         <div>
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6" data-testid="member-registro-validation-landlord">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
+              {savingRegStage && <Loader2 className="w-4 h-4 animate-spin text-terracotta" />}
+            </div>
+            <RadioGroup value={regStage} onValueChange={setRegistroStage} className="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="registro-stage-radiogroup-landlord">
+              {REGISTRO_STAGE_OPTIONS.map((opt) => (
+                <label key={opt.value} htmlFor={`regl-${opt.value}`} className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${regStage === opt.value ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta" : "border-stone-200 hover:border-stone-300"}`}>
+                  <RadioGroupItem value={opt.value} id={`regl-${opt.value}`} data-testid={`registro-stage-l-${opt.value}`} />
+                  <span className="text-sm font-medium text-navy">{opt.label}</span>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
           <h2 className="font-display font-semibold text-navy mb-1 flex items-center gap-2"><Building2 className="w-5 h-5" /> Propiedades registradas ({properties.length})</h2>
           <p className="text-sm text-stone-500 mb-4">La propiedad solo se publica en el buscador cuando el estado <strong>Publicado</strong> está seleccionado.</p>
           {properties.length === 0 ? (
@@ -553,7 +567,7 @@ export default function AdminMemberDetail() {
       )}
 
       {/* Revisión y validación del registro (arrendatario) — al final de la hoja */}
-      {showTenant && (
+      {!isLandlord && (
         <div className="bg-white border border-stone-200 rounded-2xl p-4" data-testid="member-registro-validation">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-navy flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-terracotta" /> Revisión y validación del registro</span>
