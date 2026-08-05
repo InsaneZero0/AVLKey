@@ -702,8 +702,8 @@ export default function Verification({ onPersistPersonal } = {}) {
           <fieldset disabled={submitted} className="grid grid-cols-1 sm:grid-cols-2 gap-4 disabled:opacity-70">
             <div><Label>Banco</Label><Input data-testid="fiscal-bank" value={fiscal.bank_name || ""} onChange={(e) => setFiscal({ ...fiscal, bank_name: e.target.value })} /></div>
             <div><Label>Titular de la cuenta</Label><Input data-testid="fiscal-holder" value={fiscal.account_holder || ""} onChange={(e) => setFiscal({ ...fiscal, account_holder: e.target.value })} /></div>
-            <div><Label>Número de cuenta bancaria</Label><Input data-testid="fiscal-account-number" inputMode="numeric" value={fiscal.account_number || ""} onChange={(e) => setFiscal({ ...fiscal, account_number: e.target.value.replace(/\D/g, "") })} placeholder="Número de cuenta" /></div>
-            <div className="sm:col-span-2"><Label>CLABE interbancaria</Label><Input data-testid="fiscal-clabe" value={fiscal.clabe || ""} onChange={(e) => setFiscal({ ...fiscal, clabe: e.target.value })} placeholder="18 dígitos" /></div>
+            <div><Label>Número de cuenta bancaria <span className="text-stone-400 text-xs">({(fiscal.account_number || "").length}/10)</span></Label><Input data-testid="fiscal-account-number" inputMode="numeric" maxLength={10} value={fiscal.account_number || ""} onChange={(e) => setFiscal({ ...fiscal, account_number: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="Número de cuenta" /></div>
+            <div className="sm:col-span-2"><Label>CLABE interbancaria <span className="text-stone-400 text-xs">({(fiscal.clabe || "").length}/18)</span></Label><Input data-testid="fiscal-clabe" inputMode="numeric" maxLength={18} value={fiscal.clabe || ""} onChange={(e) => setFiscal({ ...fiscal, clabe: e.target.value.replace(/\D/g, "").slice(0, 18) })} placeholder="18 dígitos" /></div>
             <div className="sm:col-span-2">
               <IncomeProofs
                 paths={fiscal.estado_cuenta_fotos}
