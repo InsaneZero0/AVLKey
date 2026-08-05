@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, ClipboardCheck, MessageSquare, Briefcase, History, Save, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import Verification from "@/pages/dashboard/Verification";
 import { STATUS_LABEL, PROPERTY_STATUS_COLOR } from "@/lib/constants";
 
 const PHONE_CODES = [
@@ -237,6 +238,12 @@ export default function Profile() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+      )}
+
+      {user?.role === "arrendador" && (
+        <div className="mt-6" data-testid="profile-verification-embed">
+          <Verification />
         </div>
       )}
 

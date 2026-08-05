@@ -16,7 +16,6 @@ export default function DashboardLayout() {
 
   const links = isLandlord ? [
     { to: "/panel/perfil", label: "Mi perfil", icon: User },
-    { to: "/panel/verificacion", label: "Verificación", icon: FileCheck2 },
     { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle },
     { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2 },
     { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox },
