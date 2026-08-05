@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MapEmbed } from "@/components/MapEmbed";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -146,6 +147,14 @@ export default function PropertyDetail() {
                 </div>
               ))}
             </div>
+
+            {(prop.colonia || prop.city) && (
+              <div className="mt-8" data-testid="detail-map-section">
+                <h2 className="font-display font-semibold text-navy mb-2 flex items-center gap-2"><MapPin className="w-5 h-5 text-terracotta" /> Ubicación aproximada</h2>
+                <p className="text-sm text-stone-500 mb-3">Ubicación aproximada por zona. La dirección exacta se comparte al confirmar una visita.</p>
+                <MapEmbed address={[prop.colonia, prop.city, prop.state, "México"].filter(Boolean).join(", ")} />
+              </div>
+            )}
 
             <div className="mt-8">
               <h2 className="font-display font-semibold text-xl text-navy">Descripción</h2>
