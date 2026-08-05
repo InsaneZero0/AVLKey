@@ -5,7 +5,13 @@ import { formatMXN, formatDate, STATUS_LABEL, RISK_LABEL, EMPLOYMENT_TYPES } fro
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Inbox, Loader2, Check, X, ShieldCheck, User, Briefcase, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Inbox, Loader2, Check, X, ShieldCheck, User, Briefcase, Users, CalendarClock } from "lucide-react";
 
 const riskColor = { bajo: "text-green-600 bg-green-100", medio: "text-amber-600 bg-amber-100", alto: "text-red-600 bg-red-100" };
 const statusColor = { pendiente: "bg-amber-100 text-amber-700", en_revision: "bg-blue-100 text-blue-700", aprobada: "bg-green-100 text-green-700", rechazada: "bg-red-100 text-red-700" };
@@ -13,6 +19,11 @@ const empLabel = Object.fromEntries(EMPLOYMENT_TYPES.map((e) => [e.value, e.labe
 
 export default function Applications() {
   const [apps, setApps] = useState(null);
+  const [schedApp, setSchedApp] = useState(null);
+  const [schedDate, setSchedDate] = useState("");
+  const [schedTime, setSchedTime] = useState("10:00");
+  const [schedNote, setSchedNote] = useState("");
+  const [scheduling, setScheduling] = useState(false);
 
   const load = () => api.get("/landlord/applications").then(({ data }) => setApps(data)).catch(() => setApps([]));
   useEffect(() => { load(); }, []);
@@ -20,11 +31,28 @@ export default function Applications() {
   const updateStatus = async (id, status) => {
     try {
       const { data } = await api.patch(`/applications/${id}/status`, { status });
-      if (status === "aprobada") toast.success("Solicitud aprobada. Se generó un contrato en borrador.");
+      if (status === "aprobada") toast.success("Solicitud aceptada. Se generó un contrato en borrador.");
       else if (status === "rechazada") toast.success("Solicitud rechazada.");
       else toast.success("Estado actualizado.");
       load();
     } catch { toast.error("No se pudo actualizar"); }
+  };
+
+  const openSchedule = (a) => { setSchedApp(a); setSchedDate(""); setSchedTime("10:00"); setSchedNote(""); };
+
+  const scheduleVisit = async () => {
+    if (!schedDate) { toast.error("Selecciona una fecha"); return; }
+    setScheduling(true);
+    try {
+      await api.post(`/applications/${schedApp.id}/schedule-visit`, {
+        scheduled_at: `${schedDate}T${schedTime}:00`,
+        note: schedNote,
+      });
+      toast.success("Cita agendada. Se notificó al arrendatario.");
+      setSchedApp(null);
+      load();
+    } catch (e) { toast.error(e.response?.data?.detail || "No se pudo agendar la cita"); }
+    finally { setScheduling(false); }
   };
 
   if (!apps) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
@@ -71,19 +99,56 @@ export default function Applications() {
 
               {a.message && <p className="mt-4 text-sm text-stone-600 bg-stone-50 rounded-xl p-3 italic">"{a.message}"</p>}
 
-              {(a.status === "pendiente" || a.status === "en_revision") && (
+              {a.status !== "rechazada" && (
                 <div className="flex flex-wrap gap-2 mt-5">
                   {a.status === "pendiente" && (
                     <Button variant="outline" size="sm" className="rounded-full" onClick={() => updateStatus(a.id, "en_revision")} data-testid={`review-${a.id}`}>Marcar en revisión</Button>
                   )}
-                  <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" onClick={() => updateStatus(a.id, "aprobada")} data-testid={`approve-${a.id}`}><Check className="w-4 h-4 mr-1" /> Aprobar</Button>
-                  <Button variant="outline" size="sm" className="rounded-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => updateStatus(a.id, "rechazada")} data-testid={`reject-${a.id}`}><X className="w-4 h-4 mr-1" /> Rechazar</Button>
+                  {(a.status === "pendiente" || a.status === "en_revision") && (
+                    <>
+                      <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" onClick={() => updateStatus(a.id, "aprobada")} data-testid={`approve-${a.id}`}><Check className="w-4 h-4 mr-1" /> Aceptar</Button>
+                      <Button variant="outline" size="sm" className="rounded-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => updateStatus(a.id, "rechazada")} data-testid={`reject-${a.id}`}><X className="w-4 h-4 mr-1" /> Rechazar</Button>
+                    </>
+                  )}
+                  <Button variant="outline" size="sm" className="rounded-full text-terracotta border-terracotta/40 hover:bg-terracotta/5 hover:text-terracotta" onClick={() => openSchedule(a)} data-testid={`schedule-cita-${a.id}`}><CalendarClock className="w-4 h-4 mr-1" /> Agendar cita</Button>
                 </div>
               )}
             </div>
           ))}
         </div>
       )}
+
+      <Dialog open={!!schedApp} onOpenChange={(o) => !o && setSchedApp(null)}>
+        <DialogContent className="max-w-md" data-testid="schedule-cita-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Agendar cita</DialogTitle>
+          </DialogHeader>
+          {schedApp && (
+            <div className="space-y-4 py-1">
+              <p className="text-sm text-stone-600">Cita con <strong>{schedApp.tenant_name}</strong> para <strong>{schedApp.property_title}</strong>.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input type="date" value={schedDate} onChange={(e) => setSchedDate(e.target.value)} data-testid="sched-date" />
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input type="time" value={schedTime} onChange={(e) => setSchedTime(e.target.value)} data-testid="sched-time" />
+                </div>
+              </div>
+              <div>
+                <Label>Nota (opcional)</Label>
+                <Textarea value={schedNote} onChange={(e) => setSchedNote(e.target.value)} placeholder="Indicaciones para la cita..." data-testid="sched-note" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={scheduleVisit} disabled={scheduling} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="sched-confirm-btn">
+              {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Agendar cita"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

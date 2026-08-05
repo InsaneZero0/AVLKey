@@ -857,7 +857,57 @@ async def create_application(data: ApplicationInput, user: dict = Depends(get_cu
     app_doc.pop("_id", None)
     await notify(prop["owner_id"], "solicitud", "Nueva solicitud de arrendamiento",
                  f"{user['name']} envió una solicitud para '{prop['title']}'.", "/panel/solicitudes")
+    staff = await db.users.find({"account_type": "internal"}, {"_id": 0, "id": 1}).to_list(200)
+    for s in staff:
+        await notify(s["id"], "solicitud", "Nueva solicitud de arrendamiento",
+                     f"{user['name']} envió una solicitud para '{prop['title']}'.", "/admin/solicitudes")
     return app_doc
+
+
+class LandlordVisitInput(BaseModel):
+    scheduled_at: str
+    note: str = ""
+
+
+@api.post("/applications/{application_id}/schedule-visit")
+async def schedule_visit_for_application(application_id: str, data: LandlordVisitInput, user: dict = Depends(get_current_user)):
+    app_doc = await db.applications.find_one({"id": application_id}, {"_id": 0})
+    if not app_doc or app_doc["owner_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    try:
+        dt = datetime.fromisoformat(data.scheduled_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Fecha y hora inválidas")
+    if dt < now_utc():
+        raise HTTPException(status_code=400, detail="La fecha de la cita debe ser futura")
+    prop = await db.properties.find_one({"id": app_doc["property_id"]}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    entry = {"status": "confirmada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note}
+    visit = {
+        "id": new_id("visit"),
+        "property_id": app_doc["property_id"],
+        "property_title": prop["title"],
+        "property_city": prop["city"],
+        "property_image": (prop.get("images") or [None])[0],
+        "tenant_id": app_doc["tenant_id"],
+        "tenant_name": app_doc["tenant_name"],
+        "landlord_id": user["id"],
+        "scheduled_at": data.scheduled_at,
+        "proposed_at": None,
+        "proposed_by": None,
+        "status": "confirmada",
+        "note": data.note,
+        "history": [entry],
+        "created_at": now_utc().isoformat(),
+        "updated_at": now_utc().isoformat(),
+    }
+    await db.visits.insert_one(dict(visit))
+    await notify(app_doc["tenant_id"], "visita", "El arrendador agendó una cita",
+                 f"El arrendador agendó una cita para visitar '{prop['title']}'.", "/panel/visitas")
+    return serialize_visit(visit, user["id"], prop)
 
 
 @api.get("/my/applications")
