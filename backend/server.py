@@ -1397,6 +1397,7 @@ class FiscalInfo(BaseModel):
     account_holder: Optional[str] = None
     account_number: Optional[str] = None
     clabe: Optional[str] = None
+    estado_cuenta_fotos: Optional[List[str]] = None
     phone: Optional[str] = None
     phone_code: Optional[str] = None
     actividad_economica: Optional[str] = None

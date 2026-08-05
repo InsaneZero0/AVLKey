@@ -279,7 +279,7 @@ export default function Verification({ onPersistPersonal } = {}) {
   const [savingConsent, setSavingConsent] = useState(false);
   const [savingFiscal, setSavingFiscal] = useState(false);
   const [fiscal, setFiscal] = useState({
-    rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "",
+    rfc: "", fiscal_regime: "", bank_name: "", account_holder: "", clabe: "", account_number: "", estado_cuenta_fotos: [],
     phone: "", actividad_economica: "", curp: "", ingreso_mensual: "",
     comprobantes_ingresos: [], cohabitantes: [],
     adultos_18: "", menores_12_17: "", ninos_0_11: "", mascotas: "",
@@ -704,6 +704,15 @@ export default function Verification({ onPersistPersonal } = {}) {
             <div><Label>Titular de la cuenta</Label><Input data-testid="fiscal-holder" value={fiscal.account_holder || ""} onChange={(e) => setFiscal({ ...fiscal, account_holder: e.target.value })} /></div>
             <div><Label>Número de cuenta bancaria</Label><Input data-testid="fiscal-account-number" inputMode="numeric" value={fiscal.account_number || ""} onChange={(e) => setFiscal({ ...fiscal, account_number: e.target.value.replace(/\D/g, "") })} placeholder="Número de cuenta" /></div>
             <div className="sm:col-span-2"><Label>CLABE interbancaria</Label><Input data-testid="fiscal-clabe" value={fiscal.clabe || ""} onChange={(e) => setFiscal({ ...fiscal, clabe: e.target.value })} placeholder="18 dígitos" /></div>
+            <div className="sm:col-span-2">
+              <IncomeProofs
+                paths={fiscal.estado_cuenta_fotos}
+                onChange={(v) => setFiscal({ ...fiscal, estado_cuenta_fotos: v })}
+                testid="estado-cuenta"
+                label="Carátula de tu estado de cuenta más reciente"
+                buttonText="Subir foto de la carátula del estado de cuenta"
+              />
+            </div>
           </fieldset>
           {!submitted && (
             <div className="mt-5 flex flex-wrap justify-end gap-3" data-testid="arrendador-actions">
