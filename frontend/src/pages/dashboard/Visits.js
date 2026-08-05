@@ -10,6 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Loader2, CalendarClock, Check, X, RefreshCw, MapPin, Ban, CheckCircle2, UserX, History,
 } from "lucide-react";
 
@@ -37,6 +41,16 @@ export default function Visits() {
   const [rDate, setRDate] = useState("");
   const [rTime, setRTime] = useState("10:00");
   const [historyOpen, setHistoryOpen] = useState(null);
+  const [slot, setSlot] = useState(null);
+
+  const formalize = async () => {
+    try {
+      await api.post(`/visits/${slot.visitId}/formalize`, { day: slot.day, time: slot.time });
+      toast.success("Cita formalizada. Se notificó al arrendatario.");
+      setSlot(null);
+      load();
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+  };
 
   const load = () => api.get("/my/visits").then(({ data }) => setVisits(data)).catch(() => setVisits([]));
   useEffect(() => { load(); }, []);
@@ -89,7 +103,21 @@ export default function Visits() {
                       {v.scheduled_at ? (
                         <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />{fmt(v.scheduled_at)}</div>
                       ) : (v.availability && v.availability.length > 0) ? (
-                        <div className="flex items-start gap-1.5 text-sm text-terracotta font-medium mt-1" data-testid={`visit-availability-${v.id}`}><CalendarClock className="w-4 h-4 mt-0.5 shrink-0" /><span>Disponibilidad: {v.availability.map((a) => `${a.day} ${a.time}`).join(", ")}</span></div>
+                        <div className="flex items-start gap-1.5 text-sm mt-1" data-testid={`visit-availability-${v.id}`}>
+                          <CalendarClock className="w-4 h-4 mt-0.5 shrink-0 text-terracotta" />
+                          <div className="flex flex-wrap gap-1.5 items-center">
+                            <span className="text-stone-500">Disponibilidad:</span>
+                            {v.availability.map((a, i) => (
+                              landlord ? (
+                                <button key={i} onClick={() => setSlot({ visitId: v.id, day: a.day, time: a.time })} className="text-terracotta font-medium underline underline-offset-2 hover:text-terracotta-hover" data-testid={`avail-link-${v.id}-${i}`}>
+                                  {a.day} {a.time}
+                                </button>
+                              ) : (
+                                <span key={i} className="text-terracotta font-medium">{a.day} {a.time}{i < v.availability.length - 1 ? "," : ""}</span>
+                              )
+                            ))}
+                          </div>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />Por confirmar</div>
                       )}
@@ -177,6 +205,22 @@ export default function Visits() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Formalizar cita desde disponibilidad */}
+      <AlertDialog open={!!slot} onOpenChange={(o) => !o && setSlot(null)}>
+        <AlertDialogContent data-testid="formalize-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Formalizar cita</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás enviando y formalizando una cita{slot ? ` para el ${slot.day} a las ${slot.time}` : ""}. ¿Estás segura?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="formalize-cancel">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={formalize} className="bg-terracotta hover:bg-terracotta-hover" data-testid="formalize-accept">Aceptar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

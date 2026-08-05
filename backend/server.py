@@ -1137,6 +1137,48 @@ def exact_address(prop: dict) -> str:
     return ", ".join([p for p in parts if p])
 
 
+DAY_INDEX = {"lunes": 0, "martes": 1, "miercoles": 2, "miércoles": 2, "jueves": 3,
+             "viernes": 4, "sabado": 5, "sábado": 5, "domingo": 6}
+
+
+class FormalizeVisit(BaseModel):
+    day: str
+    time: str
+
+
+@api.post("/visits/{visit_id}/formalize")
+async def formalize_visit(visit_id: str, data: FormalizeVisit, user: dict = Depends(get_current_user)):
+    v = await db.visits.find_one({"id": visit_id}, {"_id": 0})
+    if not v:
+        raise HTTPException(status_code=404, detail="Visita no encontrada")
+    if v["landlord_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    idx = DAY_INDEX.get(data.day.strip().lower())
+    if idx is None:
+        raise HTTPException(status_code=400, detail="Día inválido")
+    try:
+        hh, mm = [int(x) for x in data.time.split(":")]
+    except Exception:
+        raise HTTPException(status_code=400, detail="Hora inválida")
+    now = now_utc()
+    days_ahead = (idx - now.weekday()) % 7
+    candidate = (now + timedelta(days=days_ahead)).replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if candidate <= now:
+        candidate = candidate + timedelta(days=7)
+    scheduled = candidate.isoformat()
+    entry = {"status": "confirmada", "by": user["name"], "at": now.isoformat(),
+             "note": f"Cita formalizada: {data.day} {data.time}"}
+    await db.visits.update_one({"id": visit_id}, {
+        "$set": {"status": "confirmada", "scheduled_at": scheduled, "updated_at": now.isoformat()},
+        "$push": {"history": entry},
+    })
+    await notify(v["tenant_id"], "visita", "Cita formalizada",
+                 f"El arrendador formalizó tu cita para '{v['property_title']}'.", "/panel/visitas")
+    prop = await db.properties.find_one({"id": v["property_id"]}, {"_id": 0})
+    v.update({"status": "confirmada", "scheduled_at": scheduled})
+    return serialize_visit(v, user["id"], prop)
+
+
 def serialize_visit(v: dict, viewer_id: str, prop: Optional[dict] = None) -> dict:
     v = dict(v)
     v.pop("_id", None)
