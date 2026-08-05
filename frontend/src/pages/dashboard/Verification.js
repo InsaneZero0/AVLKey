@@ -267,7 +267,7 @@ function RegistroResumen({ user, fiscal, consent, items, onDelete }) {
   );
 }
 
-export default function Verification() {
+export default function Verification({ onPersistPersonal } = {}) {
   const { user, refresh } = useAuth();
   const category = user?.role === "arrendador" ? "arrendador" : "arrendatario";
   const [submitted, setSubmitted] = useState(!!user?.registro_submitted);
@@ -400,6 +400,7 @@ export default function Verification() {
         })),
       };
       await api.patch("/users/me/fiscal", payload);
+      if (onPersistPersonal) { try { await onPersistPersonal(); } catch (e) { /* noop */ } }
       if (category === "arrendatario" && accepted && !consent?.consent?.accepted) {
         await api.post("/consent/credit-check", { accepted: true, consent_text: consent?.text, consent_version: consent?.version });
         api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});

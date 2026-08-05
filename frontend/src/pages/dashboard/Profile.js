@@ -94,6 +94,7 @@ export default function Profile() {
 
   const isTenant = user?.role === "arrendatario";
   const [submitted, setSubmitted] = useState(!!user?.actividad_economica_submitted);
+  const lock = isTenant ? submitted : !!user?.registro_submitted;
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [actividad, setActividad] = useState({ ...emptyActividad(), ...(user?.actividad_economica_detalle || {}) });
@@ -106,6 +107,15 @@ export default function Profile() {
   useEffect(() => { setSubmitted(!!user?.actividad_economica_submitted); }, [user]);
 
   const setEmpleo = (i, v) => setEmpleos(empleos.map((e, idx) => (idx === i ? v : e)));
+
+  // Guarda los datos personales del perfil (nombre, teléfono, RFC, CURP). Usado por el arrendador
+  // desde los botones de Verificación (al final), para guardar/enviar todo en uno.
+  const savePersonal = async () => {
+    const { data } = await api.patch("/users/me", {
+      name: form.name, phone: form.phone, phone_code: form.phone_code, rfc: form.rfc, curp: form.curp,
+    });
+    setUser(data);
+  };
 
   // Guarda perfil (borrador) o envía (bloquea). Aplica a arrendador y arrendatario.
   const saveAll = async (doSubmit = false) => {
@@ -144,7 +154,7 @@ export default function Profile() {
           )}
           <span className="text-sm text-stone-500">{user?.email}</span>
         </div>
-        <fieldset disabled={submitted} className="space-y-5 disabled:opacity-70">
+        <fieldset disabled={lock} className="space-y-5 disabled:opacity-70">
           <div>
             <Label>Nombre completo</Label>
             <Input data-testid="profile-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -202,7 +212,7 @@ export default function Profile() {
         </>
       )}
 
-      {submitted ? (
+      {isTenant && (submitted ? (
         <div className="mt-6 flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800" data-testid="perfil-enviado-note">
           <Send className="w-4 h-4 mt-0.5 shrink-0" />
           <span>Tu información fue enviada para validación y ya no puede modificarse.</span>
@@ -239,11 +249,11 @@ export default function Profile() {
             </AlertDialogContent>
           </AlertDialog>
         </div>
-      )}
+      ))}
 
       {user?.role === "arrendador" && (
         <div className="mt-6" data-testid="profile-verification-embed">
-          <Verification />
+          <Verification onPersistPersonal={savePersonal} />
         </div>
       )}
 
