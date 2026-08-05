@@ -35,14 +35,40 @@ function fmt(iso) {
   catch { return iso; }
 }
 
+const dateStr = (d) => d.toISOString().split("T")[0];
+const contractDateBounds = () => {
+  const min = new Date(); min.setHours(0, 0, 0, 0); min.setDate(min.getDate() + 4);
+  const max = new Date(); max.setHours(0, 0, 0, 0); max.setDate(max.getDate() + 10);
+  return { min: dateStr(min), max: dateStr(max) };
+};
+
 export default function Visits() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [visits, setVisits] = useState(null);
   const [reschedule, setReschedule] = useState(null);
   const [rDate, setRDate] = useState("");
   const [rTime, setRTime] = useState("10:00");
   const [historyOpen, setHistoryOpen] = useState(null);
   const [slot, setSlot] = useState(null);
+  const [contractVisit, setContractVisit] = useState(null);
+  const [startDate, setStartDate] = useState("");
+
+  const createContract = (v) => {
+    const { min } = contractDateBounds();
+    setContractVisit(v);
+    setStartDate(min);
+  };
+
+  const submitContract = async () => {
+    if (!startDate) { toast.error("Selecciona una fecha de inicio"); return; }
+    try {
+      const { data } = await api.post(`/visits/${contractVisit.id}/create-contract`, { start_date: startDate });
+      toast.success(data.existing ? "Ya existe un contrato para este arrendatario." : "Contrato creado como borrador.");
+      setContractVisit(null);
+      navigate("/panel/contratos");
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+  };
 
   const formalize = async () => {
     try {
@@ -230,6 +256,37 @@ export default function Visits() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Crear contrato desde visita completada */}
+      <Dialog open={!!contractVisit} onOpenChange={(o) => !o && setContractVisit(null)}>
+        <DialogContent data-testid="contract-dialog">
+          <DialogHeader><DialogTitle className="font-display">Contrato de arrendamiento</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-stone-600">
+              Inmueble: <span className="font-medium text-navy">{contractVisit?.property_title}</span><br />
+              Arrendatario: <span className="font-medium text-navy">{contractVisit?.tenant_name}</span>
+            </p>
+            <div>
+              <Label htmlFor="contract-start-date">A partir de:</Label>
+              <Input
+                id="contract-start-date"
+                type="date"
+                value={startDate}
+                min={contractDateBounds().min}
+                max={contractDateBounds().max}
+                onChange={(e) => setStartDate(e.target.value)}
+                data-testid="contract-start-date"
+              />
+              <p className="text-xs text-stone-500 mt-1.5">
+                Solo puedes elegir una fecha dentro de los próximos 4 a 10 días.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={submitContract} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-contract">Crear contrato</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

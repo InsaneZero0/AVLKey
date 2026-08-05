@@ -126,6 +126,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Backend: ProfileUpdate + PATCH /users/me aceptan actividad_economica_detalle (ActividadEconomica), empleos_anteriores (List[ActividadEconomica]) y actividad_economica_submitted (bool).
 - Panel interno: la lista de Arrendatarios (/admin/arrendatarios) tiene columna "Actividad económica" con link "Ver actividad económica" (→ /admin/miembro/:id#actividad-economica) cuando el arrendatario ya envió, o "Sin enviar". El expediente (AdminMemberDetail) muestra la sección "Actividad económica y empleos anteriores" (ancla + scroll) solo cuando actividad_economica_submitted.
 
+## Contrato desde visita — selector de fecha (2026-08-05)
+- Visitas (arrendador): visita "completada" muestra botón "¿Quieres hacer un contrato de arrendamiento con: [Nombre]?" → abre diálogo con campo "A partir de:".
+- Selector de fecha restringido: deshabilita hoy y los próximos 3 días; solo permite ventana del 4º al 10º día (min=+4, max=+10). Backend valida el mismo rango (POST /api/visits/{id}/create-contract, payload { start_date }); si existe contrato activo/borrador para ese arrendatario+inmueble lo devuelve sin duplicar.
+- Al crear: contrato borrador (renta, depósito, comisión 5%, mantenimiento, 12 meses) y navega a /panel/contratos. `createContract` estaba llamado pero no definido en Visits.js (botón roto); ahora implementado.
+- Verificado: backend (curl) rechaza +2/+15 días y acepta +5; frontend (screenshot) muestra diálogo con default +4 días.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
