@@ -21,7 +21,7 @@ const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00
 
 const statusMap = {
   solicitada: { label: "Solicitada", cls: "bg-amber-100 text-amber-700" },
-  confirmada: { label: "Confirmada", cls: "bg-green-100 text-green-700" },
+  confirmada: { label: "Aceptada", cls: "bg-green-100 text-green-700" },
   reprogramada: { label: "Reprogramada", cls: "bg-blue-100 text-blue-700" },
   cancelada: { label: "Cancelada", cls: "bg-red-100 text-red-700" },
   completada: { label: "Completada", cls: "bg-navy/10 text-navy" },
