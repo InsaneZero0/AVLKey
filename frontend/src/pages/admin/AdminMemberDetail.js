@@ -14,7 +14,64 @@ import {
   Loader2, ArrowLeft, Mail, Phone, Building2, User, FileText, Eye, Download,
   MapPin, BadgeCheck, ShieldAlert, CreditCard, ClipboardCheck, MessageSquare,
   Users, Globe, PawPrint, Bed, Bath, Car, Maximize, Sofa, Briefcase,
+  Activity, ChevronDown, ChevronUp, Inbox, CalendarClock, Check, X, Clock,
 } from "lucide-react";
+
+const ACT_STYLE = {
+  solicitud: { icon: Inbox, color: "text-blue-600 bg-blue-50" },
+  solicitud_estado: { icon: Check, color: "text-green-600 bg-green-50" },
+  visita: { icon: CalendarClock, color: "text-terracotta bg-terracotta/10" },
+};
+const ACT_STATUS_COLOR = {
+  aprobada: "text-green-600 bg-green-50", confirmada: "text-green-600 bg-green-50",
+  rechazada: "text-red-600 bg-red-50", cancelada: "text-red-600 bg-red-50", no_asistio: "text-red-600 bg-red-50",
+  en_revision: "text-blue-600 bg-blue-50", reprogramada: "text-amber-600 bg-amber-50",
+};
+
+function PropertyActivity({ propertyId }) {
+  const [events, setEvents] = useState(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (open && events === null) {
+      api.get(`/admin/properties/${propertyId}/activity`)
+        .then(({ data }) => setEvents(data.events || []))
+        .catch(() => setEvents([]));
+    }
+  }, [open, events, propertyId]);
+  return (
+    <div className="mt-4 pt-4 border-t border-stone-100" data-testid={`prop-activity-${propertyId}`}>
+      <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full text-sm font-medium text-navy" data-testid={`prop-activity-toggle-${propertyId}`}>
+        <span className="flex items-center gap-2"><Activity className="w-4 h-4 text-terracotta" /> Reporte de actividad</span>
+        {open ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+      </button>
+      {open && (
+        events === null ? (
+          <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-terracotta" /></div>
+        ) : events.length === 0 ? (
+          <p className="text-sm text-stone-400 mt-3">Sin actividad todavía.</p>
+        ) : (
+          <ol className="mt-4 space-y-4" data-testid={`prop-activity-list-${propertyId}`}>
+            {events.map((e, i) => {
+              const style = ACT_STYLE[e.kind] || ACT_STYLE.solicitud;
+              const Icon = style.icon;
+              const badge = ACT_STATUS_COLOR[e.status];
+              return (
+                <li key={i} className="flex gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${badge || style.color}`}><Icon className="w-4 h-4" /></div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-navy">{e.title}</div>
+                    <div className="text-sm text-stone-600">{e.detail}</div>
+                    <div className="text-xs text-stone-400 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {formatDate(e.at)}</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )
+      )}
+    </div>
+  );
+}
 
 const ActividadBlock = ({ title, a }) => {
   const empty = !a || !(a.actividad || a.descripcion || a.empresa || a.jefe || a.fecha_inicio || a.fecha_fin);
@@ -460,6 +517,8 @@ export default function AdminMemberDetail() {
                         </div>
                       )}
                     </div>
+
+                    <PropertyActivity propertyId={p.id} />
 
                     <div className="mt-4 pt-4 border-t border-stone-100" data-testid={`validation-card-${p.id}`}>
                       <div className="flex items-center justify-between mb-3">

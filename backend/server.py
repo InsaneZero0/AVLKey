@@ -1927,6 +1927,41 @@ async def admin_applications(user: dict = Depends(require_permission("consultar"
     return apps
 
 
+@api.get("/admin/properties/{property_id}/activity")
+async def property_activity(property_id: str, user: dict = Depends(require_permission("consultar"))):
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    events = []
+    APP_LABEL = {"pendiente": "Solicitud pendiente", "en_revision": "Solicitud en revisión",
+                 "aprobada": "Solicitud aceptada", "rechazada": "Solicitud rechazada"}
+    apps = await db.applications.find({"property_id": property_id}, {"_id": 0}).to_list(500)
+    for a in apps:
+        tenant = a.get("tenant_name", "Arrendatario")
+        events.append({"kind": "solicitud", "title": "Solicitud de arrendamiento",
+                       "detail": f"{tenant} solicitó arrendamiento", "actor": tenant,
+                       "status": "pendiente", "at": a.get("created_at")})
+        st = a.get("status")
+        if st in ("aprobada", "rechazada", "en_revision"):
+            events.append({"kind": "solicitud_estado", "title": APP_LABEL.get(st, st),
+                           "detail": f"La solicitud de {tenant}: {APP_LABEL.get(st, st)}",
+                           "actor": tenant, "status": st, "at": a.get("created_at")})
+    VIS_LABEL = {"solicitada": "Cita solicitada", "confirmada": "Cita aceptada",
+                 "reprogramada": "Nueva fecha propuesta", "cancelada": "Cita cancelada",
+                 "completada": "Cita completada", "no_asistio": "No asistió a la cita"}
+    visits = await db.visits.find({"property_id": property_id}, {"_id": 0}).to_list(500)
+    for v in visits:
+        tenant = v.get("tenant_name", "")
+        for h in (v.get("history") or []):
+            hs = h.get("status")
+            detail = f"{tenant}" + (f" — {h.get('note')}" if h.get("note") else "")
+            events.append({"kind": "visita", "title": VIS_LABEL.get(hs, hs),
+                           "detail": detail, "actor": h.get("by"), "status": hs,
+                           "at": h.get("at"), "scheduled_at": v.get("scheduled_at")})
+    events.sort(key=lambda e: e.get("at") or "", reverse=True)
+    return {"property_id": property_id, "events": events}
+
+
 @api.patch("/admin/applications/{application_id}/risk")
 async def admin_override_risk(application_id: str, data: RiskOverride, actor: dict = Depends(require_permission("modificar_decisiones_automaticas"))):
     if data.risk_level not in ("bajo", "medio", "alto"):
