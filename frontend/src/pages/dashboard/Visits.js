@@ -25,6 +25,7 @@ const statusMap = {
 };
 
 function fmt(iso) {
+  if (!iso) return "Por confirmar";
   try { return new Date(iso).toLocaleString("es-MX", { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
   catch { return iso; }
 }
@@ -85,7 +86,13 @@ export default function Visits() {
                         {v.status === "reprogramada" && <span className="text-xs text-stone-400">propuesta por {v.proposed_by === (landlord ? "arrendador" : "arrendatario") ? "ti" : v.proposed_by}</span>}
                       </div>
                       <h3 className="font-display font-semibold text-navy mt-1">{v.property_title}</h3>
-                      <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />{fmt(v.scheduled_at)}</div>
+                      {v.scheduled_at ? (
+                        <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />{fmt(v.scheduled_at)}</div>
+                      ) : (v.availability && v.availability.length > 0) ? (
+                        <div className="flex items-start gap-1.5 text-sm text-terracotta font-medium mt-1" data-testid={`visit-availability-${v.id}`}><CalendarClock className="w-4 h-4 mt-0.5 shrink-0" /><span>Disponibilidad: {v.availability.map((a) => `${a.day} ${a.time}`).join(", ")}</span></div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-sm text-terracotta font-medium mt-1"><CalendarClock className="w-4 h-4" />Por confirmar</div>
+                      )}
                       <div className="text-xs text-stone-500 mt-0.5">{landlord ? `Interesado: ${v.tenant_name}` : v.property_city}</div>
                       {v.address_revealed ? (
                         <div className="flex items-center gap-1.5 text-sm text-stone-700 mt-1" data-testid={`visit-address-${v.id}`}><MapPin className="w-3.5 h-3.5 text-green-600" />{v.exact_address}</div>

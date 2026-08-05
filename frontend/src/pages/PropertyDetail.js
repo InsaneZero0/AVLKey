@@ -15,6 +15,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapEmbed } from "@/components/MapEmbed";
+
+const DAYS = [
+  { key: "lunes", label: "Lunes" },
+  { key: "martes", label: "Martes" },
+  { key: "miercoles", label: "Miércoles" },
+  { key: "jueves", label: "Jueves" },
+  { key: "viernes", label: "Viernes" },
+  { key: "sabado", label: "Sábado" },
+  { key: "domingo", label: "Domingo" },
+];
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -38,8 +48,7 @@ export default function PropertyDetail() {
   });
   const [visitOpen, setVisitOpen] = useState(false);
   const [visitSubmitting, setVisitSubmitting] = useState(false);
-  const [vDate, setVDate] = useState("");
-  const [vTime, setVTime] = useState("10:00");
+  const [avail, setAvail] = useState({});
   const [vNote, setVNote] = useState("");
   const [busy, setBusy] = useState([]);
   const [myFiscal, setMyFiscal] = useState(null);
@@ -54,11 +63,12 @@ export default function PropertyDetail() {
 
   const submitVisit = async () => {
     if (!user) { navigate("/login"); return; }
-    if (!vDate) { toast.error("Selecciona una fecha"); return; }
+    const availability = DAYS.filter((d) => avail[d.key]?.checked).map((d) => ({ day: d.label, time: avail[d.key]?.time || "10:00" }));
+    if (availability.length === 0) { toast.error("Selecciona al menos un día"); return; }
     setVisitSubmitting(true);
     try {
-      await api.post("/visits", { property_id: id, scheduled_at: `${vDate}T${vTime}:00`, note: vNote });
-      toast.success("¡Visita solicitada! El arrendador la confirmará pronto.");
+      await api.post("/visits", { property_id: id, availability, note: vNote });
+      toast.success("¡Disponibilidad enviada! El arrendador la revisará pronto.");
       setVisitOpen(false);
       navigate("/panel/visitas");
     } catch (e) {
@@ -269,32 +279,34 @@ export default function PropertyDetail() {
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader><DialogTitle className="font-display text-xl">Agendar visita</DialogTitle></DialogHeader>
-                    <div className="space-y-4 py-2">
-                      <div>
-                        <Label>Fecha</Label>
-                        <Input data-testid="visit-date" type="date" min={new Date().toISOString().split("T")[0]} value={vDate} onChange={(e) => setVDate(e.target.value)} />
-                      </div>
-                      <div>
-                        <Label>Hora</Label>
-                        <Select value={vTime} onValueChange={setVTime}>
-                          <SelectTrigger data-testid="visit-time"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {TIME_SLOTS.map((t) => {
-                              const taken = busy.some((b) => b.startsWith(vDate) && b.slice(11, 16) === t);
-                              return <SelectItem key={t} value={t} disabled={taken}>{t}{taken ? " (ocupado)" : ""}</SelectItem>;
-                            })}
-                          </SelectContent>
-                        </Select>
+                    <div className="space-y-3 py-2">
+                      <Label>Selecciona los días y horarios en que puedes visitar</Label>
+                      <div className="space-y-2">
+                        {DAYS.map((d) => {
+                          const row = avail[d.key] || {};
+                          return (
+                            <div key={d.key} className="flex items-center gap-3">
+                              <label className="flex items-center gap-2 w-28 shrink-0 cursor-pointer">
+                                <Checkbox checked={!!row.checked} onCheckedChange={(c) => setAvail({ ...avail, [d.key]: { ...row, checked: !!c, time: row.time || "10:00" } })} data-testid={`visit-day-${d.key}`} />
+                                <span className="text-sm text-navy">{d.label}</span>
+                              </label>
+                              <Select value={row.time || "10:00"} onValueChange={(t) => setAvail({ ...avail, [d.key]: { ...row, time: t } })} disabled={!row.checked}>
+                                <SelectTrigger data-testid={`visit-time-${d.key}`} className="flex-1"><SelectValue /></SelectTrigger>
+                                <SelectContent>{TIME_SLOTS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })}
                       </div>
                       <div>
                         <Label>Mensaje (opcional)</Label>
-                        <Textarea data-testid="visit-note" value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="Comparte tu disponibilidad o dudas..." />
+                        <Textarea data-testid="visit-note" value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="Comparte detalles o dudas..." />
                       </div>
                       <p className="text-xs text-stone-400 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> La dirección exacta se mostrará al confirmar la visita.</p>
                     </div>
                     <DialogFooter>
                       <Button onClick={submitVisit} disabled={visitSubmitting} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-visit-btn">
-                        {visitSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Solicitar visita"}
+                        {visitSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar disponibilidad"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
