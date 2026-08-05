@@ -415,7 +415,8 @@ export default function AdminMemberDetail() {
             )}
             {docItems.map((it) => <DocRow key={it.key} item={it} />)}
 
-            {/* Observación del administrador (máx. 50 caracteres) */}
+            {/* Observación del administrador (máx. 50 caracteres) — solo arrendatario */}
+            {!isLandlord && (
             <div className="mt-5 pt-5 border-t border-stone-100">
               <label className="font-medium text-navy flex items-center gap-2 mb-1"><MessageSquare className="w-4 h-4 text-terracotta" /> Observaciones</label>
               <p className="text-xs text-stone-500 mb-2">Este comentario se mostrará al arrendador dentro del apartado de su propiedad.</p>
@@ -434,8 +435,9 @@ export default function AdminMemberDetail() {
                 </Button>
               </div>
             </div>
+            )}
 
-            {showTenant && (
+            {!isLandlord && (
               <div className="mt-5 pt-5 border-t border-stone-100" data-testid="ingreso-total-card">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <span className="text-sm font-medium text-navy flex items-center gap-2"><CreditCard className="w-4 h-4 text-terracotta" /> Ingreso mensual total (capacidad de pago)</span>
