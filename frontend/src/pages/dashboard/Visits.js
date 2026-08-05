@@ -64,7 +64,7 @@ export default function Visits() {
     if (!startDate) { toast.error("Selecciona una fecha de inicio"); return; }
     try {
       const { data } = await api.post(`/visits/${contractVisit.id}/create-contract`, { start_date: startDate });
-      toast.success(data.existing ? "Ya existe un contrato para este arrendatario." : "Contrato creado como borrador.");
+      toast.success(data.existing ? "Ya existe un contrato para este arrendatario." : "Contrato enviado al administrador para revisión y ajuste.");
       setContractVisit(null);
       navigate("/panel/contratos");
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }

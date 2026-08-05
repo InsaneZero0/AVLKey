@@ -57,6 +57,9 @@ export const STATUS_LABEL = {
   autorizado: "Autorizado",
   publicado: "Publicado",
   rechazado: "Rechazado",
+  en_revision_admin: "En revisión (admin)",
+  ajustado: "Ajustado",
+  listo_para_firma: "Listo para firma",
 };
 
 export const REVIEW_STAGE_OPTIONS = [

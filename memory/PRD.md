@@ -132,6 +132,14 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Al crear: contrato borrador (renta, depósito, comisión 5%, mantenimiento, 12 meses) y navega a /panel/contratos. `createContract` estaba llamado pero no definido en Visits.js (botón roto); ahora implementado.
 - Verificado: backend (curl) rechaza +2/+15 días y acepta +5; frontend (screenshot) muestra diálogo con default +4 días.
 
+## Contrato → revisión del administrador (2026-08-05)
+- Al crear contrato desde visita completada, ahora se envía SOLO al administrador (no al arrendatario ni al notario). Estado inicial `en_revision_admin`.
+- Se genera un texto de contrato ficticio de prueba (build_contract_text) con datos reales del inmueble/arrendador/arrendatario, guardado en el campo `contract_text`; asociado a la propiedad (property_id + property_public_id).
+- notify_staff("administrar_contratos", ...) avisa a superadmin/admin_general/operaciones/legal con link /admin/contratos. El arrendatario NO ve el contrato mientras está en revisión (filtro en /my/contracts); el arrendador sí lo ve.
+- Nuevo endpoint PATCH /api/admin/contracts/{id} (permiso administrar_contratos): edita contract_text y status (en_revision_admin/ajustado/listo_para_firma/borrador); notifica al arrendador del avance.
+- AdminContracts.js: tabla con folio del inmueble, badge de estado y botón "Revisar / ajustar" → diálogo con selector de estado + textarea editable del texto del contrato + "Guardar ajustes".
+- Verificado: backend (curl) contrato va a admin, arrendatario no lo ve, admin ajusta ok; frontend (screenshot) diálogo de revisión renderiza el contrato ficticio.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

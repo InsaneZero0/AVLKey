@@ -969,6 +969,8 @@ async def update_application_status(application_id: str, data: StatusUpdate, use
 async def my_contracts(user: dict = Depends(get_current_user)):
     q = {"$or": [{"tenant_id": user["id"]}, {"landlord_id": user["id"]}]}
     contracts = await db.contracts.find(q, {"_id": 0}).sort("created_at", -1).to_list(200)
+    # El arrendatario no ve contratos que aún están en revisión del administrador
+    contracts = [c for c in contracts if not (c.get("status") == "en_revision_admin" and c.get("tenant_id") == user["id"] and c.get("landlord_id") != user["id"])]
     for c in contracts:
         c["paid_months"] = await db.payment_transactions.count_documents({"contract_id": c["id"], "payment_status": "paid", "concept": "renta"})
     return contracts
@@ -1179,6 +1181,56 @@ async def formalize_visit(visit_id: str, data: FormalizeVisit, user: dict = Depe
     return serialize_visit(v, user["id"], prop)
 
 
+async def notify_staff(permission: str, ntype: str, title: str, message: str, link: str = ""):
+    staff = await db.users.find({"account_type": "internal"}, {"_id": 0, "id": 1, "staff_role": 1}).to_list(200)
+    for s in staff:
+        if permission in STAFF_PERMISSIONS.get(s.get("staff_role"), []):
+            await notify(s["id"], ntype, title, message, link)
+
+
+def _money(v) -> str:
+    try:
+        return f"${float(v):,.2f} MXN"
+    except Exception:
+        return f"${v} MXN"
+
+
+def build_contract_text(prop: dict, landlord: dict, tenant: dict, c: dict) -> str:
+    dir_completa = exact_address(prop)
+    return f"""CONTRATO DE ARRENDAMIENTO (BORRADOR DE PRUEBA — PENDIENTE DE REVISIÓN Y AJUSTE POR EL ADMINISTRADOR)
+
+Folio del contrato: {c['id']}
+Inmueble (folio): {prop.get('public_id', prop['id'])}
+
+DECLARAN LAS PARTES:
+
+EL ARRENDADOR: {landlord.get('name', '')}, en su carácter de propietario del inmueble materia de este contrato.
+EL ARRENDATARIO: {tenant.get('name', '')}, quien manifiesta su interés en arrendar el inmueble.
+
+CLÁUSULAS
+
+PRIMERA. OBJETO. El ARRENDADOR otorga en arrendamiento al ARRENDATARIO el inmueble ubicado en: {dir_completa}, descrito como "{prop['title']}" ({prop.get('property_type','')}).
+
+SEGUNDA. VIGENCIA. El presente contrato tendrá una vigencia de {c['term_months']} meses, iniciando el {c['start_date']} y concluyendo el {c['end_date']}.
+
+TERCERA. RENTA. El ARRENDATARIO pagará una renta mensual de {_money(c['monthly_rent'])}, pagadera dentro de los primeros cinco días de cada mes.
+
+CUARTA. DEPÓSITO EN GARANTÍA. El ARRENDATARIO entregará un depósito en garantía por la cantidad de {_money(c['deposit'])}, reembolsable al término del contrato conforme a las condiciones aquí pactadas.
+
+QUINTA. FONDO DE MANTENIMIENTO. Se establece una cuota de mantenimiento mensual de {_money(c['maintenance_fund'])}.
+
+SEXTA. COMISIÓN DE ADMINISTRACIÓN. La plataforma Réntalo en Línea percibirá una comisión de {_money(c['commission'])} por concepto de administración e intermediación.
+
+SÉPTIMA. USO. El inmueble se destinará exclusivamente para uso habitacional/comercial según su naturaleza, quedando prohibido subarrendar sin autorización previa por escrito.
+
+OCTAVA. OBLIGACIONES. El ARRENDATARIO se obliga a conservar el inmueble en buen estado, cubrir los servicios a su cargo y respetar el reglamento interno.
+
+NOVENA. JURISDICCIÓN. Para la interpretación y cumplimiento del presente contrato, las partes se someten a las leyes y tribunales competentes de los Estados Unidos Mexicanos.
+
+——— DOCUMENTO FICTICIO DE PRUEBA. Este borrador debe ser revisado y ajustado por el administrador antes de coordinar firmas o rutearlo a notaría. ———
+"""
+
+
 class ContractFromVisit(BaseModel):
     start_date: Optional[str] = None
 
@@ -1210,10 +1262,12 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
     if existing:
         return {"ok": True, "contract": existing, "existing": True}
     commission = round(prop["price_month"] * 0.05, 2)
+    tenant = await db.users.find_one({"id": v["tenant_id"]}, {"_id": 0}) or {"name": v["tenant_name"]}
     contract = {
         "id": new_id("ctr"),
         "application_id": None,
         "property_id": v["property_id"],
+        "property_public_id": prop.get("public_id", prop["id"]),
         "property_title": prop["title"],
         "tenant_id": v["tenant_id"],
         "tenant_name": v["tenant_name"],
@@ -1226,14 +1280,18 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
         "start_date": start.date().isoformat(),
         "end_date": (start + timedelta(days=365)).date().isoformat(),
         "term_months": 12,
-        "status": "borrador",
+        "status": "en_revision_admin",
+        "source": "visita",
         "created_at": now_utc().isoformat(),
     }
+    contract["contract_text"] = build_contract_text(prop, user, tenant, contract)
     await db.contracts.insert_one(dict(contract))
     contract.pop("_id", None)
     await db.properties.update_one({"id": v["property_id"]}, {"$set": {"status": "en_proceso"}})
-    await notify(v["tenant_id"], "contrato", "Nuevo contrato de arrendamiento",
-                 f"El arrendador inició un contrato de arrendamiento para '{prop['title']}'.", "/panel/contratos")
+    # Enviar SOLO al administrador para revisión/ajuste (no al arrendatario ni al notario)
+    await notify_staff("administrar_contratos", "contrato", "Contrato para revisión",
+                       f"El arrendador {user['name']} generó un contrato (borrador de prueba) para '{prop['title']}'. Revísalo y ajústalo.",
+                       "/admin/contratos")
     return {"ok": True, "contract": contract}
 
 
@@ -2087,6 +2145,37 @@ async def admin_override_risk(application_id: str, data: RiskOverride, actor: di
 async def admin_contracts(user: dict = Depends(require_permission("consultar"))):
     contracts = await db.contracts.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return contracts
+
+
+class AdminContractUpdate(BaseModel):
+    contract_text: Optional[str] = None
+    status: Optional[str] = None
+
+
+ADMIN_CONTRACT_STATUSES = ["en_revision_admin", "ajustado", "listo_para_firma", "borrador"]
+
+
+@api.patch("/admin/contracts/{contract_id}")
+async def admin_update_contract(contract_id: str, data: AdminContractUpdate, user: dict = Depends(require_permission("administrar_contratos"))):
+    c = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    updates = {}
+    if data.contract_text is not None:
+        updates["contract_text"] = data.contract_text
+    if data.status is not None:
+        if data.status not in ADMIN_CONTRACT_STATUSES:
+            raise HTTPException(status_code=400, detail="Estado inválido")
+        updates["status"] = data.status
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nada que actualizar")
+    updates["admin_adjusted_at"] = now_utc().isoformat()
+    await db.contracts.update_one({"id": contract_id}, {"$set": updates})
+    # Notificar al arrendador del avance de la revisión (no al arrendatario ni notario)
+    await notify(c["landlord_id"], "contrato", "Contrato revisado por el administrador",
+                 f"El administrador actualizó el contrato de '{c['property_title']}'.", "/panel/contratos")
+    c.update(updates)
+    return {"ok": True, "contract": c}
 
 
 @api.get("/admin/payments")
