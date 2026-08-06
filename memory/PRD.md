@@ -145,6 +145,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - El botón navega a /admin/contratos?open={id}; AdminContracts lee el query param y abre automáticamente el diálogo de revisión/ajuste con el texto del contrato genérico cargado.
 - Backend: /admin/members/{id} ahora devuelve `contracts` (contratos donde tenant_id == miembro). Se conserva build_contract_text (contrato genérico de prueba). Verificado con screenshots (sección + auto-apertura del diálogo).
 
+## Plantilla de contrato ajustada (2026-08-06)
+- Plazo seleccionable al crear el contrato desde la visita: 6/12/24 meses (default 12); backend valida y calcula end_date con add_months (respeta meses reales, no 365 días).
+- build_contract_text reescrito con 13 cláusulas: Objeto, Destino/Uso (EXCLUSIVAMENTE habitacional), Vigencia forzosa, Renta, Incremento anual (INPC/INEGI), Depósito, Fondo de mantenimiento, Recargo por pago tardío (10% de la renta si se paga después del día 5), Pena por terminación anticipada (1 mensualidad), Comisión de administración, Obligaciones, Mediación (previa, a través de rentaloenlinea.com) y Jurisdicción.
+- Verificado: backend (curl) contrato 24 meses genera end_date correcto y todas las cláusulas presentes; frontend (screenshot) selector "Plazo del contrato".
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

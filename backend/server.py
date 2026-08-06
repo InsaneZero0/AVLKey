@@ -1195,8 +1195,19 @@ def _money(v) -> str:
         return f"${v} MXN"
 
 
+def add_months(d, months: int):
+    import calendar
+    m = d.month - 1 + months
+    y = d.year + m // 12
+    m = m % 12 + 1
+    day = min(d.day, calendar.monthrange(y, m)[1])
+    return d.replace(year=y, month=m, day=day)
+
+
 def build_contract_text(prop: dict, landlord: dict, tenant: dict, c: dict) -> str:
     dir_completa = exact_address(prop)
+    recargo = round(float(c["monthly_rent"]) * 0.10, 2)
+    pena = float(c["monthly_rent"])
     return f"""CONTRATO DE ARRENDAMIENTO (BORRADOR DE PRUEBA — PENDIENTE DE REVISIÓN Y AJUSTE POR EL ADMINISTRADOR)
 
 Folio del contrato: {c['id']}
@@ -1211,21 +1222,29 @@ CLÁUSULAS
 
 PRIMERA. OBJETO. El ARRENDADOR otorga en arrendamiento al ARRENDATARIO el inmueble ubicado en: {dir_completa}, descrito como "{prop['title']}" ({prop.get('property_type','')}).
 
-SEGUNDA. VIGENCIA. El presente contrato tendrá una vigencia de {c['term_months']} meses, iniciando el {c['start_date']} y concluyendo el {c['end_date']}.
+SEGUNDA. DESTINO Y USO. El inmueble se destinará EXCLUSIVAMENTE para uso HABITACIONAL. Queda prohibido destinarlo a un fin distinto, así como subarrendar o ceder los derechos de este contrato sin autorización previa y por escrito del ARRENDADOR.
 
-TERCERA. RENTA. El ARRENDATARIO pagará una renta mensual de {_money(c['monthly_rent'])}, pagadera dentro de los primeros cinco días de cada mes.
+TERCERA. VIGENCIA. El presente contrato tendrá una vigencia forzosa de {c['term_months']} meses, iniciando el {c['start_date']} y concluyendo el {c['end_date']}.
 
-CUARTA. DEPÓSITO EN GARANTÍA. El ARRENDATARIO entregará un depósito en garantía por la cantidad de {_money(c['deposit'])}, reembolsable al término del contrato conforme a las condiciones aquí pactadas.
+CUARTA. RENTA. El ARRENDATARIO pagará una renta mensual de {_money(c['monthly_rent'])}, pagadera por adelantado dentro de los primeros CINCO (5) días naturales de cada mes.
 
-QUINTA. FONDO DE MANTENIMIENTO. Se establece una cuota de mantenimiento mensual de {_money(c['maintenance_fund'])}.
+QUINTA. INCREMENTO ANUAL. La renta se incrementará automáticamente cada doce (12) meses conforme al Índice Nacional de Precios al Consumidor (INPC) publicado por el INEGI correspondiente al periodo inmediato anterior, aplicándose sobre la última renta vigente.
 
-SEXTA. COMISIÓN DE ADMINISTRACIÓN. La plataforma Réntalo en Línea percibirá una comisión de {_money(c['commission'])} por concepto de administración e intermediación.
+SEXTA. DEPÓSITO EN GARANTÍA. El ARRENDATARIO entregará un depósito en garantía por {_money(c['deposit'])}, reembolsable al término del contrato una vez verificado el buen estado del inmueble y cubiertos los adeudos que existieran.
 
-SÉPTIMA. USO. El inmueble se destinará exclusivamente para uso habitacional/comercial según su naturaleza, quedando prohibido subarrendar sin autorización previa por escrito.
+SÉPTIMA. FONDO DE MANTENIMIENTO. Se establece una cuota mensual de mantenimiento de {_money(c['maintenance_fund'])}.
 
-OCTAVA. OBLIGACIONES. El ARRENDATARIO se obliga a conservar el inmueble en buen estado, cubrir los servicios a su cargo y respetar el reglamento interno.
+OCTAVA. RECARGO POR PAGO TARDÍO. En caso de que la renta no se cubra dentro de los primeros cinco (5) días del mes, el ARRENDATARIO pagará un recargo equivalente al 10% de la renta mensual, es decir {_money(recargo)}, por cada mensualidad pagada de forma extemporánea.
 
-NOVENA. JURISDICCIÓN. Para la interpretación y cumplimiento del presente contrato, las partes se someten a las leyes y tribunales competentes de los Estados Unidos Mexicanos.
+NOVENA. PENA POR TERMINACIÓN ANTICIPADA. Si el ARRENDATARIO da por terminado el contrato antes de concluir la vigencia forzosa pactada, cubrirá al ARRENDADOR una pena convencional equivalente a UNA (1) mensualidad de renta, es decir {_money(pena)}, sin perjuicio de las rentas devengadas y no pagadas.
+
+DÉCIMA. COMISIÓN DE ADMINISTRACIÓN. La plataforma Réntalo en Línea percibirá una comisión de {_money(c['commission'])} por concepto de administración e intermediación.
+
+DÉCIMA PRIMERA. OBLIGACIONES DEL ARRENDATARIO. Conservar el inmueble en buen estado, cubrir los servicios a su cargo (agua, luz, gas, internet y demás), respetar el reglamento interno y permitir las inspecciones acordadas.
+
+DÉCIMA SEGUNDA. MEDIACIÓN. Ante cualquier controversia derivada de este contrato, las partes se obligan a agotar de manera previa un procedimiento de MEDIACIÓN a través de la plataforma rentaloenlinea.com, buscando una solución conciliatoria antes de acudir a instancias judiciales.
+
+DÉCIMA TERCERA. JURISDICCIÓN. Agotada la mediación sin acuerdo, las partes se someten a las leyes y tribunales competentes de los Estados Unidos Mexicanos, renunciando a cualquier otro fuero.
 
 ——— DOCUMENTO FICTICIO DE PRUEBA. Este borrador debe ser revisado y ajustado por el administrador antes de coordinar firmas o rutearlo a notaría. ———
 """
@@ -1233,6 +1252,7 @@ NOVENA. JURISDICCIÓN. Para la interpretación y cumplimiento del presente contr
 
 class ContractFromVisit(BaseModel):
     start_date: Optional[str] = None
+    term_months: Optional[int] = 12
 
 
 @api.post("/visits/{visit_id}/create-contract")
@@ -1263,6 +1283,8 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
         return {"ok": True, "contract": existing, "existing": True}
     commission = round(prop["price_month"] * 0.05, 2)
     tenant = await db.users.find_one({"id": v["tenant_id"]}, {"_id": 0}) or {"name": v["tenant_name"]}
+    term_months = data.term_months if data.term_months in (6, 12, 24) else 12
+    end = add_months(start.date(), term_months)
     contract = {
         "id": new_id("ctr"),
         "application_id": None,
@@ -1278,8 +1300,8 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
         "commission": commission,
         "maintenance_fund": prop.get("maintenance_fee", 0),
         "start_date": start.date().isoformat(),
-        "end_date": (start + timedelta(days=365)).date().isoformat(),
-        "term_months": 12,
+        "end_date": end.isoformat(),
+        "term_months": term_months,
         "status": "en_revision_admin",
         "source": "visita",
         "created_at": now_utc().isoformat(),

@@ -53,17 +53,19 @@ export default function Visits() {
   const [slot, setSlot] = useState(null);
   const [contractVisit, setContractVisit] = useState(null);
   const [startDate, setStartDate] = useState("");
+  const [term, setTerm] = useState("12");
 
   const createContract = (v) => {
     const { min } = contractDateBounds();
     setContractVisit(v);
     setStartDate(min);
+    setTerm("12");
   };
 
   const submitContract = async () => {
     if (!startDate) { toast.error("Selecciona una fecha de inicio"); return; }
     try {
-      const { data } = await api.post(`/visits/${contractVisit.id}/create-contract`, { start_date: startDate });
+      const { data } = await api.post(`/visits/${contractVisit.id}/create-contract`, { start_date: startDate, term_months: Number(term) });
       toast.success(data.existing ? "Ya existe un contrato para este arrendatario." : "Contrato enviado al administrador para revisión y ajuste.");
       setContractVisit(null);
       navigate("/panel/contratos");
@@ -280,6 +282,17 @@ export default function Visits() {
               <p className="text-xs text-stone-500 mt-1.5">
                 Solo puedes elegir una fecha dentro de los próximos 4 a 10 días.
               </p>
+            </div>
+            <div>
+              <Label htmlFor="contract-term">Plazo del contrato</Label>
+              <Select value={term} onValueChange={setTerm}>
+                <SelectTrigger id="contract-term" data-testid="contract-term"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">6 meses</SelectItem>
+                  <SelectItem value="12">12 meses</SelectItem>
+                  <SelectItem value="24">24 meses</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
