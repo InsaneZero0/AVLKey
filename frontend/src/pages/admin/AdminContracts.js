@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText, Download } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "en_revision_admin", label: "En revisión (admin)" },
@@ -58,6 +58,20 @@ export default function AdminContracts() {
       load();
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
     finally { setSaving(false); }
+  };
+
+  const downloadPdf = async (c) => {
+    try {
+      const res = await api.get(`/admin/contracts/${c.id}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contrato_${c.property_public_id || c.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch { toast.error("No se pudo generar el PDF"); }
   };
 
   if (!contracts) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
@@ -123,6 +137,9 @@ export default function AdminContracts() {
           </div>
           <DialogFooter>
             <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button variant="outline" className="rounded-full" onClick={() => downloadPdf(editing)} data-testid="admin-contract-pdf">
+              <Download className="w-4 h-4 mr-1" /> Descargar PDF
+            </Button>
             <Button onClick={save} disabled={saving} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="admin-contract-save">
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} Guardar ajustes
             </Button>

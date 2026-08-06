@@ -1250,6 +1250,32 @@ DÉCIMA TERCERA. JURISDICCIÓN. Agotada la mediación sin acuerdo, las partes se
 """
 
 
+def build_contract_pdf(c: dict) -> bytes:
+    import io
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=2 * cm, bottomMargin=2 * cm,
+                            leftMargin=2.2 * cm, rightMargin=2.2 * cm, title="Contrato de arrendamiento")
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle("body", parent=styles["Normal"], fontName="Helvetica",
+                          fontSize=10, leading=15, alignment=TA_JUSTIFY, spaceAfter=8)
+    story = []
+    text = c.get("contract_text") or "Sin contenido de contrato."
+    for block in text.split("\n\n"):
+        block = block.strip()
+        if not block:
+            continue
+        safe = (block.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>"))
+        story.append(Paragraph(safe, body))
+        story.append(Spacer(1, 4))
+    doc.build(story)
+    return buf.getvalue()
+
+
 class ContractFromVisit(BaseModel):
     start_date: Optional[str] = None
     term_months: Optional[int] = 12
@@ -2200,6 +2226,17 @@ async def admin_update_contract(contract_id: str, data: AdminContractUpdate, use
                  f"El administrador actualizó el contrato de '{c['property_title']}'.", "/panel/contratos")
     c.update(updates)
     return {"ok": True, "contract": c}
+
+
+@api.get("/admin/contracts/{contract_id}/pdf")
+async def admin_contract_pdf(contract_id: str, user: dict = Depends(require_permission("administrar_contratos"))):
+    c = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    pdf = build_contract_pdf(c)
+    filename = f"contrato_{c.get('property_public_id', c['id'])}.pdf"
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 @api.get("/admin/payments")

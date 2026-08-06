@@ -150,6 +150,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - build_contract_text reescrito con 13 cláusulas: Objeto, Destino/Uso (EXCLUSIVAMENTE habitacional), Vigencia forzosa, Renta, Incremento anual (INPC/INEGI), Depósito, Fondo de mantenimiento, Recargo por pago tardío (10% de la renta si se paga después del día 5), Pena por terminación anticipada (1 mensualidad), Comisión de administración, Obligaciones, Mediación (previa, a través de rentaloenlinea.com) y Jurisdicción.
 - Verificado: backend (curl) contrato 24 meses genera end_date correcto y todas las cláusulas presentes; frontend (screenshot) selector "Plazo del contrato".
 
+## Descargar contrato en PDF (2026-08-06)
+- Enlace "Contratos" agregado al menú del panel interno (AdminLayout, perm administrar_contratos) — antes no había forma de navegar a /admin/contratos.
+- Backend: GET /api/admin/contracts/{id}/pdf (perm administrar_contratos) genera el PDF con reportlab (build_contract_pdf) a partir de contract_text, respuesta application/pdf con Content-Disposition.
+- Frontend AdminContracts: botón "Descargar PDF" en el diálogo de revisión y botón "PDF" por fila en la tabla (descarga vía blob). reportlab agregado a requirements.txt.
+- Verificado: PDF renderizado (2 páginas, 13 cláusulas, texto justificado) vía skill document-verification; botón visible en el diálogo.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
