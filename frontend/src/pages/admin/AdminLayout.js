@@ -12,6 +12,7 @@ const NAV = [
   { to: "/admin/usuarios", label: "Usuarios", icon: Users, perm: "administrar_usuarios" },
   { to: "/admin/arrendadores", label: "Arrendadores", icon: Building2, perm: "consultar" },
   { to: "/admin/arrendatarios", label: "Arrendatarios", icon: UserRound, perm: "consultar" },
+  { to: "/admin/contratos", label: "Contratos", icon: FileText, perm: "administrar_contratos" },
   { to: "/admin/propiedades", label: "Propiedades en revisión", icon: Building2, perm: "consultar" },
 ];
 
