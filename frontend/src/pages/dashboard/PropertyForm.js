@@ -11,6 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, FileCheck2, Upload, Camera, Save, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MapEmbed } from "@/components/MapEmbed";
 
@@ -54,6 +58,7 @@ export default function PropertyForm() {
   const [loading, setLoading] = useState(false);
   const [ownershipFile, setOwnershipFile] = useState(null);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
@@ -113,7 +118,7 @@ export default function PropertyForm() {
   };
 
   const submit = async (e, isDraft = false) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!form.title || !form.city || !form.price_month) { toast.error("Completa título, ciudad y renta"); return; }
     setLoading(true);
     try {
@@ -157,12 +162,18 @@ export default function PropertyForm() {
     }
   };
 
+  const openConfirm = (e) => {
+    if (e) e.preventDefault();
+    if (!form.title || !form.city || !form.price_month) { toast.error("Completa título, ciudad y renta"); return; }
+    setConfirmOpen(true);
+  };
+
   return (
     <div className="max-w-3xl">
       <h1 className="font-display font-bold text-3xl text-navy tracking-tight">{isEdit ? "Editar inmueble" : "Publicar inmueble"}</h1>
       <p className="text-stone-500 mt-1">Esta información pasará al departamento de validación y te estaremos enviando una notificación de tu status.</p>
 
-      <form onSubmit={submit} className="mt-8 space-y-8">
+      <form onSubmit={openConfirm} className="mt-8 space-y-8">
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Información general</h2>
           <div>
@@ -347,6 +358,24 @@ export default function PropertyForm() {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent data-testid="publish-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Antes de enviar</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-stone-600">
+                <p>Tu inquilino pagará el <strong>2.5% de mantenimiento</strong>; a los 12 meses o al término del contrato se te depositará en tu cuenta para mantenimiento.</p>
+                <p>Tu inquilino además pagará el <strong>4% de comisión</strong>.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="publish-confirm-cancel">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmOpen(false); submit(null, false); }} className="bg-terracotta hover:bg-terracotta-hover" data-testid="publish-confirm-accept">Aceptar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

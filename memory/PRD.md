@@ -172,6 +172,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Garantía de pago puntual: tooltip "Cubre pago puntual antes del día 10 del mes. En caso de incumplimiento hasta 6 meses de renta."
 - Verificado por screenshot (tooltip daños $30,000 con renta 10,000).
 
+## Aviso al enviar publicación (2026-08-06)
+- PropertyForm: al pulsar "Enviar información" se muestra un AlertDialog "Antes de enviar" con: "Tu inquilino pagará el 2.5% de mantenimiento; a los 12 meses o al término del contrato se te depositará en tu cuenta para mantenimiento" y "Tu inquilino además pagará el 4% de comisión." Botones Aceptar (envía review_stage=recibido) / Cancelar. El botón Guardar (borrador) no dispara el aviso.
+- Títulos de garantías muestran "(opcional)".
+- Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
