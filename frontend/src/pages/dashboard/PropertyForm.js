@@ -207,7 +207,7 @@ export default function PropertyForm() {
                 <Checkbox checked={form.garantia_danos} onCheckedChange={(v) => set("garantia_danos", !!v)} data-testid="prop-garantia-danos" />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-navy">Garantía de daños</span>
+                    <span className="text-sm font-medium text-navy">Garantía de daños <span className="text-xs font-normal text-stone-400">(opcional)</span></span>
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -228,7 +228,7 @@ export default function PropertyForm() {
                 <Checkbox checked={form.garantia_pago_puntual} onCheckedChange={(v) => set("garantia_pago_puntual", !!v)} data-testid="prop-garantia-pago" />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-navy">Garantía de pago puntual</span>
+                    <span className="text-sm font-medium text-navy">Garantía de pago puntual <span className="text-xs font-normal text-stone-400">(opcional)</span></span>
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger asChild>
