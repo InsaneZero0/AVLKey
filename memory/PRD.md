@@ -156,6 +156,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Frontend AdminContracts: botón "Descargar PDF" en el diálogo de revisión y botón "PDF" por fila en la tabla (descarga vía blob). reportlab agregado a requirements.txt.
 - Verificado: PDF renderizado (2 páginas, 13 cláusulas, texto justificado) vía skill document-verification; botón visible en el diálogo.
 
+## Precios y comisiones en Publicar inmueble (2026-08-06)
+- Sección "Precios (MXN)" rediseñada: Renta mensual (input), checkbox opcional "Garantía de daños" (5% × renta), checkbox opcional "Garantía de pago puntual" (5% × renta), línea fija "Comisión plataforma" (4% × renta) y "Total mensual (informativo)" = renta + garantías marcadas + comisión.
+- Campo "Mantenimiento" (3%) ELIMINADO del formulario (maintenance_fee=0). El total es solo informativo para el arrendador.
+- Comisión de plataforma cambiada a 4% en TODO (contrato incluido): create_contract_from_visit y generación por solicitud usan price_month*0.04.
+- Backend PropertyInput: nuevos campos garantia_danos:bool, garantia_pago_puntual:bool (persisten y se recargan al editar).
+- Verificado: cálculo en UI (renta 10,000 → daños 500, pago 500, comisión 400, total 11,400) y persistencia vía curl.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

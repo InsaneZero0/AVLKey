@@ -336,6 +336,8 @@ class PropertyInput(BaseModel):
     price_month: float
     deposit: float = 0
     maintenance_fee: float = 0
+    garantia_danos: bool = False
+    garantia_pago_puntual: bool = False
     bedrooms: int = 0
     bathrooms: int = 0
     parking: int = 0
@@ -935,7 +937,7 @@ async def update_application_status(application_id: str, data: StatusUpdate, use
         existing = await db.contracts.find_one({"application_id": application_id}, {"_id": 0})
         if not existing:
             prop = await db.properties.find_one({"id": app_doc["property_id"]}, {"_id": 0})
-            commission = round(prop["price_month"] * 0.05, 2)
+            commission = round(prop["price_month"] * 0.04, 2)
             start = now_utc()
             contract = {
                 "id": new_id("ctr"),
@@ -1307,7 +1309,7 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
         {"_id": 0})
     if existing:
         return {"ok": True, "contract": existing, "existing": True}
-    commission = round(prop["price_month"] * 0.05, 2)
+    commission = round(prop["price_month"] * 0.04, 2)
     tenant = await db.users.find_one({"id": v["tenant_id"]}, {"_id": 0}) or {"name": v["tenant_name"]}
     term_months = data.term_months if data.term_months in (6, 12, 24) else 12
     end = add_months(start.date(), term_months)

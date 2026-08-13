@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, X, FileCheck2, Upload, Camera, Save } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MapEmbed } from "@/components/MapEmbed";
 
 const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
@@ -57,6 +58,7 @@ export default function PropertyForm() {
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
     furnished: false, pets_allowed: false, amenities: "", images: [],
+    garantia_danos: false, garantia_pago_puntual: false,
   });
 
   useEffect(() => {
@@ -72,12 +74,18 @@ export default function PropertyForm() {
         area_m2: data.area_m2 != null ? String(data.area_m2) : "",
         furnished: !!data.furnished, pets_allowed: !!data.pets_allowed,
         amenities: (data.amenities || []).join(", "), images: data.images || [],
+        garantia_danos: !!data.garantia_danos, garantia_pago_puntual: !!data.garantia_pago_puntual,
       });
     }).catch(() => toast.error("No se pudo cargar el inmueble"));
   }, [id]);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
-  const maintenance = Math.round((parseInt(form.price_month, 10) || 0) * 0.03);
+  const rent = parseInt(form.price_month, 10) || 0;
+  const danosAmt = Math.round(rent * 0.05);
+  const pagoAmt = Math.round(rent * 0.05);
+  const comisionAmt = Math.round(rent * 0.04);
+  const totalAmt = rent + (form.garantia_danos ? danosAmt : 0) + (form.garantia_pago_puntual ? pagoAmt : 0) + comisionAmt;
+  const money = (n) => `$${Number(n || 0).toLocaleString("en-US")}`;
 
   const addImage = (url) => {
     if (url && !form.images.includes(url)) set("images", [...form.images, url]);
@@ -113,7 +121,9 @@ export default function PropertyForm() {
         ...form,
         price_month: parseInt(form.price_month, 10) || 0,
         deposit: 0,
-        maintenance_fee: maintenance,
+        maintenance_fee: 0,
+        garantia_danos: !!form.garantia_danos,
+        garantia_pago_puntual: !!form.garantia_pago_puntual,
         bedrooms: parseInt(form.bedrooms) || 0,
         bathrooms: parseInt(form.bathrooms) || 0,
         parking: parseInt(form.parking) || 0,
@@ -190,7 +200,42 @@ export default function PropertyForm() {
           <h2 className="font-display font-semibold text-navy">Precios (MXN)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <MoneyInput label="Renta mensual" testid="prop-price_month" value={form.price_month} onChange={(v) => set("price_month", v)} placeholder="0" />
-            <MoneyInput label="Mantenimiento" testid="prop-maintenance_fee" value={maintenance ? String(maintenance) : ""} disabled placeholder="0" hint="Se calcula automáticamente como el 3% de la renta mensual." />
+          </div>
+          <div className="space-y-3 pt-1">
+            <label className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 cursor-pointer hover:bg-stone-50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Checkbox checked={form.garantia_danos} onCheckedChange={(v) => set("garantia_danos", !!v)} data-testid="prop-garantia-danos" />
+                <div>
+                  <div className="text-sm font-medium text-navy">Garantía de daños</div>
+                  <div className="text-xs text-stone-500">5% de la renta mensual</div>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-navy" data-testid="prop-garantia-danos-amt">{form.garantia_danos ? money(danosAmt) : "—"}</span>
+            </label>
+
+            <label className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 cursor-pointer hover:bg-stone-50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Checkbox checked={form.garantia_pago_puntual} onCheckedChange={(v) => set("garantia_pago_puntual", !!v)} data-testid="prop-garantia-pago" />
+                <div>
+                  <div className="text-sm font-medium text-navy">Garantía de pago puntual</div>
+                  <div className="text-xs text-stone-500">5% de la renta mensual</div>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-navy" data-testid="prop-garantia-pago-amt">{form.garantia_pago_puntual ? money(pagoAmt) : "—"}</span>
+            </label>
+
+            <div className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 bg-stone-50">
+              <div>
+                <div className="text-sm font-medium text-navy">Comisión plataforma</div>
+                <div className="text-xs text-stone-500">4% de la renta mensual (fijo)</div>
+              </div>
+              <span className="text-sm font-semibold text-navy" data-testid="prop-comision-amt">{money(comisionAmt)}</span>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+              <span className="font-display font-semibold text-navy">Total mensual <span className="text-xs font-normal text-stone-400">(informativo)</span></span>
+              <span className="font-display font-bold text-lg text-terracotta" data-testid="prop-total">{money(totalAmt)} MX</span>
+            </div>
           </div>
         </section>
 
