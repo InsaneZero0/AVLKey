@@ -167,6 +167,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Corrección: garantías (daños 5%, pago puntual 5%) y comisión plataforma (4%) las paga el arrendador y la plataforma las descuenta, por lo que se RESTAN de la renta (antes se sumaban).
 - Total renombrado a "Total a recibir (neto, informativo)" = renta − garantías marcadas − comisión; montos deducidos se muestran con "−" en rojo. Ej: renta 10,000 con ambas garantías → 10,000 − 500 − 500 − 400 = 8,600 neto.
 
+## Tooltips de garantías (2026-08-06)
+- Garantía de daños: ícono Info con tooltip "Cubre por daños hasta: $X" donde X = monto del descuento (5% renta) × 60. Ej. renta 10,000 → descuento 500 → "hasta $30,000".
+- Garantía de pago puntual: tooltip "Cubre pago puntual antes del día 10 del mes. En caso de incumplimiento hasta 6 meses de renta."
+- Verificado por screenshot (tooltip daños $30,000 con renta 10,000).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

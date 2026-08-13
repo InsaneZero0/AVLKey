@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, FileCheck2, Upload, Camera, Save } from "lucide-react";
+import { Loader2, X, FileCheck2, Upload, Camera, Save, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MapEmbed } from "@/components/MapEmbed";
@@ -206,7 +206,17 @@ export default function PropertyForm() {
               <div className="flex items-center gap-3">
                 <Checkbox checked={form.garantia_danos} onCheckedChange={(v) => set("garantia_danos", !!v)} data-testid="prop-garantia-danos" />
                 <div>
-                  <div className="text-sm font-medium text-navy">Garantía de daños</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-navy">Garantía de daños</span>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" onClick={(e) => e.preventDefault()} className="text-stone-400 hover:text-terracotta" data-testid="prop-garantia-danos-info"><Info className="w-3.5 h-3.5" /></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p className="max-w-xs">Cubre por daños hasta: {money(danosAmt * 60)}</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <div className="text-xs text-stone-500">5% de la renta mensual</div>
                 </div>
               </div>
@@ -217,7 +227,17 @@ export default function PropertyForm() {
               <div className="flex items-center gap-3">
                 <Checkbox checked={form.garantia_pago_puntual} onCheckedChange={(v) => set("garantia_pago_puntual", !!v)} data-testid="prop-garantia-pago" />
                 <div>
-                  <div className="text-sm font-medium text-navy">Garantía de pago puntual</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-navy">Garantía de pago puntual</span>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" onClick={(e) => e.preventDefault()} className="text-stone-400 hover:text-terracotta" data-testid="prop-garantia-pago-info"><Info className="w-3.5 h-3.5" /></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p className="max-w-xs">Cubre pago puntual antes del día 10 del mes. En caso de incumplimiento hasta 6 meses de renta.</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <div className="text-xs text-stone-500">5% de la renta mensual</div>
                 </div>
               </div>
