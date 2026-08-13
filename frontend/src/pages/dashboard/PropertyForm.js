@@ -84,7 +84,7 @@ export default function PropertyForm() {
   const danosAmt = Math.round(rent * 0.05);
   const pagoAmt = Math.round(rent * 0.05);
   const comisionAmt = Math.round(rent * 0.04);
-  const totalAmt = rent + (form.garantia_danos ? danosAmt : 0) + (form.garantia_pago_puntual ? pagoAmt : 0) + comisionAmt;
+  const totalAmt = rent - (form.garantia_danos ? danosAmt : 0) - (form.garantia_pago_puntual ? pagoAmt : 0) - comisionAmt;
   const money = (n) => `$${Number(n || 0).toLocaleString("en-US")}`;
 
   const addImage = (url) => {
@@ -210,7 +210,7 @@ export default function PropertyForm() {
                   <div className="text-xs text-stone-500">5% de la renta mensual</div>
                 </div>
               </div>
-              <span className="text-sm font-semibold text-navy" data-testid="prop-garantia-danos-amt">{form.garantia_danos ? money(danosAmt) : "—"}</span>
+              <span className="text-sm font-semibold text-red-600" data-testid="prop-garantia-danos-amt">{form.garantia_danos ? `− ${money(danosAmt)}` : "—"}</span>
             </label>
 
             <label className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 cursor-pointer hover:bg-stone-50 transition-colors">
@@ -221,7 +221,7 @@ export default function PropertyForm() {
                   <div className="text-xs text-stone-500">5% de la renta mensual</div>
                 </div>
               </div>
-              <span className="text-sm font-semibold text-navy" data-testid="prop-garantia-pago-amt">{form.garantia_pago_puntual ? money(pagoAmt) : "—"}</span>
+              <span className="text-sm font-semibold text-red-600" data-testid="prop-garantia-pago-amt">{form.garantia_pago_puntual ? `− ${money(pagoAmt)}` : "—"}</span>
             </label>
 
             <div className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 bg-stone-50">
@@ -229,13 +229,14 @@ export default function PropertyForm() {
                 <div className="text-sm font-medium text-navy">Comisión plataforma</div>
                 <div className="text-xs text-stone-500">4% de la renta mensual (fijo)</div>
               </div>
-              <span className="text-sm font-semibold text-navy" data-testid="prop-comision-amt">{money(comisionAmt)}</span>
+              <span className="text-sm font-semibold text-red-600" data-testid="prop-comision-amt">− {money(comisionAmt)}</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-stone-200 pt-3">
-              <span className="font-display font-semibold text-navy">Total mensual <span className="text-xs font-normal text-stone-400">(informativo)</span></span>
+              <span className="font-display font-semibold text-navy">Total a recibir <span className="text-xs font-normal text-stone-400">(neto, informativo)</span></span>
               <span className="font-display font-bold text-lg text-terracotta" data-testid="prop-total">{money(totalAmt)} MX</span>
             </div>
+            <p className="text-xs text-stone-500">Las garantías y la comisión de plataforma las cubre el arrendador y se descuentan de la renta; este es el monto neto que recibirás.</p>
           </div>
         </section>
 

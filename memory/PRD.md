@@ -163,6 +163,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Backend PropertyInput: nuevos campos garantia_danos:bool, garantia_pago_puntual:bool (persisten y se recargan al editar).
 - Verificado: cálculo en UI (renta 10,000 → daños 500, pago 500, comisión 400, total 11,400) y persistencia vía curl.
 
+## Comisiones/garantías se RESTAN de la renta (2026-08-06)
+- Corrección: garantías (daños 5%, pago puntual 5%) y comisión plataforma (4%) las paga el arrendador y la plataforma las descuenta, por lo que se RESTAN de la renta (antes se sumaban).
+- Total renombrado a "Total a recibir (neto, informativo)" = renta − garantías marcadas − comisión; montos deducidos se muestran con "−" en rojo. Ej: renta 10,000 con ambas garantías → 10,000 − 500 − 500 − 400 = 8,600 neto.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
