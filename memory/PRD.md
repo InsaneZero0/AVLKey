@@ -177,6 +177,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Títulos de garantías muestran "(opcional)".
 - Verificado por screenshot.
 
+## Detalle público: depósito y cuota (2026-08-06)
+- PropertyDetail (tarjeta de precios): "Depósito en garantía (1 mes de renta)" = price_month (fijo, ya no usa prop.deposit) y nueva línea "Cuota Réntalo en Línea (4%)" = price_month*0.04.
+- Backend: depósito del contrato = 1 mes de renta (prop["price_month"]) en ambos flujos (create_contract_from_visit y generación por solicitud aprobada).
+- Verificado por screenshot (renta 11,000 → depósito 11,000, cuota 440).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
