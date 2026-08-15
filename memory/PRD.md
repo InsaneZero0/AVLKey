@@ -182,6 +182,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Backend: depósito del contrato = 1 mes de renta (prop["price_month"]) en ambos flujos (create_contract_from_visit y generación por solicitud aprobada).
 - Verificado por screenshot (renta 11,000 → depósito 11,000, cuota 440).
 
+## Menú del arrendador gated por autorización (2026-08-06)
+- DashboardLayout: para el arrendador, "Mi perfil" siempre habilitado. "Publicar inmueble" se habilita SOLO cuando user.registro_stage === "autorizado" (checkbox "Autorizado" del admin). El resto (Mis inmuebles, Solicitudes recibidas, Visitas, Contratos, Pagos, Resumen) permanece deshabilitado (gris + candado, con tooltip). Aplica en sidebar y nav móvil.
+- El arrendatario conserva todas sus opciones habilitadas.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

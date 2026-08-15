@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home, LayoutDashboard, Building2, FileText, CreditCard, User, LogOut,
-  ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock, Heart,
+  ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock, Heart, Lock,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -11,27 +11,28 @@ export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isLandlord = user?.role === "arrendador";
+  const authorized = user?.registro_stage === "autorizado";
 
   const doLogout = async () => { await logout(); navigate("/"); };
 
   const links = isLandlord ? [
-    { to: "/panel/perfil", label: "Mi perfil", icon: User },
-    { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle },
-    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2 },
-    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox },
-    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
-    { to: "/panel/contratos", label: "Contratos", icon: FileText },
-    { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
-    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
+    { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
+    { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle, enabled: authorized, hint: "Se habilita cuando el administrador autorice tu registro." },
+    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: false, hint: "Disponible más adelante." },
   ] : [
-    { to: "/panel/verificacion", label: "Registro", icon: FileCheck2 },
-    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true },
-    { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList },
-    { to: "/panel/favoritos", label: "Favoritos", icon: Heart },
-    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock },
-    { to: "/panel/contratos", label: "Contratos", icon: FileText },
-    { to: "/panel/pagos", label: "Pagos", icon: CreditCard },
-    { to: "/panel/perfil", label: "Mi perfil", icon: User },
+    { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: true },
+    { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList, enabled: true },
+    { to: "/panel/favoritos", label: "Favoritos", icon: Heart, enabled: true },
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: true },
+    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: true },
+    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: true },
+    { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
   ];
 
   const initials = (user?.name || "U").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
@@ -46,17 +47,28 @@ export default function DashboardLayout() {
         </Link>
         <nav className="flex-1 p-4 space-y-1">
           {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.end}
-              data-testid={`sidebar-${l.to.split("/").pop() || "resumen"}`}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-terracotta text-white" : "text-stone-600 hover:bg-stone-100"}`
-              }
-            >
-              <l.icon className="w-4 h-4" /> {l.label}
-            </NavLink>
+            l.enabled ? (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                end={l.end}
+                data-testid={`sidebar-${l.to.split("/").pop() || "resumen"}`}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-terracotta text-white" : "text-stone-600 hover:bg-stone-100"}`
+                }
+              >
+                <l.icon className="w-4 h-4" /> {l.label}
+              </NavLink>
+            ) : (
+              <div
+                key={l.to}
+                title={l.hint || "Opción no disponible"}
+                data-testid={`sidebar-disabled-${l.to.split("/").pop() || "resumen"}`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-300 cursor-not-allowed select-none"
+              >
+                <l.icon className="w-4 h-4" /> {l.label} <Lock className="w-3 h-3 ml-auto" />
+              </div>
+            )
           ))}
         </nav>
         <div className="p-4 border-t border-stone-200">
@@ -93,9 +105,15 @@ export default function DashboardLayout() {
         {/* Mobile nav */}
         <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 flex justify-around py-2 z-40">
           {links.slice(0, 5).map((l) => (
-            <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => `flex flex-col items-center gap-0.5 text-[10px] px-2 ${isActive ? "text-terracotta" : "text-stone-500"}`}>
-              <l.icon className="w-5 h-5" /> {l.label.split(" ")[0]}
-            </NavLink>
+            l.enabled ? (
+              <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => `flex flex-col items-center gap-0.5 text-[10px] px-2 ${isActive ? "text-terracotta" : "text-stone-500"}`}>
+                <l.icon className="w-5 h-5" /> {l.label.split(" ")[0]}
+              </NavLink>
+            ) : (
+              <div key={l.to} title={l.hint || "Opción no disponible"} className="flex flex-col items-center gap-0.5 text-[10px] px-2 text-stone-300 cursor-not-allowed select-none">
+                <l.icon className="w-5 h-5" /> {l.label.split(" ")[0]}
+              </div>
+            )
           ))}
         </div>
       </main>
