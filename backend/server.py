@@ -713,6 +713,7 @@ async def list_properties(
         query["price_month"] = price_q
     if q:
         query["$or"] = [
+            {"public_id": {"$regex": q.strip(), "$options": "i"}},
             {"title": {"$regex": q, "$options": "i"}},
             {"description": {"$regex": q, "$options": "i"}},
             {"city": {"$regex": q, "$options": "i"}},

@@ -85,10 +85,10 @@ export default function Explore() {
           <div className="bg-white rounded-2xl border border-stone-200 p-6 lg:sticky lg:top-20 space-y-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
             <div className="flex items-center gap-2 text-navy font-semibold"><SlidersHorizontal className="w-4 h-4" /> Filtros</div>
             <div>
-              <Label className="text-sm">Búsqueda</Label>
+              <Label className="text-sm">Buscar por ID</Label>
               <div className="flex items-center gap-2 border border-stone-200 rounded-lg px-3 mt-1">
                 <Search className="w-4 h-4 text-stone-400" />
-                <Input data-testid="filter-search" value={f.q} onChange={(e) => set("q", e.target.value)} placeholder="Palabra clave..." className="border-0 focus-visible:ring-0 shadow-none px-0" />
+                <Input data-testid="filter-id" value={f.q} onChange={(e) => set("q", e.target.value)} placeholder="Ej. P160826002" className="border-0 focus-visible:ring-0 shadow-none px-0" />
               </div>
             </div>
             <div>

@@ -201,6 +201,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Auto-mayúscula primera letra (2026-08-06)
 - PropertyForm: helper capFirst aplicado a Título, Descripción, Colonia, Ciudad, Estado, Dirección y Amenidades; la primera letra del valor se capitaliza automáticamente al escribir. Verificado por screenshot.
 
+## Buscar por ID en Explorar (2026-08-06)
+- Explore: el filtro "Búsqueda / Palabra clave" se renombró a "Buscar por ID" (placeholder "Ej. P160826002", testid filter-id).
+- Backend /properties: el parámetro q ahora también busca por public_id (regex case-insensitive), además de title/description/city/colonia. Verificado por curl (P160826002→1, p1608→2) y screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
