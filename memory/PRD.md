@@ -186,6 +186,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - DashboardLayout: para el arrendador, "Mi perfil" siempre habilitado. "Publicar inmueble" se habilita SOLO cuando user.registro_stage === "autorizado" (checkbox "Autorizado" del admin). El resto (Mis inmuebles, Solicitudes recibidas, Visitas, Contratos, Pagos, Resumen) permanece deshabilitado (gris + candado, con tooltip). Aplica en sidebar y nav móvil.
 - El arrendatario conserva todas sus opciones habilitadas.
 
+## Menú del arrendador: 3 niveles (2026-08-06)
+- Nivel 1 (registro nuevo): solo "Mi perfil".
+- Nivel 2 (registro_stage === "autorizado"): + "Publicar inmueble".
+- Nivel 3 (tiene ≥1 inmueble con review_stage === "publicado"): se habilita el resto (Mis inmuebles, Solicitudes recibidas, Visitas, Contratos, Pagos, Resumen). DashboardLayout consulta /my/properties (hasPublished). Tooltip de esas opciones: "Se habilitará cuando el administrador autorice la publicación de tu inmueble."
+- Verificado por screenshots (estados no autorizado, autorizado, y con inmueble publicado → menú completo).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

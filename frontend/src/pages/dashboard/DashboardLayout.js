@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 import {
   Home, LayoutDashboard, Building2, FileText, CreditCard, User, LogOut,
   ClipboardList, PlusCircle, Inbox, FileCheck2, CalendarClock, Heart, Lock,
@@ -12,18 +13,26 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const isLandlord = user?.role === "arrendador";
   const authorized = user?.registro_stage === "autorizado";
+  const [hasPublished, setHasPublished] = useState(false);
+
+  useEffect(() => {
+    if (!isLandlord) return;
+    api.get("/my/properties")
+      .then(({ data }) => setHasPublished((data || []).some((p) => (p.review_stage || p.display_status) === "publicado")))
+      .catch(() => setHasPublished(false));
+  }, [isLandlord]);
 
   const doLogout = async () => { await logout(); navigate("/"); };
 
   const links = isLandlord ? [
     { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
     { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle, enabled: authorized, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
   ] : [
     { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: true },
