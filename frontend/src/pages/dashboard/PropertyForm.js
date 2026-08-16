@@ -274,9 +274,9 @@ export default function PropertyForm() {
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Recámaras" testid="prop-bedrooms" type="number" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} placeholder="0" />
-            <Field label="Baños" testid="prop-bathrooms" type="number" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} placeholder="0" />
-            <Field label="Estacionamientos" testid="prop-parking" type="number" value={form.parking} onChange={(e) => set("parking", e.target.value)} placeholder="0" />
+            <Field label="Recámaras" testid="prop-bedrooms" type="text" inputMode="numeric" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/\D/g, ""))} placeholder="0" />
+            <Field label="Baños" testid="prop-bathrooms" type="text" inputMode="numeric" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/\D/g, ""))} placeholder="0" />
+            <Field label="Estacionamientos" testid="prop-parking" type="text" inputMode="numeric" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/\D/g, ""))} placeholder="0" />
             <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="0" />
           </div>
           <div>
