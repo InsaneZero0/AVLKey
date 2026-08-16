@@ -18,10 +18,20 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { MapEmbed } from "@/components/MapEmbed";
 
-const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder }) => (
+const Field = ({ label, testid, type = "text", inputMode, value, onChange, placeholder, min, step }) => (
   <div>
     <Label>{label}</Label>
-    <Input data-testid={testid} type={type} inputMode={inputMode} value={value} onChange={onChange} placeholder={placeholder} />
+    <Input
+      data-testid={testid}
+      type={type}
+      inputMode={inputMode}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      min={min}
+      step={step}
+      onKeyDown={type === "number" ? (e) => { if (["-", "+", "e", "E"].includes(e.key)) e.preventDefault(); } : undefined}
+    />
   </div>
 );
 
@@ -274,10 +284,10 @@ export default function PropertyForm() {
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Recámaras" testid="prop-bedrooms" type="text" inputMode="numeric" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/\D/g, ""))} placeholder="0" />
-            <Field label="Baños" testid="prop-bathrooms" type="text" inputMode="numeric" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/\D/g, ""))} placeholder="0" />
-            <Field label="Estacionamientos" testid="prop-parking" type="text" inputMode="numeric" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/\D/g, ""))} placeholder="0" />
-            <Field label="Área m²" testid="prop-area_m2" type="text" inputMode="numeric" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/\D/g, ""))} placeholder="0" />
+            <Field label="Recámaras" testid="prop-bedrooms" type="number" min="0" step="1" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+            <Field label="Baños" testid="prop-bathrooms" type="number" min="0" step="1" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+            <Field label="Estacionamientos" testid="prop-parking" type="number" min="0" step="1" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+            <Field label="Área m²" testid="prop-area_m2" type="number" min="0" step="1" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
           </div>
           <div>
             <Label>Amenidades (separadas por coma)</Label>

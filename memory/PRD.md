@@ -195,6 +195,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Características sin negativos (2026-08-06)
 - PropertyForm > Características: Recámaras, Baños y Estacionamientos ahora sanitizan la entrada a solo dígitos (replace /\D/g) igual que Área m², bloqueando el signo "−" y cualquier no-dígito. Verificado por screenshot ("-5"→5, "-3abc2"→32, "-1"→1).
 
+## Selectores numéricos con steppers, solo positivos (2026-08-06)
+- PropertyForm > Características: Recámaras, Baños, Estacionamientos, Área m² vuelven a type="number" (flechas stepper) con min="0" step="1"; Field bloquea teclas "-","+","e","E" (onKeyDown) y sanitiza onChange a solo dígitos. Verificado ("-5"→5, steppers visibles).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
