@@ -198,6 +198,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Selectores numéricos con steppers, solo positivos (2026-08-06)
 - PropertyForm > Características: Recámaras, Baños, Estacionamientos, Área m² vuelven a type="number" (flechas stepper) con min="0" step="1"; Field bloquea teclas "-","+","e","E" (onKeyDown) y sanitiza onChange a solo dígitos. Verificado ("-5"→5, steppers visibles).
 
+## Auto-mayúscula primera letra (2026-08-06)
+- PropertyForm: helper capFirst aplicado a Título, Descripción, Colonia, Ciudad, Estado, Dirección y Amenidades; la primera letra del valor se capitaliza automáticamente al escribir. Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

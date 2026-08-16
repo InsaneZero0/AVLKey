@@ -35,6 +35,8 @@ const Field = ({ label, testid, type = "text", inputMode, value, onChange, place
   </div>
 );
 
+const capFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const MoneyInput = ({ label, testid, value, onChange, disabled, placeholder, hint }) => {
   const display = value !== "" && value != null ? Number(value).toLocaleString("en-US") : "";
   return (
@@ -188,11 +190,11 @@ export default function PropertyForm() {
           <h2 className="font-display font-semibold text-navy">Información general</h2>
           <div>
             <Label>Título</Label>
-            <Input data-testid="prop-title" value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ej. Departamento moderno en la Condesa" />
+            <Input data-testid="prop-title" value={form.title} onChange={(e) => set("title", capFirst(e.target.value))} placeholder="Ej. Departamento moderno en la Condesa" />
           </div>
           <div>
             <Label>Descripción</Label>
-            <Textarea data-testid="prop-description" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Describe el inmueble..." rows={4} />
+            <Textarea data-testid="prop-description" value={form.description} onChange={(e) => set("description", capFirst(e.target.value))} placeholder="Describe el inmueble..." rows={4} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -202,13 +204,13 @@ export default function PropertyForm() {
                 <SelectContent>{PROPERTY_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <Field label="Colonia" testid="prop-colonia" value={form.colonia} onChange={(e) => set("colonia", e.target.value)} placeholder="Roma Norte" />
+            <Field label="Colonia" testid="prop-colonia" value={form.colonia} onChange={(e) => set("colonia", capFirst(e.target.value))} placeholder="Roma Norte" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Ciudad" testid="prop-city" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Ciudad de México" />
-            <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="CDMX" />
+            <Field label="Ciudad" testid="prop-city" value={form.city} onChange={(e) => set("city", capFirst(e.target.value))} placeholder="Ciudad de México" />
+            <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", capFirst(e.target.value))} placeholder="CDMX" />
           </div>
-          <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Calle y número (opcional)" />
+          <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", capFirst(e.target.value))} placeholder="Calle y número (opcional)" />
           {[form.address, form.colonia, form.city, form.state].filter(Boolean).join(", ").trim() && (
             <div className="pt-1" data-testid="prop-map-wrapper">
               <Label className="text-stone-500">Ubicación en el mapa</Label>
@@ -291,7 +293,7 @@ export default function PropertyForm() {
           </div>
           <div>
             <Label>Amenidades (separadas por coma)</Label>
-            <Input data-testid="prop-amenities" value={form.amenities} onChange={(e) => set("amenities", e.target.value)} placeholder="Roof garden, Gimnasio, Seguridad 24h" />
+            <Input data-testid="prop-amenities" value={form.amenities} onChange={(e) => set("amenities", capFirst(e.target.value))} placeholder="Roof garden, Gimnasio, Seguridad 24h" />
           </div>
           <div className="flex gap-8">
             <div className="flex items-center gap-2"><Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" /><Label>Amueblado</Label></div>
