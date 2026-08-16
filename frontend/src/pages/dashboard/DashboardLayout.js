@@ -17,13 +17,13 @@ export default function DashboardLayout() {
 
   const links = isLandlord ? [
     { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
-    { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle, enabled: authorized, hint: "Se habilita cuando el administrador autorice tu registro." },
-    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: false, hint: "Disponible más adelante." },
-    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: false, hint: "Disponible más adelante." },
-    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: false, hint: "Disponible más adelante." },
-    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: false, hint: "Disponible más adelante." },
-    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: false, hint: "Disponible más adelante." },
-    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: false, hint: "Disponible más adelante." },
+    { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle, enabled: authorized, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
+    { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: false, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
   ] : [
     { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: true },
