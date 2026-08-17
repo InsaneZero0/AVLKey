@@ -223,6 +223,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Solicitar arrendamiento deshabilitado (2026-08-06)
 - PropertyDetail: el botón "Solicitar arrendamiento" ahora está disabled (atenuado, no abre el diálogo) con tooltip "Las solicitudes de arrendamiento están deshabilitadas temporalmente." Se conserva el formulario/diálogo (incluye subida de video) para reactivarlo. "Agendar una visita" sigue activo.
 
+## Piso y número interior (opcionales) (2026-08-06)
+- PropertyForm: nuevos inputs "Piso (opcional)" y "Número interior (opcional)" debajo de Dirección. Backend PropertyInput: piso:str="", numero_interior:str="". Verificado (UI + persistencia via curl).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

@@ -72,7 +72,7 @@ export default function PropertyForm() {
   const [uploadingImg, setUploadingImg] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState({
-    title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "",
+    title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "", piso: "", numero_interior: "",
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
     furnished: false, pets_allowed: false, amenities: "", images: [],
     garantia_danos: false, garantia_pago_puntual: false,
@@ -83,7 +83,7 @@ export default function PropertyForm() {
     api.get(`/properties/${id}`).then(({ data }) => {
       setForm({
         title: data.title || "", description: data.description || "", property_type: data.property_type || "departamento",
-        city: data.city || "", state: data.state || "", colonia: data.colonia || "", address: data.address || "",
+        city: data.city || "", state: data.state || "", colonia: data.colonia || "", address: data.address || "", piso: data.piso || "", numero_interior: data.numero_interior || "",
         price_month: data.price_month != null ? String(data.price_month) : "",
         bedrooms: data.bedrooms != null ? String(data.bedrooms) : "",
         bathrooms: data.bathrooms != null ? String(data.bathrooms) : "",
@@ -212,6 +212,10 @@ export default function PropertyForm() {
             <Field label="Estado" testid="prop-state" value={form.state} onChange={(e) => set("state", capFirst(e.target.value))} placeholder="CDMX" />
           </div>
           <Field label="Dirección" testid="prop-address" value={form.address} onChange={(e) => set("address", capFirst(e.target.value))} placeholder="Calle y número (opcional)" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Piso (opcional)" testid="prop-piso" value={form.piso} onChange={(e) => set("piso", e.target.value)} placeholder="Ej. 3" />
+            <Field label="Número interior (opcional)" testid="prop-numero-interior" value={form.numero_interior} onChange={(e) => set("numero_interior", e.target.value)} placeholder="Ej. 4B" />
+          </div>
           {[form.address, form.colonia, form.city, form.state].filter(Boolean).join(", ").trim() && (
             <div className="pt-1" data-testid="prop-map-wrapper">
               <Label className="text-stone-500">Ubicación en el mapa</Label>

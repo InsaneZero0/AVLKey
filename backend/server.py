@@ -334,6 +334,8 @@ class PropertyInput(BaseModel):
     city: str
     state: str = ""
     colonia: str = ""
+    piso: str = ""
+    numero_interior: str = ""
     price_month: float
     deposit: float = 0
     maintenance_fee: float = 0
