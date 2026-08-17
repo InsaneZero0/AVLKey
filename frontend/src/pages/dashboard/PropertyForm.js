@@ -101,6 +101,7 @@ export default function PropertyForm() {
   const danosAmt = Math.round(rent * 0.05);
   const pagoAmt = Math.round(rent * 0.05);
   const comisionAmt = Math.round(rent * 0.04);
+  const mantenimientoAmt = Math.round(rent * 0.04);
   const totalAmt = rent - (form.garantia_danos ? danosAmt : 0) - (form.garantia_pago_puntual ? pagoAmt : 0) - comisionAmt;
   const money = (n) => `$${Number(n || 0).toLocaleString("en-US")}`;
 
@@ -138,7 +139,7 @@ export default function PropertyForm() {
         ...form,
         price_month: parseInt(form.price_month, 10) || 0,
         deposit: 0,
-        maintenance_fee: 0,
+        maintenance_fee: mantenimientoAmt,
         garantia_danos: !!form.garantia_danos,
         garantia_pago_puntual: !!form.garantia_pago_puntual,
         bedrooms: parseInt(form.bedrooms) || 0,
@@ -273,6 +274,14 @@ export default function PropertyForm() {
                 <div className="text-xs text-stone-500">4% de la renta mensual (fijo)</div>
               </div>
               <span className="text-sm font-semibold text-red-600" data-testid="prop-comision-amt">− {money(comisionAmt)}</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border border-stone-200 rounded-xl p-3 bg-stone-50">
+              <div>
+                <div className="text-sm font-medium text-navy">Mantenimiento</div>
+                <div className="text-xs text-stone-500">4% de la renta mensual (lo paga el inquilino)</div>
+              </div>
+              <span className="text-sm font-semibold text-navy" data-testid="prop-mantenimiento-amt">{money(mantenimientoAmt)}</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-stone-200 pt-3">

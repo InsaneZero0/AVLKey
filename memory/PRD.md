@@ -209,6 +209,11 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Solicitud de arrendamiento (PropertyDetail): nuevo Select "¿Cuánto tiempo estimas tu estadía?" con opciones 6, 12, 18, 24, 30 meses (default 6). Se envía stay_months en el payload.
 - Backend ApplicationInput: campo stay_months:int=6 (persistido vía model_dump). Verificado por screenshot.
 
+## Mantenimiento 4% (2026-08-06)
+- PropertyForm: nueva línea "Mantenimiento" = 4% de la renta (informativa, "lo paga el inquilino", no reduce el neto del arrendador). Payload guarda maintenance_fee = 4% de la renta.
+- PropertyDetail: línea "Mantenimiento (4%)" = price_month*0.04/mes, siempre visible, junto a "Cuota Réntalo en Línea (4%)".
+- Verificado por screenshots (form: renta 10,000 → mant 400; detalle: renta 11,000 → cuota 440 y mant 440/mes).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
