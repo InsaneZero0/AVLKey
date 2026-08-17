@@ -247,7 +247,7 @@ export default function PropertyDetail() {
                       </div>
                       <div>
                         <Label>Ocupación</Label>
-                        <Input data-testid="app-occupation" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} placeholder="Ej. Ingeniero de software" />
+                        <Input data-testid="app-occupation" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1) })} placeholder="Ej. Ingeniero de software" />
                       </div>
                       <div className="flex items-center gap-2">
                         <Checkbox id="guarantor" checked={form.has_guarantor} onCheckedChange={(v) => setForm({ ...form, has_guarantor: !!v })} data-testid="app-guarantor" />
@@ -264,7 +264,7 @@ export default function PropertyDetail() {
                       </div>
                       <div>
                         <Label>Mensaje al arrendador</Label>
-                        <Textarea data-testid="app-message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Cuéntale por qué eres un buen candidato..." />
+                        <Textarea data-testid="app-message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1) })} placeholder="Cuéntale por qué eres un buen candidato..." />
                       </div>
                     </div>
                     <DialogFooter>
