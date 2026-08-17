@@ -229,6 +229,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Piso/interior en dirección exacta (2026-08-06)
 - exact_address() ahora incluye "Piso X" e "Int. Y" cuando existen; aplica a la dirección revelada al arrendatario tras confirmar la visita (v.exact_address) y al texto del contrato. Verificado con casos de prueba.
 
+## Características para Oficina (2026-08-06)
+- PropertyForm: si property_type === "oficina", la sección Características muestra Privados (bedrooms), Áreas de trabajo (nuevo work_areas), Baños, Estacionamientos, Área m² y checkbox Recepción (reemplaza Amueblado/Pet friendly). Otros tipos sin cambios.
+- Backend PropertyInput: work_areas:int=0, reception:bool=False. Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

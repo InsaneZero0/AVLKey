@@ -344,6 +344,8 @@ class PropertyInput(BaseModel):
     bedrooms: int = 0
     bathrooms: int = 0
     parking: int = 0
+    work_areas: int = 0
+    reception: bool = False
     area_m2: float = 0
     furnished: bool = False
     pets_allowed: bool = False

@@ -74,6 +74,7 @@ export default function PropertyForm() {
   const [form, setForm] = useState({
     title: "", description: "", property_type: "departamento", city: "", state: "", colonia: "", address: "", piso: "", numero_interior: "",
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
+    work_areas: "", reception: false,
     furnished: false, pets_allowed: false, amenities: "", images: [],
     garantia_danos: false, garantia_pago_puntual: false,
   });
@@ -89,6 +90,8 @@ export default function PropertyForm() {
         bathrooms: data.bathrooms != null ? String(data.bathrooms) : "",
         parking: data.parking != null ? String(data.parking) : "",
         area_m2: data.area_m2 != null ? String(data.area_m2) : "",
+        work_areas: data.work_areas != null ? String(data.work_areas) : "",
+        reception: !!data.reception,
         furnished: !!data.furnished, pets_allowed: !!data.pets_allowed,
         amenities: (data.amenities || []).join(", "), images: data.images || [],
         garantia_danos: !!data.garantia_danos, garantia_pago_puntual: !!data.garantia_pago_puntual,
@@ -145,6 +148,8 @@ export default function PropertyForm() {
         bedrooms: parseInt(form.bedrooms) || 0,
         bathrooms: parseInt(form.bathrooms) || 0,
         parking: parseInt(form.parking) || 0,
+        work_areas: parseInt(form.work_areas) || 0,
+        reception: !!form.reception,
         area_m2: parseFloat(form.area_m2) || 0,
         amenities: form.amenities.split(",").map((a) => a.trim()).filter(Boolean),
         images: form.images,
@@ -298,19 +303,34 @@ export default function PropertyForm() {
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Recámaras" testid="prop-bedrooms" type="number" min="0" step="1" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
-            <Field label="Baños" testid="prop-bathrooms" type="number" min="0" step="1" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
-            <Field label="Estacionamientos" testid="prop-parking" type="number" min="0" step="1" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
-            <Field label="Área m²" testid="prop-area_m2" type="number" min="0" step="1" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
-          </div>
+          {form.property_type === "oficina" ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <Field label="Privados" testid="prop-bedrooms" type="number" min="0" step="1" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Áreas de trabajo" testid="prop-work-areas" type="number" min="0" step="1" value={form.work_areas} onChange={(e) => set("work_areas", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Baños" testid="prop-bathrooms" type="number" min="0" step="1" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Estacionamientos" testid="prop-parking" type="number" min="0" step="1" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Área m²" testid="prop-area_m2" type="number" min="0" step="1" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+              </div>
+              <div className="flex items-center gap-2"><Switch checked={form.reception} onCheckedChange={(v) => set("reception", v)} data-testid="prop-reception" /><Label>Recepción</Label></div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <Field label="Recámaras" testid="prop-bedrooms" type="number" min="0" step="1" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Baños" testid="prop-bathrooms" type="number" min="0" step="1" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Estacionamientos" testid="prop-parking" type="number" min="0" step="1" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+                <Field label="Área m²" testid="prop-area_m2" type="number" min="0" step="1" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
+              </div>
+              <div className="flex gap-8">
+                <div className="flex items-center gap-2"><Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" /><Label>Amueblado</Label></div>
+                <div className="flex items-center gap-2"><Switch checked={form.pets_allowed} onCheckedChange={(v) => set("pets_allowed", v)} data-testid="prop-pets" /><Label>Pet friendly</Label></div>
+              </div>
+            </>
+          )}
           <div>
             <Label>Amenidades (separadas por coma)</Label>
             <Input data-testid="prop-amenities" value={form.amenities} onChange={(e) => set("amenities", capFirst(e.target.value))} placeholder="Roof garden, Gimnasio, Seguridad 24h" />
-          </div>
-          <div className="flex gap-8">
-            <div className="flex items-center gap-2"><Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" /><Label>Amueblado</Label></div>
-            <div className="flex items-center gap-2"><Switch checked={form.pets_allowed} onCheckedChange={(v) => set("pets_allowed", v)} data-testid="prop-pets" /><Label>Pet friendly</Label></div>
           </div>
         </section>
 
