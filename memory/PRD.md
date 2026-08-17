@@ -233,6 +233,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - PropertyForm: si property_type === "oficina", la sección Características muestra Privados (bedrooms), Áreas de trabajo (nuevo work_areas), Baños, Estacionamientos, Área m² y checkbox Recepción (reemplaza Amueblado/Pet friendly). Otros tipos sin cambios.
 - Backend PropertyInput: work_areas:int=0, reception:bool=False. Verificado por screenshot.
 
+## Características de Oficina en detalle público (2026-08-06)
+- PropertyDetail: si property_type === "oficina", los "facts" muestran Privados (bedrooms), Áreas de trabajo (work_areas), Baños, Estacionamientos, Área m² y Recepción (si reception=true), con iconos DoorClosed/LayoutGrid/Bell; oculta Amueblado/Pet friendly. Otros tipos sin cambios. Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

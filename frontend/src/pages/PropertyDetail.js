@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Bed, Bath, Maximize, Car, MapPin, Loader2, Check, ShieldCheck, PawPrint, Sofa, Building, CalendarClock,
+  DoorClosed, LayoutGrid, Bell,
 } from "lucide-react";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
@@ -137,14 +138,21 @@ export default function PropertyDetail() {
 
   if (!prop) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
-  const facts = [
+  const facts = (prop.property_type === "oficina" ? [
+    prop.bedrooms > 0 && { icon: DoorClosed, label: `${prop.bedrooms} privados` },
+    prop.work_areas > 0 && { icon: LayoutGrid, label: `${prop.work_areas} áreas de trabajo` },
+    prop.bathrooms > 0 && { icon: Bath, label: `${prop.bathrooms} baños` },
+    prop.parking > 0 && { icon: Car, label: `${prop.parking} estac.` },
+    prop.area_m2 > 0 && { icon: Maximize, label: `${prop.area_m2} m²` },
+    prop.reception && { icon: Bell, label: "Recepción" },
+  ] : [
     prop.bedrooms > 0 && { icon: Bed, label: `${prop.bedrooms} recámaras` },
     prop.bathrooms > 0 && { icon: Bath, label: `${prop.bathrooms} baños` },
     prop.parking > 0 && { icon: Car, label: `${prop.parking} estac.` },
     prop.area_m2 > 0 && { icon: Maximize, label: `${prop.area_m2} m²` },
     prop.furnished && { icon: Sofa, label: "Amueblado" },
     prop.pets_allowed && { icon: PawPrint, label: "Pet friendly" },
-  ].filter(Boolean);
+  ]).filter(Boolean);
 
   const isTenant = user?.role === "arrendatario";
   const canApply = !user || isTenant;
