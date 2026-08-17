@@ -214,6 +214,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - PropertyDetail: línea "Mantenimiento (4%)" = price_month*0.04/mes, siempre visible, junto a "Cuota Réntalo en Línea (4%)".
 - Verificado por screenshots (form: renta 10,000 → mant 400; detalle: renta 11,000 → cuota 440 y mant 440/mes).
 
+## Video en solicitud (reemplaza mensaje de texto) (2026-08-06)
+- Solicitud de arrendamiento: "Mensaje al arrendador" ahora es subida de VIDEO (máx. 45 seg). Placeholder/guía: "Di tu nombre, tu ocupación, tu antigüedad, quiénes habitarían la propiedad (familiares, esposa, amig@s) y explica el motivo de la búsqueda en renta."
+- Validación de duración ≤45s en cliente (metadata del <video>) + formato/size; preview con <video controls>.
+- Backend: POST /applications/upload-video (mp4/webm/mov/ogg, ≤60MB) → object storage bajo {APP}/properties/applications/{uid}/; ApplicationInput.video_url persistido. MIME_TYPES ampliado con video.
+- Verificado: curl (mp4 aceptado, txt rechazado) y screenshot del control.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

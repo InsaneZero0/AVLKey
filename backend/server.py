@@ -58,6 +58,7 @@ _storage_key = None
 MIME_TYPES = {
     "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp",
     "gif": "image/gif", "pdf": "application/pdf",
+    "mp4": "video/mp4", "webm": "video/webm", "mov": "video/quicktime", "ogg": "video/ogg",
 }
 
 
@@ -357,6 +358,7 @@ class ApplicationInput(BaseModel):
     num_occupants: int = 1
     has_guarantor: bool = False
     stay_months: int = 6
+    video_url: str = ""
     message: str = ""
 
 
@@ -798,6 +800,24 @@ async def upload_property_image(file: UploadFile = File(...), user: dict = Depen
     except Exception as e:
         logger.error(f"Storage upload error: {e}")
         raise HTTPException(status_code=500, detail="No se pudo subir la imagen")
+    return {"path": path}
+
+
+@api.post("/applications/upload-video")
+async def upload_application_video(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"
+    if ext not in ("mp4", "webm", "mov", "ogg"):
+        raise HTTPException(status_code=400, detail="Formato no permitido (usa MP4, WEBM, MOV u OGG)")
+    data = await file.read()
+    if len(data) > 60 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="El video excede 60 MB")
+    path = f"{APP_NAME}/properties/applications/{user['id']}/{uuid.uuid4()}.{ext}"
+    content_type = MIME_TYPES.get(ext, file.content_type or "video/mp4")
+    try:
+        put_object(path, data, content_type)
+    except Exception as e:
+        logger.error(f"Storage upload error: {e}")
+        raise HTTPException(status_code=500, detail="No se pudo subir el video")
     return {"path": path}
 
 

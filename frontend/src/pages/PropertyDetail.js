@@ -15,6 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapEmbed } from "@/components/MapEmbed";
+import { Video } from "lucide-react";
+
+const API = process.env.REACT_APP_BACKEND_URL;
 
 const DAYS = [
   { key: "lunes", label: "Lunes" },
@@ -44,8 +47,9 @@ export default function PropertyDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     monthly_income: "", occupation: "", employment_type: "empleado_formal",
-    num_occupants: "1", has_guarantor: false, stay_months: "6", message: "",
+    num_occupants: "1", has_guarantor: false, stay_months: "6", video_url: "", message: "",
   });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [visitOpen, setVisitOpen] = useState(false);
   const [visitSubmitting, setVisitSubmitting] = useState(false);
   const [avail, setAvail] = useState({});
@@ -82,6 +86,30 @@ export default function PropertyDetail() {
     api.get(`/properties/${id}`).then(({ data }) => setProp(data)).catch(() => toast.error("Inmueble no encontrado"));
   }, [id]);
 
+  const handleVideo = async (file) => {
+    if (!file) return;
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!["mp4", "webm", "mov", "ogg"].includes(ext)) { toast.error("Formato no permitido (MP4, WEBM, MOV u OGG)"); return; }
+    if (file.size > 60 * 1024 * 1024) { toast.error("El video excede 60 MB"); return; }
+    const duration = await new Promise((resolve) => {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => { window.URL.revokeObjectURL(v.src); resolve(v.duration); };
+      v.onerror = () => resolve(null);
+      v.src = URL.createObjectURL(file);
+    });
+    if (duration && duration > 46) { toast.error("El video no debe exceder 45 segundos"); return; }
+    setUploadingVideo(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/applications/upload-video", fd);
+      setForm((f) => ({ ...f, video_url: `${API}/api/media/${data.path}` }));
+      toast.success("Video subido");
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+    finally { setUploadingVideo(false); }
+  };
+
   const submitApplication = async () => {
     if (!user) { navigate("/login"); return; }
     setSubmitting(true);
@@ -94,6 +122,7 @@ export default function PropertyDetail() {
         num_occupants: 1,
         has_guarantor: form.has_guarantor,
         stay_months: parseInt(form.stay_months, 10) || 6,
+        video_url: form.video_url,
         message: form.message,
       });
       toast.success("¡Solicitud enviada! Se calculó tu perfil de riesgo automáticamente.");
@@ -263,8 +292,14 @@ export default function PropertyDetail() {
                         </Select>
                       </div>
                       <div>
-                        <Label>Mensaje al arrendador</Label>
-                        <Textarea data-testid="app-message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1) })} placeholder="Cuéntale por qué eres un buen candidato..." />
+                        <Label>Mensaje al arrendador (video)</Label>
+                        <p className="text-xs text-stone-500 mt-0.5 mb-2">Graba un video de máximo 45 segundos: Di tu nombre, tu ocupación, tu antigüedad, quiénes habitarían la propiedad (familiares, esposa, amig@s) y explica el motivo de la búsqueda en renta.</p>
+                        <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${uploadingVideo ? "opacity-60 pointer-events-none border-stone-200" : "border-stone-300 hover:border-terracotta"}`} data-testid="app-video-label">
+                          <input type="file" accept="video/*" className="hidden" data-testid="app-video-input" onChange={(e) => handleVideo(e.target.files?.[0])} />
+                          {uploadingVideo ? <Loader2 className="w-5 h-5 text-terracotta animate-spin" /> : <Video className="w-5 h-5 text-terracotta" />}
+                          <span className="text-sm text-navy">{uploadingVideo ? "Subiendo video..." : (form.video_url ? "Cambiar video" : "Subir video (máx. 45 seg)")}</span>
+                        </label>
+                        {form.video_url && <video src={form.video_url} controls className="mt-3 w-full rounded-lg max-h-52 bg-black" data-testid="app-video-preview" />}
                       </div>
                     </div>
                     <DialogFooter>
