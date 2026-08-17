@@ -251,11 +251,18 @@ export default function PropertyDetail() {
                   </TooltipProvider>
                 ) : (
                 <Dialog open={open} onOpenChange={setOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full mt-5 rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base" data-testid="apply-btn">
-                      Solicitar arrendamiento
-                    </Button>
-                  </DialogTrigger>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="block mt-5" tabIndex={0} data-testid="apply-btn-wrapper">
+                          <Button className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover h-12 text-base pointer-events-none opacity-60" data-testid="apply-btn" disabled>
+                            Solicitar arrendamiento
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent data-testid="apply-disabled-tooltip">Las solicitudes de arrendamiento están deshabilitadas temporalmente.</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="font-display text-xl">Solicitud de arrendamiento</DialogTitle>

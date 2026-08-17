@@ -220,6 +220,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Backend: POST /applications/upload-video (mp4/webm/mov/ogg, ≤60MB) → object storage bajo {APP}/properties/applications/{uid}/; ApplicationInput.video_url persistido. MIME_TYPES ampliado con video.
 - Verificado: curl (mp4 aceptado, txt rechazado) y screenshot del control.
 
+## Solicitar arrendamiento deshabilitado (2026-08-06)
+- PropertyDetail: el botón "Solicitar arrendamiento" ahora está disabled (atenuado, no abre el diálogo) con tooltip "Las solicitudes de arrendamiento están deshabilitadas temporalmente." Se conserva el formulario/diálogo (incluye subida de video) para reactivarlo. "Agendar una visita" sigue activo.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
