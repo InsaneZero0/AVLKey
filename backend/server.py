@@ -356,6 +356,7 @@ class ApplicationInput(BaseModel):
     employment_type: str = "empleado_formal"
     num_occupants: int = 1
     has_guarantor: bool = False
+    stay_months: int = 6
     message: str = ""
 
 

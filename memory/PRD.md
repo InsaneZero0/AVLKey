@@ -205,6 +205,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Explore: el filtro "Búsqueda / Palabra clave" se renombró a "Buscar por ID" (placeholder "Ej. P160826002", testid filter-id).
 - Backend /properties: el parámetro q ahora también busca por public_id (regex case-insensitive), además de title/description/city/colonia. Verificado por curl (P160826002→1, p1608→2) y screenshot.
 
+## Estadía estimada en solicitud (2026-08-06)
+- Solicitud de arrendamiento (PropertyDetail): nuevo Select "¿Cuánto tiempo estimas tu estadía?" con opciones 6, 12, 18, 24, 30 meses (default 6). Se envía stay_months en el payload.
+- Backend ApplicationInput: campo stay_months:int=6 (persistido vía model_dump). Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

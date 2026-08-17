@@ -44,7 +44,7 @@ export default function PropertyDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     monthly_income: "", occupation: "", employment_type: "empleado_formal",
-    num_occupants: "1", has_guarantor: false, message: "",
+    num_occupants: "1", has_guarantor: false, stay_months: "6", message: "",
   });
   const [visitOpen, setVisitOpen] = useState(false);
   const [visitSubmitting, setVisitSubmitting] = useState(false);
@@ -93,6 +93,7 @@ export default function PropertyDetail() {
         employment_type: form.employment_type,
         num_occupants: 1,
         has_guarantor: form.has_guarantor,
+        stay_months: parseInt(form.stay_months, 10) || 6,
         message: form.message,
       });
       toast.success("¡Solicitud enviada! Se calculó tu perfil de riesgo automáticamente.");
@@ -251,6 +252,15 @@ export default function PropertyDetail() {
                       <div className="flex items-center gap-2">
                         <Checkbox id="guarantor" checked={form.has_guarantor} onCheckedChange={(v) => setForm({ ...form, has_guarantor: !!v })} data-testid="app-guarantor" />
                         <Label htmlFor="guarantor" className="cursor-pointer">Cuento con aval / fiador</Label>
+                      </div>
+                      <div>
+                        <Label>¿Cuánto tiempo estimas tu estadía?</Label>
+                        <Select value={form.stay_months} onValueChange={(v) => setForm({ ...form, stay_months: v })}>
+                          <SelectTrigger data-testid="app-stay-months" className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[6, 12, 18, 24, 30].map((m) => <SelectItem key={m} value={String(m)}>{m} meses</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label>Mensaje al arrendador</Label>
