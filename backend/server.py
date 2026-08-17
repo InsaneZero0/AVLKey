@@ -1161,7 +1161,15 @@ async def notify(user_id: str, ntype: str, title: str, message: str, link: str =
 
 
 def exact_address(prop: dict) -> str:
-    parts = [prop.get("address"), prop.get("colonia"), prop.get("city"), prop.get("state")]
+    street = prop.get("address") or ""
+    extras = []
+    if prop.get("piso"):
+        extras.append(f"Piso {prop['piso']}")
+    if prop.get("numero_interior"):
+        extras.append(f"Int. {prop['numero_interior']}")
+    if extras:
+        street = (street + (", " if street else "") + ", ".join(extras)).strip()
+    parts = [street, prop.get("colonia"), prop.get("city"), prop.get("state")]
     return ", ".join([p for p in parts if p])
 
 

@@ -226,6 +226,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Piso y número interior (opcionales) (2026-08-06)
 - PropertyForm: nuevos inputs "Piso (opcional)" y "Número interior (opcional)" debajo de Dirección. Backend PropertyInput: piso:str="", numero_interior:str="". Verificado (UI + persistencia via curl).
 
+## Piso/interior en dirección exacta (2026-08-06)
+- exact_address() ahora incluye "Piso X" e "Int. Y" cuando existen; aplica a la dirección revelada al arrendatario tras confirmar la visita (v.exact_address) y al texto del contrato. Verificado con casos de prueba.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
