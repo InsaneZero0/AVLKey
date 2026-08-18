@@ -5,18 +5,32 @@ import { useAuth } from "@/context/AuthContext";
 import { formatMXN, formatDate, STATUS_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, CreditCard, ShieldCheck, CheckCircle2, Calendar } from "lucide-react";
+import { FileText, Loader2, CreditCard, ShieldCheck, CheckCircle2, Calendar, Eye, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const statusColor = { borrador: "bg-amber-100 text-amber-700", activo: "bg-green-100 text-green-700", finalizado: "bg-stone-100 text-stone-600" };
+const statusColor = { borrador: "bg-amber-100 text-amber-700", en_revision_admin: "bg-amber-100 text-amber-700", enviado_arrendatario: "bg-blue-100 text-blue-700", activo: "bg-green-100 text-green-700", finalizado: "bg-stone-100 text-stone-600" };
 
 export default function Contracts() {
   const { user } = useAuth();
   const [contracts, setContracts] = useState(null);
   const [paying, setPaying] = useState(null);
+  const [viewing, setViewing] = useState(null);
   const isLandlord = user?.role === "arrendador";
 
   const load = () => api.get("/my/contracts").then(({ data }) => setContracts(data)).catch(() => setContracts([]));
   useEffect(() => { load(); }, []);
+
+  const downloadPdf = async (c) => {
+    try {
+      const res = await api.get(`/my/contracts/${c.id}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contrato_${c.property_public_id || c.id}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch { toast.error("No se pudo generar el PDF"); }
+  };
 
   const pay = async (contractId, concept) => {
     setPaying(`${contractId}-${concept}`);
@@ -72,7 +86,7 @@ export default function Contracts() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 text-sm">
                   <div><div className="text-stone-400 text-xs">Depósito</div><div className="font-medium text-navy">{formatMXN(c.deposit)}</div></div>
-                  <div><div className="text-stone-400 text-xs">Comisión (5%)</div><div className="font-medium text-navy">{formatMXN(c.commission)}</div></div>
+                  <div><div className="text-stone-400 text-xs">Comisión (4%)</div><div className="font-medium text-navy">{formatMXN(c.commission)}</div></div>
                   <div><div className="text-stone-400 text-xs flex items-center gap-1"><Calendar className="w-3 h-3" />Inicio</div><div className="font-medium text-navy">{formatDate(c.start_date)}</div></div>
                   <div><div className="text-stone-400 text-xs">Vigencia</div><div className="font-medium text-navy">{c.term_months} meses</div></div>
                 </div>
@@ -81,6 +95,11 @@ export default function Contracts() {
               <div className="p-5 bg-stone-50 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5 text-xs text-stone-500"><ShieldCheck className="w-4 h-4 text-green-600" /> Contrato administrado por Réntalo en Línea</div>
                 <div className="flex flex-wrap gap-2">
+                  {c.contract_text && (
+                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => setViewing(c)} data-testid={`view-contract-${c.id}`}>
+                      <Eye className="w-4 h-4 mr-1" /> Ver contrato
+                    </Button>
+                  )}
                   {isLandlord ? (
                     <>
                       {c.status === "borrador" && <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" onClick={() => setStatus(c.id, "activo")} data-testid={`activate-${c.id}`}><CheckCircle2 className="w-4 h-4 mr-1" /> Activar contrato</Button>}
@@ -104,6 +123,19 @@ export default function Contracts() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-3xl" data-testid="contract-view-dialog">
+          <DialogHeader><DialogTitle className="font-display">Contrato de arrendamiento</DialogTitle></DialogHeader>
+          <div className="text-xs text-stone-500 -mt-1">{viewing?.property_title} · Solo lectura</div>
+          <pre className="mt-2 max-h-[55vh] overflow-y-auto whitespace-pre-wrap font-mono text-xs bg-stone-50 border border-stone-200 rounded-lg p-4 text-stone-700 select-text" data-testid="contract-view-text">{viewing?.contract_text}</pre>
+          <div className="flex justify-end">
+            <Button variant="outline" className="rounded-full" onClick={() => downloadPdf(viewing)} data-testid="contract-view-pdf">
+              <Download className="w-4 h-4 mr-1" /> Descargar PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

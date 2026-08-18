@@ -239,6 +239,12 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Fix texto Mantenimiento 3%→4% (2026-08-06)
 - MyProperties.js (Mis inmuebles) y AdminMemberDetail.js (expediente admin): etiqueta corregida de "Mantenimiento (3%)" a "Mantenimiento (4%)". Verificado por testing_agent (frontend 100%, sin ocurrencias de 3% restantes).
 
+## Enviar contrato al solicitante (solo lectura) (2026-08-06)
+- AdminContracts (diálogo Revisar/ajustar): nuevo botón "Enviar a solicitante" → POST /admin/contracts/{id}/send-to-tenant (guarda ajustes previos si cambió el texto), estado pasa a "enviado_arrendatario" y notifica al arrendatario. Nuevo estado agregado a STATUS_OPTIONS/ADMIN_CONTRACT_STATUSES/STATUS_LABEL.
+- Arrendatario (Contracts.js): contrato enviado aparece con badge "Enviado al arrendatario" y botón "Ver contrato" → diálogo de SOLO LECTURA (<pre> no editable) + "Descargar PDF" (GET /my/contracts/{id}/pdf, solo partes del contrato). Etiqueta de comisión corregida a 4%.
+- my_contracts sigue ocultando al arrendatario solo los contratos en "en_revision_admin".
+- Verificado por curl (antes de enviar no lo ve; tras enviar lo ve con texto+PDF) y screenshots (botón admin + vista solo lectura tenant).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

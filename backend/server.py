@@ -2238,7 +2238,7 @@ class AdminContractUpdate(BaseModel):
     status: Optional[str] = None
 
 
-ADMIN_CONTRACT_STATUSES = ["en_revision_admin", "ajustado", "listo_para_firma", "borrador"]
+ADMIN_CONTRACT_STATUSES = ["en_revision_admin", "ajustado", "listo_para_firma", "enviado_arrendatario", "borrador"]
 
 
 @api.patch("/admin/contracts/{contract_id}")
@@ -2275,7 +2275,29 @@ async def admin_contract_pdf(contract_id: str, user: dict = Depends(require_perm
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
-@api.get("/admin/payments")
+@api.post("/admin/contracts/{contract_id}/send-to-tenant")
+async def admin_send_contract_to_tenant(contract_id: str, user: dict = Depends(require_permission("administrar_contratos"))):
+    c = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    if not c.get("contract_text"):
+        raise HTTPException(status_code=400, detail="El contrato no tiene texto para enviar")
+    await db.contracts.update_one({"id": contract_id}, {"$set": {"status": "enviado_arrendatario", "sent_to_tenant_at": now_utc().isoformat()}})
+    await notify(c["tenant_id"], "contrato", "Contrato disponible",
+                 f"El administrador te envió el contrato de '{c['property_title']}'. Revísalo en tus Contratos.", "/panel/contratos")
+    c["status"] = "enviado_arrendatario"
+    return {"ok": True, "contract": c}
+
+
+@api.get("/my/contracts/{contract_id}/pdf")
+async def my_contract_pdf(contract_id: str, user: dict = Depends(get_current_user)):
+    c = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not c or user["id"] not in (c.get("tenant_id"), c.get("landlord_id")):
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    pdf = build_contract_pdf(c)
+    filename = f"contrato_{c.get('property_public_id', c['id'])}.pdf"
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 async def admin_payments(user: dict = Depends(require_permission("administrar_pagos"))):
     payments = await db.payment_transactions.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return payments

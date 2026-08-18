@@ -58,6 +58,7 @@ export const STATUS_LABEL = {
   publicado: "Publicado",
   rechazado: "Rechazado",
   en_revision_admin: "En revisión (admin)",
+  enviado_arrendatario: "Enviado al arrendatario",
   ajustado: "Ajustado",
   listo_para_firma: "Listo para firma",
 };

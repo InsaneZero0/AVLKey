@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, FileText, Download } from "lucide-react";
+import { Loader2, FileText, Download, Send } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "en_revision_admin", label: "En revisión (admin)" },
   { value: "ajustado", label: "Ajustado" },
   { value: "listo_para_firma", label: "Listo para firma" },
+  { value: "enviado_arrendatario", label: "Enviado al arrendatario" },
   { value: "borrador", label: "Borrador" },
 ];
 
@@ -54,6 +55,22 @@ export default function AdminContracts() {
     try {
       await api.patch(`/admin/contracts/${editing.id}`, { contract_text: text, status });
       toast.success("Contrato ajustado y guardado.");
+      setEditing(null);
+      load();
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+    finally { setSaving(false); }
+  };
+
+  const sendToTenant = async () => {
+    if (!editing) return;
+    if (!window.confirm("¿Enviar este contrato al solicitante? Podrá verlo en sus Contratos en formato de solo lectura.")) return;
+    setSaving(true);
+    try {
+      if (text !== (editing.contract_text || "")) {
+        await api.patch(`/admin/contracts/${editing.id}`, { contract_text: text });
+      }
+      await api.post(`/admin/contracts/${editing.id}/send-to-tenant`);
+      toast.success("Contrato enviado al solicitante.");
       setEditing(null);
       load();
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
@@ -139,6 +156,9 @@ export default function AdminContracts() {
             <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button variant="outline" className="rounded-full" onClick={() => downloadPdf(editing)} data-testid="admin-contract-pdf">
               <Download className="w-4 h-4 mr-1" /> Descargar PDF
+            </Button>
+            <Button variant="outline" className="rounded-full border-terracotta text-terracotta hover:bg-terracotta/10" onClick={sendToTenant} disabled={saving} data-testid="admin-contract-send">
+              <Send className="w-4 h-4 mr-1" /> Enviar a solicitante
             </Button>
             <Button onClick={save} disabled={saving} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="admin-contract-save">
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} Guardar ajustes
