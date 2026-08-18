@@ -236,6 +236,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Características de Oficina en detalle público (2026-08-06)
 - PropertyDetail: si property_type === "oficina", los "facts" muestran Privados (bedrooms), Áreas de trabajo (work_areas), Baños, Estacionamientos, Área m² y Recepción (si reception=true), con iconos DoorClosed/LayoutGrid/Bell; oculta Amueblado/Pet friendly. Otros tipos sin cambios. Verificado por screenshot.
 
+## Fix texto Mantenimiento 3%→4% (2026-08-06)
+- MyProperties.js (Mis inmuebles) y AdminMemberDetail.js (expediente admin): etiqueta corregida de "Mantenimiento (3%)" a "Mantenimiento (4%)". Verificado por testing_agent (frontend 100%, sin ocurrencias de 3% restantes).
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

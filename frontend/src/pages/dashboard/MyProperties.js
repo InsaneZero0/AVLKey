@@ -146,7 +146,7 @@ export default function MyProperties() {
                       <div><div className="text-xs text-stone-400">Estado</div><div className="text-navy font-medium">{p.state || "—"}</div></div>
                       <div className="col-span-2"><div className="text-xs text-stone-400">Dirección</div><div className="text-navy font-medium">{p.address || "—"}</div></div>
                       <div><div className="text-xs text-stone-400">Renta mensual</div><div className="text-navy font-medium">{formatMXN(p.price_month)}</div></div>
-                      <div><div className="text-xs text-stone-400">Mantenimiento (3%)</div><div className="text-navy font-medium">{formatMXN(p.maintenance_fee || 0)}</div></div>
+                      <div><div className="text-xs text-stone-400">Mantenimiento (4%)</div><div className="text-navy font-medium">{formatMXN(p.maintenance_fee || 0)}</div></div>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-stone-600">
                       <span className="flex items-center gap-1.5"><Bed className="w-4 h-4 text-terracotta" /> {p.bedrooms || 0} rec.</span>
