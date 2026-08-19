@@ -35,13 +35,13 @@ export default function DashboardLayout() {
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
   ] : [
     { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
+    { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: true },
     { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList, enabled: true },
     { to: "/panel/favoritos", label: "Favoritos", icon: Heart, enabled: true },
     { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: true },
     { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: true },
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: true },
-    { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
   ];
 
   const initials = (user?.name || "U").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
