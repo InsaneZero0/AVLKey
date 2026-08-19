@@ -252,6 +252,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Stripe Connect (PENDIENTE de decisión del usuario)
 - Playbook obtenido. Falta respuesta del usuario a ask_human (onboarding Express, momento de dispersión, retenciones, manejo de depósito). Retomar cuando el usuario responda.
 
+## Menú del arrendatario gated por autorización (2026-08-06)
+- Nuevo arrendatario: solo "Registro" y "Mi perfil" habilitados (Mi perfil movido a 2º lugar, bajo Registro). El resto (Resumen, Mis solicitudes, Favoritos, Visitas, Contratos, Pagos) se habilita cuando user.registro_stage === "autorizado"; mientras tanto gris + candado + tooltip. Aplica en sidebar y nav móvil.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
