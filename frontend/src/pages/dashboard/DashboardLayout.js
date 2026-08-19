@@ -34,8 +34,8 @@ export default function DashboardLayout() {
     { to: "/panel/pagos", label: "Pagos", icon: CreditCard, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
   ] : [
-    { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
     { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
+    { to: "/panel/verificacion", label: "Registro", icon: FileCheck2, enabled: true },
     { to: "/panel", label: "Resumen", icon: LayoutDashboard, end: true, enabled: authorized, hint: "Se habilitará cuando el administrador autorice tu registro." },
     { to: "/panel/solicitudes", label: "Mis solicitudes", icon: ClipboardList, enabled: authorized, hint: "Se habilitará cuando el administrador autorice tu registro." },
     { to: "/panel/favoritos", label: "Favoritos", icon: Heart, enabled: authorized, hint: "Se habilitará cuando el administrador autorice tu registro." },
