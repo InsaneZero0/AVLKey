@@ -245,6 +245,13 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - my_contracts sigue ocultando al arrendatario solo los contratos en "en_revision_admin".
 - Verificado por curl (antes de enviar no lo ve; tras enviar lo ve con texto+PDF) y screenshots (botón admin + vista solo lectura tenant).
 
+## Persona física/moral en perfil del arrendador (2026-08-06)
+- Profile.js (solo arrendador): selector "¿Cómo te registras?" con dos opciones (checkbox) Persona física / Persona moral. Física → formulario actual (Nombre, Teléfono, RFC, CURP). Moral → oculta esos y muestra: Razón social, RFC, Representante legal, RFC del representante legal, Actividad de la empresa, Régimen fiscal, Nombre de contacto, Teléfono de contacto.
+- Persistencia: tipo_persona + empresa_datos (dict) en ProfileUpdate/PATCH /users/me. Verificado por screenshot.
+
+## Stripe Connect (PENDIENTE de decisión del usuario)
+- Playbook obtenido. Falta respuesta del usuario a ask_human (onboarding Express, momento de dispersión, retenciones, manejo de depósito). Retomar cuando el usuario responda.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.

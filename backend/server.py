@@ -321,6 +321,8 @@ class ProfileUpdate(BaseModel):
     role: Optional[str] = None
     rfc: Optional[str] = None
     curp: Optional[str] = None
+    tipo_persona: Optional[str] = None
+    empresa_datos: Optional[dict] = None
     actividad_economica_detalle: Optional[ActividadEconomica] = None
     empleos_anteriores: Optional[List[ActividadEconomica]] = None
     actividad_economica_submitted: Optional[bool] = None
@@ -629,6 +631,10 @@ async def update_profile(data: ProfileUpdate, user: dict = Depends(get_current_u
         updates["rfc"] = data.rfc
     if data.curp is not None:
         updates["curp"] = data.curp
+    if data.tipo_persona in ("fisica", "moral"):
+        updates["tipo_persona"] = data.tipo_persona
+    if data.empresa_datos is not None:
+        updates["empresa_datos"] = data.empresa_datos
     if data.actividad_economica_detalle is not None:
         updates["actividad_economica_detalle"] = data.actividad_economica_detalle.model_dump()
     if data.empleos_anteriores is not None:

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -90,9 +91,16 @@ function ActividadFields({ value, onChange, prefix }) {
 export default function Profile() {
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({ name: user?.name || "", phone: user?.phone || "", phone_code: user?.phone_code || "+52", rfc: user?.rfc || "", curp: user?.curp || "" });
+  const [tipoPersona, setTipoPersona] = useState(user?.tipo_persona || "fisica");
+  const [empresa, setEmpresa] = useState({
+    razon_social: "", rfc: "", representante_legal: "", rfc_representante: "",
+    actividad: "", regimen_fiscal: "", contacto_nombre: "", contacto_telefono: "",
+    ...(user?.empresa_datos || {}),
+  });
   const [loading, setLoading] = useState(false);
 
   const isTenant = user?.role === "arrendatario";
+  const isLandlord = user?.role === "arrendador";
   const [submitted, setSubmitted] = useState(!!user?.actividad_economica_submitted);
   const lock = isTenant ? submitted : !!user?.registro_submitted;
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -127,6 +135,8 @@ export default function Profile() {
         phone_code: form.phone_code,
         rfc: form.rfc,
         curp: form.curp,
+        tipo_persona: tipoPersona,
+        empresa_datos: empresa,
       };
       if (isTenant) {
         payload.actividad_economica_detalle = actividad;
@@ -155,6 +165,35 @@ export default function Profile() {
           <span className="text-sm text-stone-500">{user?.email}</span>
         </div>
         <fieldset disabled={lock} className="space-y-5 disabled:opacity-70">
+          {isLandlord && (
+            <div data-testid="tipo-persona-alert" className="bg-terracotta/5 border border-terracotta/20 rounded-xl p-4">
+              <div className="text-sm font-medium text-navy mb-2">¿Cómo te registras? <span className="text-xs font-normal text-stone-400">(selecciona una opción)</span></div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className={`flex items-center gap-2 border rounded-lg px-4 py-2.5 cursor-pointer flex-1 transition-colors ${tipoPersona === "fisica" ? "border-terracotta bg-white" : "border-stone-200"}`}>
+                  <Checkbox checked={tipoPersona === "fisica"} onCheckedChange={() => setTipoPersona("fisica")} data-testid="tipo-persona-fisica" />
+                  <span className="text-sm text-navy">Persona física</span>
+                </label>
+                <label className={`flex items-center gap-2 border rounded-lg px-4 py-2.5 cursor-pointer flex-1 transition-colors ${tipoPersona === "moral" ? "border-terracotta bg-white" : "border-stone-200"}`}>
+                  <Checkbox checked={tipoPersona === "moral"} onCheckedChange={() => setTipoPersona("moral")} data-testid="tipo-persona-moral" />
+                  <span className="text-sm text-navy">Persona moral</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {isLandlord && tipoPersona === "moral" ? (
+            <>
+              <div><Label>Razón social</Label><Input data-testid="empresa-razon-social" value={empresa.razon_social} onChange={(e) => setEmpresa({ ...empresa, razon_social: e.target.value })} /></div>
+              <div><Label>RFC</Label><Input data-testid="empresa-rfc" maxLength={12} value={empresa.rfc} onChange={(e) => setEmpresa({ ...empresa, rfc: e.target.value.toUpperCase().slice(0, 12) })} placeholder="AAA010101AAA" /></div>
+              <div><Label>Representante legal</Label><Input data-testid="empresa-representante" value={empresa.representante_legal} onChange={(e) => setEmpresa({ ...empresa, representante_legal: e.target.value })} /></div>
+              <div><Label>RFC del representante legal</Label><Input data-testid="empresa-rfc-representante" maxLength={13} value={empresa.rfc_representante} onChange={(e) => setEmpresa({ ...empresa, rfc_representante: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" /></div>
+              <div><Label>Actividad de la empresa</Label><Input data-testid="empresa-actividad" value={empresa.actividad} onChange={(e) => setEmpresa({ ...empresa, actividad: e.target.value })} /></div>
+              <div><Label>Régimen fiscal</Label><Input data-testid="empresa-regimen" value={empresa.regimen_fiscal} onChange={(e) => setEmpresa({ ...empresa, regimen_fiscal: e.target.value })} /></div>
+              <div><Label>Nombre de contacto</Label><Input data-testid="empresa-contacto-nombre" value={empresa.contacto_nombre} onChange={(e) => setEmpresa({ ...empresa, contacto_nombre: e.target.value })} /></div>
+              <div><Label>Teléfono de contacto</Label><Input data-testid="empresa-contacto-telefono" type="tel" inputMode="numeric" maxLength={10} value={empresa.contacto_telefono} onChange={(e) => setEmpresa({ ...empresa, contacto_telefono: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="5555550000" /></div>
+            </>
+          ) : (
+          <>
           <div>
             <Label>Nombre completo</Label>
             <Input data-testid="profile-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -177,6 +216,8 @@ export default function Profile() {
             <Label>CURP <span className="text-stone-400 text-xs">({form.curp.length}/18)</span></Label>
             <Input data-testid="profile-curp" maxLength={18} value={form.curp} onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase().slice(0, 18) })} placeholder="XAXX010101HDFXXX00" />
           </div>
+          </>
+          )}
         </fieldset>
       </div>
 
