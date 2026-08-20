@@ -7,6 +7,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// RFC persona física: 4 letras + 6 dígitos + 3 indistintos (13)
+const rfcFisica = (raw) => {
+  const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (const ch of s) {
+    const i = out.length;
+    if (i < 4) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 10) { if (/[0-9]/.test(ch)) out += ch; }
+    else if (i < 13) { out += ch; }
+    else break;
+  }
+  return out;
+};
+// RFC persona moral: 3 letras + 6 dígitos + 3 indistintos (12)
+const rfcMoral = (raw) => {
+  const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (const ch of s) {
+    const i = out.length;
+    if (i < 3) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 9) { if (/[0-9]/.test(ch)) out += ch; }
+    else if (i < 12) { out += ch; }
+    else break;
+  }
+  return out;
+};
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -185,9 +212,9 @@ export default function Profile() {
           {isExternal && tipoPersona === "moral" ? (
             <>
               <div><Label>Razón social</Label><Input data-testid="empresa-razon-social" value={empresa.razon_social} onChange={(e) => setEmpresa({ ...empresa, razon_social: e.target.value })} /></div>
-              <div><Label>RFC</Label><Input data-testid="empresa-rfc" maxLength={12} value={empresa.rfc} onChange={(e) => setEmpresa({ ...empresa, rfc: e.target.value.toUpperCase().slice(0, 12) })} placeholder="AAA010101AAA" /></div>
+              <div><Label>RFC</Label><Input data-testid="empresa-rfc" maxLength={12} value={empresa.rfc} onChange={(e) => setEmpresa({ ...empresa, rfc: rfcMoral(e.target.value) })} placeholder="AAA010101AAA" /></div>
               <div><Label>Representante legal</Label><Input data-testid="empresa-representante" value={empresa.representante_legal} onChange={(e) => setEmpresa({ ...empresa, representante_legal: e.target.value })} /></div>
-              <div><Label>RFC del representante legal</Label><Input data-testid="empresa-rfc-representante" maxLength={13} value={empresa.rfc_representante} onChange={(e) => setEmpresa({ ...empresa, rfc_representante: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" /></div>
+              <div><Label>RFC del representante legal</Label><Input data-testid="empresa-rfc-representante" maxLength={13} value={empresa.rfc_representante} onChange={(e) => setEmpresa({ ...empresa, rfc_representante: rfcFisica(e.target.value) })} placeholder="XAXX010101000" /></div>
               <div><Label>Actividad de la empresa</Label><Input data-testid="empresa-actividad" value={empresa.actividad} onChange={(e) => setEmpresa({ ...empresa, actividad: e.target.value })} /></div>
               <div><Label>Régimen fiscal</Label><Input data-testid="empresa-regimen" value={empresa.regimen_fiscal} onChange={(e) => setEmpresa({ ...empresa, regimen_fiscal: e.target.value })} /></div>
               <div><Label>Nombre de contacto</Label><Input data-testid="empresa-contacto-nombre" value={empresa.contacto_nombre} onChange={(e) => setEmpresa({ ...empresa, contacto_nombre: e.target.value })} /></div>
@@ -211,7 +238,7 @@ export default function Profile() {
           </div>
           <div>
             <Label>RFC <span className="text-stone-400 text-xs">({form.rfc.length}/13)</span></Label>
-            <Input data-testid="profile-rfc" maxLength={13} value={form.rfc} onChange={(e) => setForm({ ...form, rfc: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" />
+            <Input data-testid="profile-rfc" maxLength={13} value={form.rfc} onChange={(e) => setForm({ ...form, rfc: rfcFisica(e.target.value) })} placeholder="XAXX010101000" />
           </div>
           <div>
             <Label>CURP <span className="text-stone-400 text-xs">({form.curp.length}/18)</span></Label>

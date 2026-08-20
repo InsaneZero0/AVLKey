@@ -258,6 +258,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Persona física/moral también para arrendatario (2026-08-06)
 - Profile.js: el selector "¿Cómo te registras?" (Persona física/moral) ahora aplica a arrendador Y arrendatario (isExternal). En persona moral se sustituyen Nombre/Teléfono/RFC/CURP por los campos de empresa. Las secciones de actividad económica/empleos del arrendatario se conservan. Verificado (selector visible en perfil del arrendatario; campos moral idénticos al arrendador ya verificado).
 
+## Máscara de RFC (2026-08-06)
+- Profile.js (arrendador y arrendatario): RFC persona física con máscara 4 letras + 6 dígitos + 3 indistintos (13); RFC persona moral 3 letras + 6 dígitos + 3 indistintos (12); RFC del representante legal usa formato física (13). Helpers rfcFisica/rfcMoral fuerzan mayúsculas y orden. Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
