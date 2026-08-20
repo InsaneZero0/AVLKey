@@ -229,7 +229,7 @@ export default function Profile() {
               <Briefcase className="w-5 h-5 text-terracotta" />
               <h2 className="font-display font-semibold text-navy">Actividad económica actual</h2>
             </div>
-            <fieldset disabled={submitted} className="disabled:opacity-70">
+            <fieldset disabled={submitted || tipoPersona === "moral"} className="disabled:opacity-70">
               <ActividadFields value={actividad} onChange={setActividad} prefix="actividad" />
             </fieldset>
           </div>
@@ -242,7 +242,7 @@ export default function Profile() {
                 <p className="text-sm text-stone-500">Registra tus empleos anteriores en caso de que los hayas tenido.</p>
               </div>
             </div>
-            <fieldset disabled={submitted} className="space-y-6 disabled:opacity-70">
+            <fieldset disabled={submitted || tipoPersona === "moral"} className="space-y-6 disabled:opacity-70">
               {empleos.map((emp, i) => (
                 <div key={i} className="border-t border-stone-100 pt-5 first:border-t-0 first:pt-0" data-testid={`empleo-anterior-${i + 1}`}>
                   <h3 className="font-medium text-navy mb-4">Empleo anterior {i + 1}</h3>
