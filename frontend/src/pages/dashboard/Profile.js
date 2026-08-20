@@ -68,14 +68,14 @@ const ACTIVIDAD_OPTIONS = [
 
 const emptyActividad = () => ({ actividad: "", descripcion: "", fecha_inicio: "", fecha_fin: "", empresa: "", jefe: "" });
 
-function ActividadFields({ value, onChange, prefix }) {
+function ActividadFields({ value, onChange, prefix, lockActividad = false }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   return (
     <div className="space-y-5">
       <div>
         <Label>Actividad</Label>
-        <Select value={value.actividad} onValueChange={(v) => set("actividad", v)}>
-          <SelectTrigger data-testid={`${prefix}-select`} className="mt-1">
+        <Select value={value.actividad} onValueChange={(v) => set("actividad", v)} disabled={lockActividad}>
+          <SelectTrigger data-testid={`${prefix}-select`} className="mt-1 disabled:opacity-70 disabled:cursor-not-allowed">
             <SelectValue placeholder="Selecciona una opción" />
           </SelectTrigger>
           <SelectContent>
@@ -257,7 +257,7 @@ export default function Profile() {
               <h2 className="font-display font-semibold text-navy">Actividad económica actual</h2>
             </div>
             <fieldset disabled={submitted || tipoPersona === "moral"} className="disabled:opacity-70">
-              <ActividadFields value={actividad} onChange={setActividad} prefix="actividad" />
+              <ActividadFields value={actividad} onChange={setActividad} prefix="actividad" lockActividad={tipoPersona === "moral"} />
             </fieldset>
           </div>
 
