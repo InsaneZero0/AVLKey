@@ -68,14 +68,14 @@ const ACTIVIDAD_OPTIONS = [
 
 const emptyActividad = () => ({ actividad: "", descripcion: "", fecha_inicio: "", fecha_fin: "", empresa: "", jefe: "" });
 
-function ActividadFields({ value, onChange, prefix, lockActividad = false }) {
+function ActividadFields({ value, onChange, prefix }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   return (
     <div className="space-y-5">
       <div>
         <Label>Actividad</Label>
-        <Select value={value.actividad} onValueChange={(v) => set("actividad", v)} disabled={lockActividad}>
-          <SelectTrigger data-testid={`${prefix}-select`} className="mt-1 disabled:opacity-70 disabled:cursor-not-allowed">
+        <Select value={value.actividad} onValueChange={(v) => set("actividad", v)}>
+          <SelectTrigger data-testid={`${prefix}-select`} className="mt-1">
             <SelectValue placeholder="Selecciona una opción" />
           </SelectTrigger>
           <SelectContent>
@@ -273,7 +273,7 @@ export default function Profile() {
               {empleos.map((emp, i) => (
                 <div key={i} className="border-t border-stone-100 pt-5 first:border-t-0 first:pt-0" data-testid={`empleo-anterior-${i + 1}`}>
                   <h3 className="font-medium text-navy mb-4">Empleo anterior {i + 1}</h3>
-                  <ActividadFields value={emp} onChange={(v) => setEmpleo(i, v)} prefix={`empleo-${i + 1}`} lockActividad />
+                  <ActividadFields value={emp} onChange={(v) => setEmpleo(i, v)} prefix={`empleo-${i + 1}`} />
                 </div>
               ))}
             </fieldset>
