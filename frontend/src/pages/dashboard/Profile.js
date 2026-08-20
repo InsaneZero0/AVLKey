@@ -101,6 +101,7 @@ export default function Profile() {
 
   const isTenant = user?.role === "arrendatario";
   const isLandlord = user?.role === "arrendador";
+  const isExternal = isLandlord || isTenant;
   const [submitted, setSubmitted] = useState(!!user?.actividad_economica_submitted);
   const lock = isTenant ? submitted : !!user?.registro_submitted;
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -165,7 +166,7 @@ export default function Profile() {
           <span className="text-sm text-stone-500">{user?.email}</span>
         </div>
         <fieldset disabled={lock} className="space-y-5 disabled:opacity-70">
-          {isLandlord && (
+          {isExternal && (
             <div data-testid="tipo-persona-alert" className="bg-terracotta/5 border border-terracotta/20 rounded-xl p-4">
               <div className="text-sm font-medium text-navy mb-2">¿Cómo te registras? <span className="text-xs font-normal text-stone-400">(selecciona una opción)</span></div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -181,7 +182,7 @@ export default function Profile() {
             </div>
           )}
 
-          {isLandlord && tipoPersona === "moral" ? (
+          {isExternal && tipoPersona === "moral" ? (
             <>
               <div><Label>Razón social</Label><Input data-testid="empresa-razon-social" value={empresa.razon_social} onChange={(e) => setEmpresa({ ...empresa, razon_social: e.target.value })} /></div>
               <div><Label>RFC</Label><Input data-testid="empresa-rfc" maxLength={12} value={empresa.rfc} onChange={(e) => setEmpresa({ ...empresa, rfc: e.target.value.toUpperCase().slice(0, 12) })} placeholder="AAA010101AAA" /></div>
