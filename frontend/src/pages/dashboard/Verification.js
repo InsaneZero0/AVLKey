@@ -36,6 +36,20 @@ const curpMask = (raw) => {
   return out;
 };
 
+// RFC persona física: 4 letras + 6 dígitos + 3 alfanuméricos (13)
+const rfcFisica = (raw) => {
+  const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (const ch of s) {
+    const i = out.length;
+    if (i < 4) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 10) { if (/[0-9]/.test(ch)) out += ch; }
+    else if (i < 13) { out += ch; }
+    else break;
+  }
+  return out;
+};
+
 const REGIMENES = [
   "605 - Sueldos y Salarios e Ingresos Asimilados a Salarios",
   "606 - Arrendamiento",
@@ -576,7 +590,7 @@ export default function Verification({ onPersistPersonal } = {}) {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
-                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 13))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", rfcFisica(e.target.value))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", curpMask(e.target.value))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
                         <Label>Teléfono <span className="text-red-500">*</span></Label>
