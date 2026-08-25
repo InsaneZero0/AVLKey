@@ -5,7 +5,7 @@ import os
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, UploadFile, File, Form, Header, Query
+from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, UploadFile, File, Form, Header, Query, BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
@@ -1132,6 +1132,334 @@ async def my_payments(user: dict = Depends(get_current_user)):
     q = {"$or": [{"tenant_id": user["id"]}, {"landlord_id": user["id"]}]}
     payments = await db.payment_transactions.find(q, {"_id": 0}).sort("created_at", -1).to_list(200)
     return payments
+
+# ---------------------------------------------------------------------------
+# Cobros / Stripe Connect (modelo retenido: plataforma cobra y dispersa)
+# ---------------------------------------------------------------------------
+class OriginInput(BaseModel):
+    origin_url: str
+
+
+class SessionInput(BaseModel):
+    session_id: str
+
+
+class DisperseInput(BaseModel):
+    reference: str = ""
+
+
+CRON_SECRET = os.environ.get("CRON_SECRET", "rentalo-cron-2026")
+
+
+def compute_charge_amounts(contract: dict, prop: dict, is_first: bool) -> dict:
+    rent = float(contract.get("monthly_rent") or 0)
+    maintenance = round(rent * 0.04, 2)
+    commission = round(rent * 0.04, 2)
+    g_danos = round(rent * 0.05, 2) if prop.get("garantia_danos") else 0.0
+    g_pago = round(rent * 0.05, 2) if prop.get("garantia_pago_puntual") else 0.0
+    deposit = float(contract.get("deposit") or rent) if is_first else 0.0
+    tenant_total = round(rent + maintenance + deposit, 2)
+    net_landlord = round(rent - commission - g_danos - g_pago, 2)
+    retained = round(deposit + g_danos + g_pago + maintenance, 2)
+    return {
+        "rent": rent, "maintenance": maintenance, "commission": commission,
+        "guarantee_danos": g_danos, "guarantee_pago": g_pago, "deposit": deposit,
+        "tenant_total": tenant_total, "net_landlord": net_landlord, "retained": retained,
+    }
+
+
+async def get_or_create_customer(udoc: dict) -> str:
+    if udoc.get("stripe_customer_id"):
+        return udoc["stripe_customer_id"]
+    cust = stripe.Customer.create(email=udoc["email"], name=udoc.get("name", ""), metadata={"user_id": udoc["id"]})
+    await db.users.update_one({"id": udoc["id"]}, {"$set": {"stripe_customer_id": cust.id}})
+    return cust.id
+
+
+def _period_now() -> str:
+    return now_utc().strftime("%Y-%m")
+
+
+async def _ensure_charge(contract: dict, prop: dict, period: str, is_first: bool) -> dict:
+    existing = await db.rent_charges.find_one({"contract_id": contract["id"], "period": period}, {"_id": 0})
+    if existing:
+        return existing
+    a = compute_charge_amounts(contract, prop, is_first)
+    doc = {
+        "id": new_id("chg"),
+        "contract_id": contract["id"],
+        "property_id": contract.get("property_id"),
+        "property_public_id": prop.get("public_id", ""),
+        "property_title": contract.get("property_title", ""),
+        "tenant_id": contract["tenant_id"],
+        "tenant_name": contract.get("tenant_name", ""),
+        "landlord_id": contract["landlord_id"],
+        "landlord_name": contract.get("landlord_name", ""),
+        "period": period,
+        "due_date": f"{period}-05",
+        "is_first": is_first,
+        **a,
+        "status": "pendiente",
+        "stripe_payment_intent_id": None,
+        "last_error": None,
+        "paid_at": None,
+        "dispersed": False,
+        "dispersed_at": None,
+        "dispersal_ref": None,
+        "dispersal_method": None,
+        "created_at": now_utc().isoformat(),
+    }
+    await db.rent_charges.insert_one(dict(doc))
+    doc.pop("_id", None)
+    return doc
+
+
+async def _charge_now(charge: dict, tenant: dict) -> dict:
+    if charge.get("status") == "pagado":
+        return charge
+    try:
+        pi = stripe.PaymentIntent.create(
+            amount=int(round(charge["tenant_total"] * 100)),
+            currency="mxn",
+            customer=tenant["stripe_customer_id"],
+            payment_method=tenant["default_payment_method_id"],
+            off_session=True, confirm=True,
+            description=f"Renta {charge['period']} - {charge['property_title']}",
+            metadata={"charge_id": charge["id"], "contract_id": charge["contract_id"]},
+        )
+        await db.rent_charges.update_one(
+            {"id": charge["id"]},
+            {"$set": {"status": "pagado", "stripe_payment_intent_id": pi.id, "paid_at": now_utc().isoformat(), "last_error": None}},
+        )
+        await notify(charge["tenant_id"], "pago", "Pago de renta procesado",
+                     f"Se cobró el periodo {charge['period']} por ${charge['tenant_total']:,.0f} MX.", "/panel/pagos")
+        charge.update({"status": "pagado", "stripe_payment_intent_id": pi.id})
+    except stripe.error.CardError as e:
+        err = str(getattr(e, "user_message", None) or e)
+        await db.rent_charges.update_one({"id": charge["id"]}, {"$set": {"status": "fallido", "last_error": err}})
+        charge["status"] = "fallido"
+        charge["last_error"] = err
+    except stripe.error.StripeError as e:
+        err = str(getattr(e, "user_message", None) or e)
+        await db.rent_charges.update_one({"id": charge["id"]}, {"$set": {"status": "fallido", "last_error": err}})
+        charge["status"] = "fallido"
+        charge["last_error"] = err
+    return charge
+
+
+async def _attempt_autocharge(charge: dict) -> dict:
+    tenant = await db.users.find_one({"id": charge["tenant_id"]})
+    if not tenant or not tenant.get("default_payment_method_id"):
+        return charge
+    return await _charge_now(charge, tenant)
+
+
+async def _generate_period(period: str) -> list:
+    contracts = await db.contracts.find({"status": "activo"}, {"_id": 0}).to_list(1000)
+    results = []
+    for c in contracts:
+        prop = await db.properties.find_one({"id": c["property_id"]}, {"_id": 0}) or {}
+        is_first = (await db.rent_charges.count_documents({"contract_id": c["id"]})) == 0
+        charge = await _ensure_charge(c, prop, period, is_first)
+        charge = await _attempt_autocharge(charge)
+        results.append(charge)
+    return results
+
+
+# --- Tarjeta guardada del arrendatario (Stripe Checkout setup) ---
+@api.post("/payments/card/setup-session")
+async def card_setup_session(data: OriginInput, user: dict = Depends(get_current_user)):
+    udoc = await db.users.find_one({"id": user["id"]})
+    cust_id = await get_or_create_customer(udoc)
+    origin = data.origin_url.rstrip("/")
+    session = stripe.checkout.Session.create(
+        mode="setup", customer=cust_id, payment_method_types=["card"],
+        success_url=f"{origin}/panel/pagos?card_session={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin}/panel/pagos?card=cancel",
+    )
+    return {"checkout_url": session.url}
+
+
+@api.post("/payments/card/confirm")
+async def card_confirm(data: SessionInput, user: dict = Depends(get_current_user)):
+    session = stripe.checkout.Session.retrieve(data.session_id)
+    si = stripe.SetupIntent.retrieve(session.setup_intent)
+    pm = stripe.PaymentMethod.retrieve(si.payment_method)
+    cust_id = session.customer
+    stripe.Customer.modify(cust_id, invoice_settings={"default_payment_method": pm.id})
+    await db.users.update_one({"id": user["id"]}, {"$set": {
+        "stripe_customer_id": cust_id, "default_payment_method_id": pm.id,
+        "card_brand": pm.card.brand, "card_last4": pm.card.last4,
+    }})
+    return {"brand": pm.card.brand, "last4": pm.card.last4}
+
+
+@api.get("/payments/card")
+async def get_card(user: dict = Depends(get_current_user)):
+    udoc = await db.users.find_one({"id": user["id"]})
+    if not udoc.get("default_payment_method_id"):
+        return {"has_card": False}
+    return {"has_card": True, "brand": udoc.get("card_brand"), "last4": udoc.get("card_last4")}
+
+
+# --- Onboarding Connect del arrendador ---
+@api.post("/payments/connect/onboard")
+async def connect_onboard(data: OriginInput, user: dict = Depends(get_current_user)):
+    if user.get("role") != "arrendador":
+        raise HTTPException(status_code=403, detail="Solo arrendadores")
+    udoc = await db.users.find_one({"id": user["id"]})
+    acct_id = udoc.get("stripe_connect_account_id")
+    try:
+        if not acct_id:
+            acct = stripe.Account.create(
+                type="express", country="MX", email=udoc["email"],
+                capabilities={"transfers": {"requested": True}},
+                business_type="individual", metadata={"user_id": user["id"]},
+            )
+            acct_id = acct.id
+            await db.users.update_one({"id": user["id"]}, {"$set": {"stripe_connect_account_id": acct_id, "connect_status": "pending"}})
+        origin = data.origin_url.rstrip("/")
+        link = stripe.AccountLink.create(
+            account=acct_id,
+            refresh_url=f"{origin}/panel/pagos?connect=refresh",
+            return_url=f"{origin}/panel/pagos?connect=done",
+            type="account_onboarding",
+        )
+        return {"enabled": True, "url": link.url}
+    except stripe.error.StripeError as e:
+        msg = str(getattr(e, "user_message", None) or e)
+        return {"enabled": False, "message": "Stripe Connect aún no está habilitado en la plataforma; el administrador debe activarlo en el panel de Stripe.", "detail": msg[:160]}
+
+
+@api.get("/payments/connect/status")
+async def connect_status(user: dict = Depends(get_current_user)):
+    udoc = await db.users.find_one({"id": user["id"]})
+    acct_id = udoc.get("stripe_connect_account_id")
+    if not acct_id:
+        return {"connected": False, "status": "none"}
+    try:
+        acct = stripe.Account.retrieve(acct_id)
+        status = "active" if (acct.charges_enabled and acct.payouts_enabled) else "pending"
+        await db.users.update_one({"id": user["id"]}, {"$set": {"connect_status": status}})
+        return {"connected": True, "status": status, "charges_enabled": acct.charges_enabled, "payouts_enabled": acct.payouts_enabled}
+    except stripe.error.StripeError:
+        return {"connected": True, "status": udoc.get("connect_status", "pending")}
+
+
+# --- Cobros de renta ---
+@api.post("/payments/contracts/{cid}/start-billing")
+async def start_billing(cid: str, user: dict = Depends(get_current_user)):
+    c = await db.contracts.find_one({"id": cid}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    if not user.get("staff_role") and user["id"] not in (c["landlord_id"], c["tenant_id"]):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    prop = await db.properties.find_one({"id": c["property_id"]}, {"_id": 0}) or {}
+    period = _period_now()
+    is_first = (await db.rent_charges.count_documents({"contract_id": cid})) == 0
+    charge = await _ensure_charge(c, prop, period, is_first)
+    await db.contracts.update_one({"id": cid}, {"$set": {"billing_active": True}})
+    charge = await _attempt_autocharge(charge)
+    return charge
+
+
+@api.post("/payments/charges/{chg_id}/pay")
+async def pay_charge(chg_id: str, user: dict = Depends(get_current_user)):
+    charge = await db.rent_charges.find_one({"id": chg_id}, {"_id": 0})
+    if not charge or charge["tenant_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    if charge.get("status") == "pagado":
+        return charge
+    tenant = await db.users.find_one({"id": user["id"]})
+    if not tenant.get("default_payment_method_id"):
+        raise HTTPException(status_code=400, detail="Primero guarda una tarjeta para poder pagar")
+    charge = await _charge_now(charge, tenant)
+    if charge.get("status") != "pagado":
+        raise HTTPException(status_code=400, detail=charge.get("last_error") or "No se pudo procesar el pago con tu tarjeta")
+    return charge
+
+
+@api.get("/my/rent-charges")
+async def my_rent_charges(user: dict = Depends(get_current_user)):
+    q = {"$or": [{"tenant_id": user["id"]}, {"landlord_id": user["id"]}]}
+    return await db.rent_charges.find(q, {"_id": 0}).sort("period", -1).to_list(300)
+
+
+# --- Panel admin de finanzas ---
+@api.get("/admin/finance/summary")
+async def finance_summary(user: dict = Depends(require_permission("administrar_pagos"))):
+    charges = await db.rent_charges.find({}, {"_id": 0}).to_list(5000)
+    paid = [c for c in charges if c["status"] == "pagado"]
+    return {
+        "total_charges": len(charges),
+        "total_collected": round(sum(c["tenant_total"] for c in paid), 2),
+        "commission_earned": round(sum(c["commission"] for c in paid), 2),
+        "retained": round(sum(c["retained"] for c in paid), 2),
+        "pending_dispersal": round(sum(c["net_landlord"] for c in paid if not c.get("dispersed")), 2),
+        "dispersed_total": round(sum(c["net_landlord"] for c in paid if c.get("dispersed")), 2),
+        "pending_count": len([c for c in charges if c["status"] == "pendiente"]),
+        "failed_count": len([c for c in charges if c["status"] == "fallido"]),
+    }
+
+
+@api.get("/admin/finance/charges")
+async def finance_charges(user: dict = Depends(require_permission("administrar_pagos"))):
+    return await db.rent_charges.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+
+
+@api.post("/admin/finance/generate")
+async def finance_generate(user: dict = Depends(require_permission("administrar_pagos"))):
+    period = _period_now()
+    results = await _generate_period(period)
+    return {"period": period, "generated": len(results)}
+
+
+@api.post("/admin/finance/charges/{chg_id}/disperse")
+async def finance_disperse(chg_id: str, data: DisperseInput, user: dict = Depends(require_permission("administrar_pagos"))):
+    charge = await db.rent_charges.find_one({"id": chg_id}, {"_id": 0})
+    if not charge:
+        raise HTTPException(status_code=404, detail="Cobro no encontrado")
+    if charge["status"] != "pagado":
+        raise HTTPException(status_code=400, detail="Solo puedes dispersar cobros pagados")
+    if charge.get("dispersed"):
+        raise HTTPException(status_code=400, detail="Este cobro ya fue dispersado")
+    method = "manual"
+    ref = data.reference or ""
+    landlord = await db.users.find_one({"id": charge["landlord_id"]})
+    acct_id = (landlord or {}).get("stripe_connect_account_id")
+    connect_status = (landlord or {}).get("connect_status")
+    if acct_id and connect_status == "active":
+        try:
+            tr = stripe.Transfer.create(
+                amount=int(round(charge["net_landlord"] * 100)), currency="mxn",
+                destination=acct_id, metadata={"charge_id": chg_id},
+            )
+            method = "stripe_transfer"
+            ref = tr.id
+        except stripe.error.StripeError as e:
+            method = "manual"
+            ref = ref or f"transfer_error:{str(e)[:60]}"
+    await db.rent_charges.update_one({"id": chg_id}, {"$set": {
+        "dispersed": True, "dispersed_at": now_utc().isoformat(),
+        "dispersal_ref": ref, "dispersal_method": method,
+    }})
+    await notify(charge["landlord_id"], "pago", "Dispersión registrada",
+                 f"Se registró tu pago neto de ${charge['net_landlord']:,.0f} MX del periodo {charge['period']}.", "/panel/pagos")
+    return {"ok": True, "method": method, "reference": ref}
+
+
+@api.post("/cron/rent-billing")
+async def cron_rent_billing(request: Request, background_tasks: BackgroundTasks):
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    auth = request.headers.get("authorization", "")
+    token = auth[7:] if auth.lower().startswith("bearer ") else ""
+    if not secrets.compare_digest(token, os.environ.get("WEBHOOK_CRON_SECRET", "")):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    period = _period_now()
+    background_tasks.add_task(_generate_period, period)
+    return {"ok": True, "period": period}
+
+
 
 
 # ---------------------------------------------------------------------------

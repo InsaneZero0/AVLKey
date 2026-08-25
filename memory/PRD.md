@@ -267,3 +267,22 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
+
+## Máscaras CURP/RFC en Registro del arrendatario (2026-08-25)
+- CURP con formato estricto (4 letras + 6 dígitos + 1 letra + 5 letras + 1 alfanumérico + 1 dígito = 18, mayúsculas) en Verification.js (reg-curp y co-curp-{idx}); ya existía en Profile.js.
+- RFC persona física (4 letras + 6 dígitos + 3 alfanuméricos = 13) en Verification.js (reg-rfc y co-rfc-{idx}).
+- Perfil arrendatario: en "Actividad económica actual" se quitó "Fecha de fin" (prop hideFechaFin en ActividadFields); Empleos anteriores conservan ambas fechas.
+- Banner "Estatus de tu registro" en Verification.js siempre visible con fondo #F2EC91 (placeholder "Sin enviar").
+
+## Visitas — avisos (2026-08-25)
+- Arrendatario: visita "confirmada" muestra aviso "VISITA ACEPTADA · <fecha>" con fondo #F2F18F (data-testid visit-accepted-notice-{id}).
+- Arrendador: visita "confirmada" muestra leyenda "Si quieres hacer un contrato con esta persona, oprime Completada." (#F2F18F). Al oprimir "Completada" aparece AlertDialog "Generar contrato de arrendamiento" (¿Deseas hacer un contrato…?) con Aceptar/Cancelar → act complete attended:true.
+
+## Cobros / Stripe Connect — modelo retenido (2026-08-25)
+- Backend (server.py): compute_charge_amounts, get_or_create_customer, _ensure_charge, _charge_now (off_session), _attempt_autocharge, _generate_period.
+- Endpoints: POST /payments/card/setup-session, /payments/card/confirm, GET /payments/card; POST /payments/connect/onboard (graceful enabled:false si Connect no activo), GET /payments/connect/status; POST /payments/contracts/{id}/start-billing, /payments/charges/{id}/pay, GET /my/rent-charges; GET /admin/finance/summary, /admin/finance/charges, POST /admin/finance/generate, /admin/finance/charges/{id}/disperse (Stripe Transfer si connect active, si no ledger manual); POST /cron/rent-billing (Bearer WEBHOOK_CRON_SECRET, BackgroundTasks).
+- Colección rent_charges: rent, maintenance(4%), commission(4%), guarantee_danos/pago(5% c/u), deposit(1er mes), tenant_total, net_landlord, retained, status(pendiente/pagado/fallido), dispersed, dispersal_method/ref.
+- Frontend: Payments.js (branch arrendatario=tarjeta+pagar / arrendador=Connect+retención+cobros netos); AdminFinance.js en /admin/finanzas (resumen + tabla + "Generar cobros del mes" + diálogo "Registrar dispersión"); nav "Finanzas" (perm administrar_pagos).
+- Cron: .emergent/crons.yml POST /api/cron/rent-billing día 1 08:00 America/Mexico_City.
+- Verificado por curl end-to-end: renta 16,000 → tenant_total 32,640 (incl. depósito), comisión 640, neto 15,360, retenido 16,640; auto-cobro, dispersión manual, cron auth 401/200. Paneles verificados por screenshot.
+- PENDIENTE (bloqueado por usuario): activar Connect en Dashboard de Stripe para transferencias reales al banco del arrendador (hoy dispersión = ledger manual).
