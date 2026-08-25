@@ -162,7 +162,7 @@ export default function Visits() {
                 </div>
 
                 {!landlord && v.status === "confirmada" && (
-                  <div className="mt-3 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm font-bold text-navy" style={{ backgroundColor: "#E0D910" }} data-testid={`visit-accepted-notice-${v.id}`}>
+                  <div className="mt-3 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm font-bold text-navy" style={{ backgroundColor: "#F2F18F" }} data-testid={`visit-accepted-notice-${v.id}`}>
                     <CheckCircle2 className="w-4 h-4" /> VISITA ACEPTADA{v.scheduled_at ? ` · ${fmt(v.scheduled_at)}` : ""}
                   </div>
                 )}
