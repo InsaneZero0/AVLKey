@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, Building2, User } from "lucide-react";
+import { Loader2, Search, Building2, User, Wallet } from "lucide-react";
 
 export default function AdminMembers({ role }) {
   const [users, setUsers] = useState(null);
@@ -51,12 +51,13 @@ export default function AdminMembers({ role }) {
               <th className="text-left px-6 py-3">Nombre</th>
               <th className="text-left px-6 py-3">Correo</th>
               <th className="text-left px-6 py-3">Teléfono</th>
+              {isLandlord && <th className="text-left px-6 py-3">Estado de cuenta</th>}
               {!isLandlord && <th className="text-left px-6 py-3">Actividad económica</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {filtered.length === 0 && (
-              <tr><td colSpan={isLandlord ? 4 : 5} className="px-6 py-10 text-center text-stone-400">Sin resultados</td></tr>
+              <tr><td colSpan={5} className="px-6 py-10 text-center text-stone-400">Sin resultados</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} data-testid={`member-row-${u.id}`}>
@@ -64,6 +65,13 @@ export default function AdminMembers({ role }) {
                 <td className="px-6 py-4"><Link to={`/admin/miembro/${u.id}`} className="font-medium text-navy hover:text-terracotta hover:underline transition-colors" data-testid={`member-name-${u.id}`}>{u.name}</Link></td>
                 <td className="px-6 py-4 text-stone-600">{u.email}</td>
                 <td className="px-6 py-4 text-stone-600">{u.phone || "—"}</td>
+                {isLandlord && (
+                  <td className="px-6 py-4">
+                    <Link to={`/admin/estado-cuenta/${u.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta hover:text-white px-3 py-1.5 text-xs font-medium transition-colors" data-testid={`member-statement-${u.id}`}>
+                      <Wallet className="w-3.5 h-3.5" /> Estado de cuenta
+                    </Link>
+                  </td>
+                )}
                 {!isLandlord && (
                   <td className="px-6 py-4">
                     {u.actividad_economica_submitted ? (

@@ -1603,6 +1603,30 @@ async def finance_charges(user: dict = Depends(require_permission("administrar_p
     return await db.rent_charges.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
 
 
+@api.get("/admin/finance/statement/{user_id}")
+async def finance_statement(user_id: str, user: dict = Depends(require_permission("consultar"))):
+    ll = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not ll:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    charges = await db.rent_charges.find({"landlord_id": user_id}, {"_id": 0}).sort("period", -1).to_list(1000)
+    paid = [c for c in charges if c["status"] == "pagado"]
+    totals = {
+        "gross_collected": round(sum(c["tenant_total"] for c in paid), 2),
+        "commission": round(sum(c["commission"] for c in paid), 2),
+        "net_total": round(sum(c["net_landlord"] for c in paid), 2),
+        "dispersed": round(sum(c["net_landlord"] for c in paid if c.get("dispersed")), 2),
+        "pending_dispersal": round(sum(c["net_landlord"] for c in paid if not c.get("dispersed")), 2),
+        "retained": round(sum(c["retained"] for c in paid), 2),
+        "paid_count": len(paid), "total_count": len(charges),
+    }
+    landlord = {
+        "id": ll["id"], "name": ll.get("name"), "email": ll.get("email"),
+        "public_id": public_id_for(with_perms(dict(ll))), "phone": ll.get("phone"),
+        "connect_status": ll.get("connect_status", "none"),
+    }
+    return {"landlord": landlord, "charges": charges, "totals": totals}
+
+
 @api.post("/admin/finance/generate")
 async def finance_generate(user: dict = Depends(require_permission("administrar_pagos"))):
     period = _period_now()
