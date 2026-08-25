@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, CalendarClock, Check, X, RefreshCw, MapPin, Ban, CheckCircle2, UserX, History, FileText,
@@ -182,7 +182,21 @@ export default function Visits() {
                         {v.status === "confirmada" && (
                           <>
                             <span className="w-full text-sm font-medium text-navy rounded-lg px-3 py-2 mb-1" style={{ backgroundColor: "#F2F18F" }} data-testid={`landlord-contract-hint-${v.id}`}>Si quieres hacer un contrato con esta persona, oprime Completada.</span>
-                            <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" onClick={() => act(v.id, "complete", { attended: true })} data-testid={`complete-${v.id}`}><CheckCircle2 className="w-4 h-4 mr-1" /> Completada</Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" data-testid={`complete-${v.id}`}><CheckCircle2 className="w-4 h-4 mr-1" /> Completada</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="font-display">Generar contrato de arrendamiento</AlertDialogTitle>
+                                  <AlertDialogDescription>¿Deseas hacer un contrato con este solicitante o deseas esperar más opciones? Si decides que sí, todas las demás opciones serán bloqueadas y estarás generando un contrato de arrendamiento.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel data-testid={`complete-cancel-${v.id}`}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction className="bg-green-600 hover:bg-green-700" onClick={() => act(v.id, "complete", { attended: true })} data-testid={`complete-confirm-${v.id}`}>Aceptar</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                             <Button size="sm" variant="outline" className="rounded-full" onClick={() => act(v.id, "complete", { attended: false })} data-testid={`noshow-${v.id}`}><UserX className="w-4 h-4 mr-1" /> No asistió</Button>
                             <Button size="sm" variant="outline" className="rounded-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => act(v.id, "cancel", {})} data-testid={`cancel-${v.id}`}><Ban className="w-4 h-4 mr-1" /> Cancelar</Button>
                           </>
