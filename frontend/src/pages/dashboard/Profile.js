@@ -66,9 +66,26 @@ const ACTIVIDAD_OPTIONS = [
   "Otro",
 ];
 
+// CURP: 4 letras + 6 dígitos + 1 letra (sexo) + 5 letras + 1 alfanumérico + 1 dígito (18)
+const curpMask = (raw) => {
+  const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (const ch of s) {
+    const i = out.length;
+    if (i < 4) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 10) { if (/[0-9]/.test(ch)) out += ch; }
+    else if (i < 11) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 16) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 17) { out += ch; }
+    else if (i < 18) { if (/[0-9]/.test(ch)) out += ch; }
+    else break;
+  }
+  return out;
+};
+
 const emptyActividad = () => ({ actividad: "", descripcion: "", fecha_inicio: "", fecha_fin: "", empresa: "", jefe: "" });
 
-function ActividadFields({ value, onChange, prefix, lockActividad = false }) {
+function ActividadFields({ value, onChange, prefix, lockActividad = false, hideFechaFin = false }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   return (
     <div className="space-y-5">
@@ -96,10 +113,12 @@ function ActividadFields({ value, onChange, prefix, lockActividad = false }) {
           <Label>Fecha de inicio</Label>
           <Input type="date" data-testid={`${prefix}-fecha-inicio`} value={value.fecha_inicio} onChange={(e) => set("fecha_inicio", e.target.value)} />
         </div>
-        <div>
-          <Label>Fecha de fin</Label>
-          <Input type="date" data-testid={`${prefix}-fecha-fin`} value={value.fecha_fin} onChange={(e) => set("fecha_fin", e.target.value)} />
-        </div>
+        {!hideFechaFin && (
+          <div>
+            <Label>Fecha de fin</Label>
+            <Input type="date" data-testid={`${prefix}-fecha-fin`} value={value.fecha_fin} onChange={(e) => set("fecha_fin", e.target.value)} />
+          </div>
+        )}
       </div>
 
       <div>
@@ -245,7 +264,7 @@ export default function Profile() {
           </div>
           <div>
             <Label>CURP <span className="text-stone-400 text-xs">({form.curp.length}/18)</span></Label>
-            <Input data-testid="profile-curp" maxLength={18} value={form.curp} onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase().slice(0, 18) })} placeholder="XAXX010101HDFXXX00" />
+            <Input data-testid="profile-curp" maxLength={18} value={form.curp} onChange={(e) => setForm({ ...form, curp: curpMask(e.target.value) })} placeholder="XAXX010101HDFXXX00" />
           </div>
           </>
           )}
@@ -260,7 +279,7 @@ export default function Profile() {
               <h2 className="font-display font-semibold text-navy">Actividad económica actual</h2>
             </div>
             <fieldset disabled={submitted || tipoPersona === "moral"} className="disabled:opacity-70">
-              <ActividadFields value={actividad} onChange={setActividad} prefix="actividad" lockActividad={tipoPersona === "moral"} />
+              <ActividadFields value={actividad} onChange={setActividad} prefix="actividad" lockActividad={tipoPersona === "moral"} hideFechaFin={true} />
             </fieldset>
           </div>
 
