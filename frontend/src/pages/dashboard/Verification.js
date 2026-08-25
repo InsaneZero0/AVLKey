@@ -19,6 +19,23 @@ import {
   CreditCard, Landmark, FileText, UserRound, Users, X, Camera, Plus, Save, Send, Trash2,
 } from "lucide-react";
 
+// CURP: 4 letras + 6 dígitos + 1 letra (sexo) + 5 letras + 1 alfanumérico + 1 dígito (18)
+const curpMask = (raw) => {
+  const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (const ch of s) {
+    const i = out.length;
+    if (i < 4) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 10) { if (/[0-9]/.test(ch)) out += ch; }
+    else if (i < 11) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 16) { if (/[A-Z]/.test(ch)) out += ch; }
+    else if (i < 17) { out += ch; }
+    else if (i < 18) { if (/[0-9]/.test(ch)) out += ch; }
+    else break;
+  }
+  return out;
+};
+
 const REGIMENES = [
   "605 - Sueldos y Salarios e Ingresos Asimilados a Salarios",
   "606 - Arrendamiento",
@@ -465,7 +482,7 @@ export default function Verification({ onPersistPersonal } = {}) {
             </div>
             <div>
               <Label>CURP {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
-              <Input data-testid="reg-curp" disabled={fiscal.es_extranjero} maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18) })} placeholder="18 caracteres" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-curp" disabled={fiscal.es_extranjero} maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: curpMask(e.target.value) })} placeholder="18 caracteres" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
               {!fiscal.es_extranjero && <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>}
             </div>
             <div>
@@ -560,7 +577,7 @@ export default function Verification({ onPersistPersonal } = {}) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 sm:col-span-1"><Label>Nombre completo <span className="text-red-500">*</span></Label><Input data-testid={`co-nombre-${idx}`} value={c.name} onChange={(e) => setCohab(idx, "name", e.target.value)} placeholder="Nombre" /></div>
                       <div><Label>RFC {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-rfc-${idx}`} disabled={c.es_extranjero} maxLength={13} value={c.rfc} onChange={(e) => setCohab(idx, "rfc", e.target.value.toUpperCase().slice(0, 13))} placeholder="XAXX010101000" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
-                      <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 18))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
+                      <div><Label>CURP {!c.es_extranjero && <span className="text-red-500">*</span>}</Label><Input data-testid={`co-curp-${idx}`} disabled={c.es_extranjero} maxLength={18} value={c.curp} onChange={(e) => setCohab(idx, "curp", curpMask(e.target.value))} placeholder="18 caracteres" className={c.es_extranjero ? "bg-stone-100 text-stone-400" : ""} /></div>
                       <div>
                         <Label>Teléfono <span className="text-red-500">*</span></Label>
                         <div className="flex items-center gap-2">
