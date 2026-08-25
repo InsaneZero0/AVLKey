@@ -492,7 +492,7 @@ export default function Verification({ onPersistPersonal } = {}) {
             </div>
             <div>
               <Label>RFC {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
-              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={13} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: e.target.value.toUpperCase().slice(0, 13) })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={13} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: rfcFisica(e.target.value) })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
             </div>
             <div>
               <Label>CURP {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
