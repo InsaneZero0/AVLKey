@@ -292,4 +292,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Correo transaccional gestionado (Emergent, playbook Resend): send_email_managed + _assert_safe_email (gate G2/G3). EMERGENT_EMAIL_KEY + EMAIL_FROM_NAME="Réntalo en Línea" en backend/.env. Recibo al pagar (_send_receipt_email) y recordatorio de atraso (_send_reminder_email). Verificado: endpoint 202.
 - Cron 2 (.emergent/crons.yml): payments-daily 09:00 CDMX → POST /api/cron/payments-daily (Bearer WEBHOOK_CRON_SECRET) aplica recargos + recordatorios.
 - Estado de cuenta por arrendador: botón "Estado de cuenta" en /admin/arrendadores → /admin/estado-cuenta/:userId (AdminStatement.js). Endpoint GET /admin/finance/statement/{user_id} (perm consultar): landlord, charges, totals (net_total, dispersed, pending_dispersal, retained, commission), deposits.
-- Caja "Depósitos en garantía" en el estado de cuenta: lista contratos con depósito (1 mes), estado Registrado/Pendiente y botón "Registrar depósito" → POST /admin/finance/contracts/{cid}/register-deposit (perm administrar_pagos, campos deposit_registered/at/reference, notifica al arrendador). Verificado por screenshot.
+- Caja "Depósitos en garantía" en el estado de cuenta: lista contratos con depósito (1 mes), estado Registrado/Pendiente y botón "Registrar depósito" → POST /admin/finance/contracts/{cid}/register-deposit (perm administrar_pagos, campos deposit_registered/at/reference, notifica al arrendador). Verificado por screenshot. Solo se muestran contratos cuyo cobro inicial (is_first) esté PAGADO.
+
+## Registro del pago Stripe en las 3 vistas (2026-08-25)
+- _charge_now: al confirmar el PaymentIntent (off_session) se hace upsert en payment_transactions (session_id=pi.id, concept "renta", period, amount=tenant_total, tenant/landlord, property, payment_status "paid"), además de actualizar rent_charges.
+- Payments.js (arrendatario y arrendador): nueva sección "Historial de pagos (Stripe)" que consulta /my/payments (muestra concepto+periodo, inmueble, arrendatario si es arrendador, fecha, monto, estado).
+- Admin: /admin/pagos (AdminPayments) muestra las transacciones. BUG corregido: al endpoint admin_payments le faltaba el decorador @api.get("/admin/payments") (devolvía 404); restaurado.
+- Verificado end-to-end: pago de 2026-09 ($16,640) visible en admin, arrendatario y arrendador.

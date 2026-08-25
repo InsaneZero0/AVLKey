@@ -10,6 +10,9 @@ import { CreditCard, Loader2, Landmark, ShieldCheck, CheckCircle2, Clock } from 
 
 const chColor = { pagado: "bg-green-100 text-green-700", pendiente: "bg-amber-100 text-amber-700", fallido: "bg-red-100 text-red-700" };
 const chLabel = { pagado: "Pagado", pendiente: "Pendiente", fallido: "Fallido" };
+const payColor = { paid: "bg-green-100 text-green-700", pending: "bg-amber-100 text-amber-700", failed: "bg-red-100 text-red-700" };
+const payLabel = { paid: "Pagado", pending: "Pendiente", failed: "Fallido", expired: "Expirado", completed: "Pagado" };
+const conceptLabel = { renta: "Renta mensual", deposito: "Depósito en garantía" };
 
 function Spinner() {
   return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
@@ -20,12 +23,14 @@ export default function Payments() {
   const isLandlord = user?.role === "arrendador";
   const [params, setParams] = useSearchParams();
   const [charges, setCharges] = useState(null);
+  const [history, setHistory] = useState([]);
   const [card, setCard] = useState(null);
   const [connect, setConnect] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
     api.get("/my/rent-charges").then(({ data }) => setCharges(data)).catch(() => setCharges([]));
+    api.get("/my/payments").then(({ data }) => setHistory(data)).catch(() => setHistory([]));
     if (isLandlord) api.get("/payments/connect/status").then(({ data }) => setConnect(data)).catch(() => setConnect({ connected: false }));
     else api.get("/payments/card").then(({ data }) => setCard(data)).catch(() => setCard({ has_card: false }));
   }, [isLandlord]);
@@ -170,6 +175,42 @@ export default function Payments() {
                         : <Button size="sm" onClick={() => pay(c.id)} disabled={busy} className="rounded-full bg-terracotta hover:bg-terracotta-hover h-8" data-testid={`pay-charge-${c.id}`}>Pagar</Button>}
                     </td>
                   )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Historial de pagos registrados en Stripe */}
+      <h2 className="font-display font-semibold text-navy text-lg mt-8 mb-3">Historial de pagos (Stripe)</h2>
+      {history.length === 0 ? (
+        <div className="bg-white border border-dashed border-stone-300 rounded-2xl py-12 flex flex-col items-center text-stone-500" data-testid="empty-history">
+          <CreditCard className="w-10 h-10 mb-3" />
+          <p className="font-medium text-sm">Aún no hay pagos registrados</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-stone-200 rounded-2xl overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wider">
+              <tr>
+                <th className="text-left px-5 py-3">Concepto</th>
+                <th className="text-left px-5 py-3">Inmueble</th>
+                {isLandlord && <th className="text-left px-5 py-3">Arrendatario</th>}
+                <th className="text-left px-5 py-3">Fecha</th>
+                <th className="text-right px-5 py-3">Monto</th>
+                <th className="text-right px-5 py-3">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {history.map((p) => (
+                <tr key={p.session_id} data-testid={`history-${p.session_id}`}>
+                  <td className="px-5 py-4 font-medium text-navy">{conceptLabel[p.concept] || p.concept}{p.period ? ` · ${p.period}` : ""}</td>
+                  <td className="px-5 py-4 text-stone-600">{p.property_title || "—"}</td>
+                  {isLandlord && <td className="px-5 py-4 text-stone-600">{p.tenant_name || "—"}</td>}
+                  <td className="px-5 py-4 text-stone-500">{formatDate(p.created_at)}</td>
+                  <td className="px-5 py-4 text-right font-semibold text-navy">{formatMXN(p.amount)}</td>
+                  <td className="px-5 py-4 text-right"><Badge className={`rounded-full ${payColor[p.payment_status] || "bg-stone-100 text-stone-600"}`}>{payLabel[p.payment_status] || p.payment_status}</Badge></td>
                 </tr>
               ))}
             </tbody>

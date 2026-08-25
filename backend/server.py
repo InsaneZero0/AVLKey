@@ -1327,6 +1327,29 @@ async def _charge_now(charge: dict, tenant: dict) -> dict:
             {"id": charge["id"]},
             {"$set": {"status": "pagado", "stripe_payment_intent_id": pi.id, "paid_at": now_utc().isoformat(), "last_error": None}},
         )
+        await db.payment_transactions.update_one(
+            {"session_id": pi.id},
+            {"$set": {
+                "session_id": pi.id,
+                "contract_id": charge["contract_id"],
+                "tenant_id": charge["tenant_id"],
+                "tenant_name": charge.get("tenant_name", ""),
+                "landlord_id": charge["landlord_id"],
+                "landlord_name": charge.get("landlord_name", ""),
+                "property_title": charge.get("property_title", ""),
+                "property_public_id": charge.get("property_public_id", ""),
+                "concept": "renta",
+                "period": charge["period"],
+                "amount": charge["tenant_total"],
+                "currency": "mxn",
+                "status": "completed",
+                "payment_status": "paid",
+                "stripe_payment_intent_id": pi.id,
+                "created_at": now_utc().isoformat(),
+                "updated_at": now_utc().isoformat(),
+            }},
+            upsert=True,
+        )
         await notify(charge["tenant_id"], "pago", "Pago de renta procesado",
                      f"Se cobró el periodo {charge['period']} por ${charge['tenant_total']:,.0f} MX.", "/panel/pagos")
         charge.update({"status": "pagado", "stripe_payment_intent_id": pi.id})
@@ -2892,6 +2915,9 @@ async def my_contract_pdf(contract_id: str, user: dict = Depends(get_current_use
     filename = f"contrato_{c.get('property_public_id', c['id'])}.pdf"
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@api.get("/admin/payments")
 async def admin_payments(user: dict = Depends(require_permission("administrar_pagos"))):
     payments = await db.payment_transactions.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return payments
