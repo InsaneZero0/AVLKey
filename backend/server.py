@@ -1625,6 +1625,7 @@ async def finance_statement(user_id: str, user: dict = Depends(require_permissio
         "connect_status": ll.get("connect_status", "none"),
     }
     contracts = await db.contracts.find({"landlord_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    paid_deposit_contracts = {c["contract_id"] for c in charges if c.get("is_first") and c.get("status") == "pagado"}
     deposits = [{
         "contract_id": c["id"],
         "property_title": c.get("property_title", ""),
@@ -1633,7 +1634,7 @@ async def finance_statement(user_id: str, user: dict = Depends(require_permissio
         "registered": bool(c.get("deposit_registered")),
         "registered_at": c.get("deposit_registered_at"),
         "reference": c.get("deposit_reference"),
-    } for c in contracts if float(c.get("deposit") or 0) > 0]
+    } for c in contracts if float(c.get("deposit") or 0) > 0 and c["id"] in paid_deposit_contracts]
     return {"landlord": landlord, "charges": charges, "totals": totals, "deposits": deposits}
 
 
