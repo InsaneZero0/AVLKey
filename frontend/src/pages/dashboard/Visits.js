@@ -161,6 +161,13 @@ export default function Visits() {
                   <button onClick={() => setHistoryOpen(v)} className="text-xs text-stone-400 hover:text-terracotta flex items-center gap-1" data-testid={`history-${v.id}`}><History className="w-3.5 h-3.5" /> Historial</button>
                 </div>
 
+                {!landlord && v.status === "confirmada" && (
+                  <div className="mt-3 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm font-bold text-navy" style={{ backgroundColor: "#E0D910" }} data-testid={`visit-accepted-notice-${v.id}`}>
+                    <CheckCircle2 className="w-4 h-4" /> VISITA ACEPTADA{v.scheduled_at ? ` · ${fmt(v.scheduled_at)}` : ""}
+                  </div>
+                )}
+
+
                 {active && (
                   <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-100">
                     {landlord ? (
