@@ -152,7 +152,10 @@ export default function Payments() {
                   <td className="px-5 py-4 font-medium text-navy">{c.period}</td>
                   <td className="px-5 py-4 text-stone-600">{c.property_title}{c.property_public_id ? ` · ${c.property_public_id}` : ""}</td>
                   <td className="px-5 py-4 text-stone-600">{isLandlord ? (c.tenant_name || "—") : (c.is_first ? "Renta + depósito" : "Renta mensual")}</td>
-                  <td className="px-5 py-4 text-right font-semibold text-navy">{formatMXN(isLandlord ? c.net_landlord : c.tenant_total)}</td>
+                  <td className="px-5 py-4 text-right font-semibold text-navy">
+                    {formatMXN(isLandlord ? c.net_landlord : c.tenant_total)}
+                    {!isLandlord && c.late_fee > 0 && <div className="text-xs font-normal text-red-600" data-testid={`charge-late-${c.id}`}>Incluye recargo {formatMXN(c.late_fee)}</div>}
+                  </td>
                   <td className="px-5 py-4 text-right"><Badge className={`rounded-full ${chColor[c.status] || "bg-stone-100 text-stone-600"}`} data-testid={`charge-status-${c.id}`}>{chLabel[c.status] || c.status}</Badge></td>
                   {isLandlord ? (
                     <td className="px-5 py-4 text-right">

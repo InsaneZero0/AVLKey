@@ -7,3 +7,11 @@ crons:
     method: POST
     # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
     enabled: true
+  - name: payments-daily
+    description: "Revisa rentas vencidas: aplica recargo 10% y envía recordatorio al arrendatario, diario 9am CDMX"
+    cron: "0 9 * * *"
+    timezone: "America/Mexico_City"
+    endpoint: "{{BASE_URL}}/api/cron/payments-daily"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true

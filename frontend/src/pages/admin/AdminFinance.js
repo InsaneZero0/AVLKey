@@ -111,7 +111,7 @@ export default function AdminFinance() {
                 <td className="px-5 py-4 text-right text-terracotta">{formatMXN(c.commission)}</td>
                 <td className="px-5 py-4 text-right text-stone-600">{formatMXN(c.retained)}</td>
                 <td className="px-5 py-4 text-right font-semibold text-navy">{formatMXN(c.net_landlord)}</td>
-                <td className="px-5 py-4 text-right"><Badge className={`rounded-full ${chColor[c.status] || "bg-stone-100 text-stone-600"}`}>{chLabel[c.status] || c.status}</Badge></td>
+                <td className="px-5 py-4 text-right"><Badge className={`rounded-full ${chColor[c.status] || "bg-stone-100 text-stone-600"}`}>{chLabel[c.status] || c.status}</Badge>{c.late_fee > 0 && <div className="text-xs text-red-600 mt-1" data-testid={`finance-late-${c.id}`}>Recargo {formatMXN(c.late_fee)}</div>}</td>
                 <td className="px-5 py-4 text-right">
                   {c.dispersed
                     ? <span className="text-green-600 text-xs font-medium" data-testid={`finance-dispersed-${c.id}`}>Dispersado{c.dispersal_method === "stripe_transfer" ? " (Stripe)" : ""}</span>

@@ -18,6 +18,12 @@ import bcrypt
 import requests
 import stripe
 import secrets
+import re
+import ipaddress
+import httpx
+from html import escape
+from html.parser import HTMLParser
+from urllib.parse import urlparse
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM = os.environ.get("RESEND_FROM", "Réntalo en Línea <onboarding@resend.dev>")
@@ -35,6 +41,95 @@ def send_email(to: str, subject: str, html: str) -> bool:
     except Exception as e:
         logging.getLogger("rentalo").error(f"Resend error: {e}")
         return False
+
+
+# --- Correo transaccional gestionado (Emergent) ---
+EMAIL_BASE_URL = "https://integrations.emergentagent.com"
+EMAIL_KEY = os.environ.get("EMERGENT_EMAIL_KEY")
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "Réntalo en Línea")
+
+_SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "is.gd", "cutt.ly", "goo.gl", "rebrand.ly")
+_CRED_ASK = ("reply with your password", "reply with the code", "send your password", "cvv",
+             "seed phrase", "recovery phrase", "verify your card", "social security number",
+             "confirm your bank details", "confirm your card number", "your full card number")
+_HOSTISH = re.compile(r"\b(?:https?://)?((?:[a-z0-9-]+\.)+[a-z]{2,})", re.I)
+
+
+def _host_ok(host: str) -> bool:
+    if not host or "xn--" in host:
+        return False
+    try:
+        ipaddress.ip_address(host)
+        return False
+    except ValueError:
+        pass
+    return not any(host == s or host.endswith("." + s) for s in _SHORTENERS)
+
+
+def _same_site(shown: str, real: str) -> bool:
+    return shown == real or real.endswith("." + shown) or shown.endswith("." + real)
+
+
+class _EmailScan(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tags, self.urls, self.anchors = set(), [], []
+        self._href, self._text = None, []
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.add(tag.lower())
+        self.urls += [v for k, v in attrs if k.lower() in ("href", "src") and v]
+        if tag.lower() == "a":
+            self._href = dict((k.lower(), v) for k, v in attrs).get("href")
+            self._text = []
+
+    def handle_data(self, data):
+        if self._href is not None:
+            self._text.append(data)
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "a" and self._href is not None:
+            self.anchors.append((self._href, "".join(self._text)))
+            self._href, self._text = None, []
+
+
+def _assert_safe_email(subject: str, html: str) -> None:
+    scan = _EmailScan(); scan.feed(html)
+    if scan.tags & {"form", "input", "textarea", "select"}:
+        raise ValueError("No forms or input fields in email (G2)")
+    body = f"{subject}\n{html}".lower()
+    for p in _CRED_ASK:
+        if p in body:
+            raise ValueError(f"Email asks for credentials: {p!r} (G2)")
+    for url in scan.urls:
+        low = url.strip().lower()
+        if low.startswith(("mailto:", "tel:", "cid:", "#")):
+            continue
+        if not low.startswith("https://"):
+            raise ValueError(f"Email links/assets must be absolute https: {url!r} (G3)")
+        host = urlparse(low).hostname or ""
+        if not _host_ok(host) or urlparse(low).username is not None:
+            raise ValueError(f"Shortened/numeric/credential URL: {url!r} (G3)")
+    for href, text in scan.anchors:
+        real = urlparse(href.strip().lower()).hostname or ""
+        if not real:
+            continue
+        for m in _HOSTISH.finditer(text):
+            if not _same_site(m.group(1).lower(), real):
+                raise ValueError(f"Anchor text {m.group(1)!r} != host {real!r} (G3)")
+
+
+async def send_email_managed(to: str, subject: str, html: str) -> Optional[str]:
+    _assert_safe_email(subject, html)
+    if not EMAIL_KEY:
+        logging.getLogger("rentalo").info(f"[EMAIL:dev] Para: {to} | Asunto: {subject}")
+        return None
+    payload = {"to": [to], "subject": subject, "html": html, "from_name": EMAIL_FROM_NAME}
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(f"{EMAIL_BASE_URL}/api/v1/email/send",
+                                 headers={"X-Email-Key": EMAIL_KEY}, json=payload)
+    resp.raise_for_status()
+    return resp.json().get("id")
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -1158,13 +1253,14 @@ def compute_charge_amounts(contract: dict, prop: dict, is_first: bool) -> dict:
     g_danos = round(rent * 0.05, 2) if prop.get("garantia_danos") else 0.0
     g_pago = round(rent * 0.05, 2) if prop.get("garantia_pago_puntual") else 0.0
     deposit = float(contract.get("deposit") or rent) if is_first else 0.0
-    tenant_total = round(rent + maintenance + deposit, 2)
+    base_total = round(rent + maintenance + deposit, 2)
     net_landlord = round(rent - commission - g_danos - g_pago, 2)
     retained = round(deposit + g_danos + g_pago + maintenance, 2)
     return {
         "rent": rent, "maintenance": maintenance, "commission": commission,
         "guarantee_danos": g_danos, "guarantee_pago": g_pago, "deposit": deposit,
-        "tenant_total": tenant_total, "net_landlord": net_landlord, "retained": retained,
+        "base_total": base_total, "late_fee": 0.0, "tenant_total": base_total,
+        "net_landlord": net_landlord, "retained": retained,
     }
 
 
@@ -1234,6 +1330,10 @@ async def _charge_now(charge: dict, tenant: dict) -> dict:
         await notify(charge["tenant_id"], "pago", "Pago de renta procesado",
                      f"Se cobró el periodo {charge['period']} por ${charge['tenant_total']:,.0f} MX.", "/panel/pagos")
         charge.update({"status": "pagado", "stripe_payment_intent_id": pi.id})
+        try:
+            await _send_receipt_email(tenant, charge)
+        except Exception as e:
+            logger.error(f"receipt email error: {e}")
     except stripe.error.CardError as e:
         err = str(getattr(e, "user_message", None) or e)
         await db.rent_charges.update_one({"id": charge["id"]}, {"$set": {"status": "fallido", "last_error": err}})
@@ -1264,6 +1364,101 @@ async def _generate_period(period: str) -> list:
         charge = await _attempt_autocharge(charge)
         results.append(charge)
     return results
+
+
+# --- Recargos por atraso y correos (recibo / recordatorio) ---
+def _fmt_money(v) -> str:
+    return f"${float(v or 0):,.0f} MX"
+
+
+async def _apply_late_fee(charge: dict) -> dict:
+    if charge.get("status") == "pagado" or float(charge.get("late_fee") or 0) > 0:
+        return charge
+    today = now_utc().date().isoformat()
+    if charge.get("due_date") and today > charge["due_date"]:
+        late = round(float(charge.get("rent") or 0) * 0.10, 2)
+        base = float(charge.get("base_total") or charge.get("tenant_total") or 0)
+        new_total = round(base + late, 2)
+        await db.rent_charges.update_one({"id": charge["id"]}, {"$set": {"late_fee": late, "tenant_total": new_total}})
+        charge["late_fee"] = late
+        charge["tenant_total"] = new_total
+    return charge
+
+
+def _receipt_html(charge: dict, tenant_name: str) -> str:
+    rows = [("Renta mensual", charge.get("rent"))]
+    if float(charge.get("maintenance") or 0) > 0:
+        rows.append(("Mantenimiento (4%)", charge.get("maintenance")))
+    if float(charge.get("deposit") or 0) > 0:
+        rows.append(("Depósito en garantía", charge.get("deposit")))
+    if float(charge.get("late_fee") or 0) > 0:
+        rows.append(("Recargo por pago tardío (10%)", charge.get("late_fee")))
+    row_html = "".join(
+        f'<tr><td style="padding:6px 0;color:#57534e">{escape(lbl)}</td>'
+        f'<td style="padding:6px 0;text-align:right;color:#1c1917">{_fmt_money(val)}</td></tr>'
+        for lbl, val in rows)
+    return (
+        f'<table role="presentation" width="100%" style="max-width:560px;margin:auto;'
+        f'font-family:Arial,sans-serif"><tr><td style="padding:24px">'
+        f'<h2 style="color:#0f2740;margin:0 0 4px">Recibo de pago de renta</h2>'
+        f'<p style="color:#57534e;margin:0 0 16px">Hola {escape(tenant_name)}, recibimos tu pago correctamente.</p>'
+        f'<p style="color:#1c1917;margin:0 0 12px"><strong>Inmueble:</strong> {escape(charge.get("property_title",""))}'
+        f'<br><strong>Periodo:</strong> {escape(charge.get("period",""))}</p>'
+        f'<table role="presentation" width="100%" style="border-top:1px solid #e7e5e4;border-bottom:1px solid #e7e5e4">'
+        f'{row_html}</table>'
+        f'<p style="text-align:right;font-size:18px;color:#0f2740;margin:12px 0"><strong>Total pagado: {_fmt_money(charge.get("tenant_total"))}</strong></p>'
+        f'<p style="font-size:12px;color:#a8a29e;margin-top:20px">Enviado por {escape(EMAIL_FROM_NAME)}. '
+        f'Nunca te pediremos tu contraseña ni datos de tarjeta por correo.</p>'
+        f'</td></tr></table>')
+
+
+def _reminder_html(charge: dict, tenant_name: str) -> str:
+    late = float(charge.get("late_fee") or 0)
+    extra = (f'<p style="color:#b91c1c;margin:0 0 12px">Se aplicó un recargo por pago tardío del 10% '
+             f'({_fmt_money(late)}).</p>' if late > 0 else "")
+    return (
+        f'<table role="presentation" width="100%" style="max-width:560px;margin:auto;'
+        f'font-family:Arial,sans-serif"><tr><td style="padding:24px">'
+        f'<h2 style="color:#0f2740;margin:0 0 4px">Tu renta está vencida</h2>'
+        f'<p style="color:#57534e;margin:0 0 12px">Hola {escape(tenant_name)}, tu renta del periodo '
+        f'<strong>{escape(charge.get("period",""))}</strong> del inmueble '
+        f'{escape(charge.get("property_title",""))} aún no ha sido pagada.</p>'
+        f'{extra}'
+        f'<p style="color:#1c1917;margin:0 0 12px">Total a pagar: <strong>{_fmt_money(charge.get("tenant_total"))}</strong>. '
+        f'Ingresa a tu panel de Réntalo en Línea, sección Pagos, para liquidarlo.</p>'
+        f'<p style="font-size:12px;color:#a8a29e;margin-top:20px">Enviado por {escape(EMAIL_FROM_NAME)}. '
+        f'Nunca te pediremos tu contraseña ni datos de tarjeta por correo.</p>'
+        f'</td></tr></table>')
+
+
+async def _send_receipt_email(tenant: dict, charge: dict):
+    if not tenant or not tenant.get("email"):
+        return
+    subject = f"Recibo de tu renta {charge.get('period','')} · {EMAIL_FROM_NAME}"
+    await send_email_managed(tenant["email"], subject, _receipt_html(charge, tenant.get("name", "arrendatario")))
+
+
+async def _send_reminder_email(tenant: dict, charge: dict):
+    if not tenant or not tenant.get("email"):
+        return
+    subject = f"Renta vencida {charge.get('period','')} · {EMAIL_FROM_NAME}"
+    await send_email_managed(tenant["email"], subject, _reminder_html(charge, tenant.get("name", "arrendatario")))
+
+
+async def _payments_daily():
+    today = now_utc().date().isoformat()
+    charges = await db.rent_charges.find({"status": {"$in": ["pendiente", "fallido"]}}, {"_id": 0}).to_list(3000)
+    for c in charges:
+        if c.get("due_date") and today > c["due_date"]:
+            c = await _apply_late_fee(c)
+            await notify(c["tenant_id"], "pago", "Renta vencida",
+                         f"Tu renta del periodo {c['period']} está vencida. Se aplicó un recargo del 10%. "
+                         f"Total a pagar: ${c['tenant_total']:,.0f} MX.", "/panel/pagos")
+            tenant = await db.users.find_one({"id": c["tenant_id"]})
+            try:
+                await _send_reminder_email(tenant, c)
+            except Exception as e:
+                logger.error(f"reminder email error: {e}")
 
 
 # --- Tarjeta guardada del arrendatario (Stripe Checkout setup) ---
@@ -1373,6 +1568,7 @@ async def pay_charge(chg_id: str, user: dict = Depends(get_current_user)):
     tenant = await db.users.find_one({"id": user["id"]})
     if not tenant.get("default_payment_method_id"):
         raise HTTPException(status_code=400, detail="Primero guarda una tarjeta para poder pagar")
+    charge = await _apply_late_fee(charge)
     charge = await _charge_now(charge, tenant)
     if charge.get("status") != "pagado":
         raise HTTPException(status_code=400, detail=charge.get("last_error") or "No se pudo procesar el pago con tu tarjeta")
@@ -1458,6 +1654,17 @@ async def cron_rent_billing(request: Request, background_tasks: BackgroundTasks)
     period = _period_now()
     background_tasks.add_task(_generate_period, period)
     return {"ok": True, "period": period}
+
+
+@api.post("/cron/payments-daily")
+async def cron_payments_daily(request: Request, background_tasks: BackgroundTasks):
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    auth = request.headers.get("authorization", "")
+    token = auth[7:] if auth.lower().startswith("bearer ") else ""
+    if not secrets.compare_digest(token, os.environ.get("WEBHOOK_CRON_SECRET", "")):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    background_tasks.add_task(_payments_daily)
+    return {"ok": True}
 
 
 
