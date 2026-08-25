@@ -184,7 +184,7 @@ export default function Profile() {
       <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Mi perfil</h1>
       <p className="text-stone-500 mt-1">Administra tu información personal.</p>
       {isLandlord && user?.registro_stage === "autorizado" && (
-        <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1" data-testid="profile-autorizado-legend">Ya puedes publicar tus propiedades</p>
+        <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-green-800 border border-[#e2d96a] rounded-full px-3 py-1" style={{ backgroundColor: "#F2EC91" }} data-testid="profile-autorizado-legend">Ya puedes publicar tus propiedades</p>
       )}
 
       <div className="mt-8 bg-white border border-stone-200 rounded-2xl p-6 space-y-5">
