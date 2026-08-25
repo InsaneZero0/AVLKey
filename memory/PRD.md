@@ -286,3 +286,10 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Cron: .emergent/crons.yml POST /api/cron/rent-billing día 1 08:00 America/Mexico_City.
 - Verificado por curl end-to-end: renta 16,000 → tenant_total 32,640 (incl. depósito), comisión 640, neto 15,360, retenido 16,640; auto-cobro, dispersión manual, cron auth 401/200. Paneles verificados por screenshot.
 - PENDIENTE (bloqueado por usuario): activar Connect en Dashboard de Stripe para transferencias reales al banco del arrendador (hoy dispersión = ledger manual).
+
+## Cobranza, recibos, estado de cuenta y depósitos (2026-08-25)
+- Recargo por atraso: 10% de la renta si el pago pasa del día 5. _apply_late_fee (base_total + late_fee) aplicado en pay_charge y en cron diario. Campos base_total/late_fee en rent_charges. UI muestra "Incluye recargo $X" (arrendatario) y "Recargo $X" (admin).
+- Correo transaccional gestionado (Emergent, playbook Resend): send_email_managed + _assert_safe_email (gate G2/G3). EMERGENT_EMAIL_KEY + EMAIL_FROM_NAME="Réntalo en Línea" en backend/.env. Recibo al pagar (_send_receipt_email) y recordatorio de atraso (_send_reminder_email). Verificado: endpoint 202.
+- Cron 2 (.emergent/crons.yml): payments-daily 09:00 CDMX → POST /api/cron/payments-daily (Bearer WEBHOOK_CRON_SECRET) aplica recargos + recordatorios.
+- Estado de cuenta por arrendador: botón "Estado de cuenta" en /admin/arrendadores → /admin/estado-cuenta/:userId (AdminStatement.js). Endpoint GET /admin/finance/statement/{user_id} (perm consultar): landlord, charges, totals (net_total, dispersed, pending_dispersal, retained, commission), deposits.
+- Caja "Depósitos en garantía" en el estado de cuenta: lista contratos con depósito (1 mes), estado Registrado/Pendiente y botón "Registrar depósito" → POST /admin/finance/contracts/{cid}/register-deposit (perm administrar_pagos, campos deposit_registered/at/reference, notifica al arrendador). Verificado por screenshot.

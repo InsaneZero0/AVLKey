@@ -31,6 +31,8 @@ export default function AdminStatement() {
   const [busy, setBusy] = useState(false);
   const [dispersing, setDispersing] = useState(null);
   const [reference, setReference] = useState("");
+  const [depositing, setDepositing] = useState(null);
+  const [depositRef, setDepositRef] = useState("");
 
   const load = () => api.get(`/admin/finance/statement/${userId}`).then(({ data }) => setData(data)).catch(() => setData(null));
   useEffect(() => { load(); }, [userId]); // eslint-disable-line
@@ -46,8 +48,19 @@ export default function AdminStatement() {
     setBusy(false);
   };
 
+  const registerDeposit = async () => {
+    if (!depositing) return;
+    setBusy(true);
+    try {
+      await api.post(`/admin/finance/contracts/${depositing.contract_id}/register-deposit`, { reference: depositRef });
+      toast.success("Depósito en garantía registrado.");
+      setDepositing(null); setDepositRef(""); load();
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+    setBusy(false);
+  };
+
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
-  const { landlord, charges, totals } = data;
+  const { landlord, charges, totals, deposits } = data;
 
   return (
     <div data-testid="admin-statement">
@@ -71,6 +84,32 @@ export default function AdminStatement() {
         <Stat icon={ShieldCheck} label="Retenido en custodia" value={formatMXN(totals.retained)} testid="stmt-retained" />
       </div>
       <p className="text-sm text-stone-500 mt-3" data-testid="stmt-counts">{totals.paid_count} de {totals.total_count} cobros pagados · Comisión plataforma: <b className="text-navy">{formatMXN(totals.commission)}</b></p>
+
+      {/* Depósitos en garantía */}
+      <div className="mt-8" data-testid="deposits-box">
+        <h2 className="font-display font-semibold text-navy text-lg mb-2">Depósitos en garantía</h2>
+        <div className="rounded-xl bg-navy/5 border border-navy/10 p-4 text-sm text-navy flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-terracotta" />
+          <span>El depósito en garantía equivale a 1 mes de renta y se retiene en custodia por Réntalo en Línea hasta el término del contrato. Registra el depósito cuando el arrendatario lo entregue.</span>
+        </div>
+        <div className="mt-3 grid gap-3">
+          {(!deposits || deposits.length === 0) ? (
+            <div className="bg-white border border-dashed border-stone-300 rounded-xl py-8 text-center text-stone-400 text-sm" data-testid="deposits-empty">Sin depósitos por registrar.</div>
+          ) : deposits.map((d) => (
+            <div key={d.contract_id} className="bg-white border border-stone-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3" data-testid={`deposit-${d.contract_id}`}>
+              <div>
+                <div className="font-medium text-navy">{d.property_title}</div>
+                <div className="text-sm text-stone-500">Arrendatario: {d.tenant_name || "—"} · Depósito: <b className="text-navy">{formatMXN(d.deposit_amount)}</b></div>
+              </div>
+              {d.registered ? (
+                <Badge className="rounded-full bg-green-100 text-green-700" data-testid={`deposit-registered-${d.contract_id}`}>Registrado{d.reference ? ` · ${d.reference}` : ""}</Badge>
+              ) : (
+                <Button size="sm" onClick={() => { setDepositing(d); setDepositRef(""); }} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid={`deposit-register-${d.contract_id}`}>Registrar depósito</Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="mt-6 bg-white border border-stone-200 rounded-2xl overflow-x-auto">
         <table className="w-full text-sm">
@@ -124,6 +163,30 @@ export default function AdminStatement() {
             <Button variant="outline" className="rounded-full" onClick={() => setDispersing(null)} data-testid="stmt-disperse-cancel">Cancelar</Button>
             <Button className="rounded-full bg-terracotta hover:bg-terracotta-hover" onClick={disperse} disabled={busy} data-testid="stmt-disperse-confirm">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!depositing} onOpenChange={(o) => { if (!o) setDepositing(null); }}>
+        <DialogContent data-testid="deposit-dialog">
+          <DialogHeader><DialogTitle className="font-display">Registrar depósito en garantía</DialogTitle></DialogHeader>
+          {depositing && (
+            <div className="space-y-3 text-sm">
+              <p className="text-stone-600">Inmueble: <b className="text-navy">{depositing.property_title}</b></p>
+              <p className="text-stone-600">Arrendatario: <b className="text-navy">{depositing.tenant_name || "—"}</b></p>
+              <p className="text-stone-600">Monto del depósito: <b className="text-navy">{formatMXN(depositing.deposit_amount)}</b></p>
+              <div>
+                <Label>Referencia / comprobante (opcional)</Label>
+                <Input value={depositRef} onChange={(e) => setDepositRef(e.target.value)} placeholder="Ej. SPEI 98765 o folio del depósito" data-testid="deposit-reference" />
+              </div>
+              <p className="text-xs text-stone-400">Al registrarlo se marca como recibido y queda retenido en custodia hasta el término del contrato.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setDepositing(null)} data-testid="deposit-cancel">Cancelar</Button>
+            <Button className="rounded-full bg-terracotta hover:bg-terracotta-hover" onClick={registerDeposit} disabled={busy} data-testid="deposit-confirm">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Registrar depósito"}
             </Button>
           </DialogFooter>
         </DialogContent>

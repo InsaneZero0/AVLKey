@@ -1624,7 +1624,35 @@ async def finance_statement(user_id: str, user: dict = Depends(require_permissio
         "public_id": public_id_for(with_perms(dict(ll))), "phone": ll.get("phone"),
         "connect_status": ll.get("connect_status", "none"),
     }
-    return {"landlord": landlord, "charges": charges, "totals": totals}
+    contracts = await db.contracts.find({"landlord_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    deposits = [{
+        "contract_id": c["id"],
+        "property_title": c.get("property_title", ""),
+        "tenant_name": c.get("tenant_name", ""),
+        "deposit_amount": float(c.get("deposit") or 0),
+        "registered": bool(c.get("deposit_registered")),
+        "registered_at": c.get("deposit_registered_at"),
+        "reference": c.get("deposit_reference"),
+    } for c in contracts if float(c.get("deposit") or 0) > 0]
+    return {"landlord": landlord, "charges": charges, "totals": totals, "deposits": deposits}
+
+
+@api.post("/admin/finance/contracts/{cid}/register-deposit")
+async def register_deposit(cid: str, data: DisperseInput, user: dict = Depends(require_permission("administrar_pagos"))):
+    c = await db.contracts.find_one({"id": cid}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    if c.get("deposit_registered"):
+        raise HTTPException(status_code=400, detail="El depósito ya está registrado")
+    await db.contracts.update_one({"id": cid}, {"$set": {
+        "deposit_registered": True,
+        "deposit_registered_at": now_utc().isoformat(),
+        "deposit_reference": data.reference or "",
+    }})
+    await notify(c["landlord_id"], "pago", "Depósito en garantía registrado",
+                 f"Se registró el depósito en garantía de {_money(c.get('deposit'))} del inmueble "
+                 f"{c.get('property_title','')} (retenido en custodia).", "/panel/pagos")
+    return {"ok": True}
 
 
 @api.post("/admin/finance/generate")
