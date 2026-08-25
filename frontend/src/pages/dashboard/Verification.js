@@ -467,11 +467,11 @@ export default function Verification({ onPersistPersonal } = {}) {
         </div>
       )}
 
-      {category === "arrendatario" && user?.registro_stage && (
-        <div className="mt-3 flex items-center gap-3 flex-wrap rounded-xl bg-white border border-stone-200 p-4" data-testid="registro-status-banner">
+      {category === "arrendatario" && (
+        <div className="mt-3 flex items-center gap-3 flex-wrap rounded-xl border border-stone-200 p-4" style={{ backgroundColor: "#F2EC91" }} data-testid="registro-status-banner">
           <span className="text-sm font-medium text-navy">Estatus de tu registro:</span>
-          <Badge className={`rounded-full ${PROPERTY_STATUS_COLOR[user.registro_stage] || "bg-stone-100 text-stone-600"}`} data-testid="registro-status-badge">
-            {STATUS_LABEL[user.registro_stage] || user.registro_stage}
+          <Badge className={`rounded-full ${user?.registro_stage ? (PROPERTY_STATUS_COLOR[user.registro_stage] || "bg-stone-100 text-stone-600") : "bg-white text-stone-500 border border-stone-300"}`} data-testid="registro-status-badge">
+            {user?.registro_stage ? (STATUS_LABEL[user.registro_stage] || user.registro_stage) : "Sin enviar"}
           </Badge>
           <span className="text-sm font-medium text-navy sm:ml-auto">Capacidad de pago:</span>
           <span className="font-display font-bold text-terracotta" data-testid="registro-capacidad-pago">${capacidadPago.toLocaleString("en-US")} MX</span>
