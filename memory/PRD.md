@@ -261,6 +261,9 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 ## Máscara de RFC (2026-08-06)
 - Profile.js (arrendador y arrendatario): RFC persona física con máscara 4 letras + 6 dígitos + 3 indistintos (13); RFC persona moral 3 letras + 6 dígitos + 3 indistintos (12); RFC del representante legal usa formato física (13). Helpers rfcFisica/rfcMoral fuerzan mayúsculas y orden. Verificado por screenshot.
 
+## Leyenda "Ya puedes publicar tus propiedades" (2026-08-06)
+- Profile.js: cuando isLandlord y registro_stage === "autorizado", muestra una leyenda verde "Ya puedes publicar tus propiedades" debajo de "Administra tu información personal.". Verificado por screenshot.
+
 ## Notes
 - Stripe: modo prueba (sandbox reclamable). Pagos de renta procesados sin cálculo automático de impuestos (procesamiento directo). Se puede cambiar el plan fiscal más adelante.
 - Credenciales de prueba en `/app/memory/test_credentials.md`.
