@@ -299,3 +299,6 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Payments.js (arrendatario y arrendador): nueva sección "Historial de pagos (Stripe)" que consulta /my/payments (muestra concepto+periodo, inmueble, arrendatario si es arrendador, fecha, monto, estado).
 - Admin: /admin/pagos (AdminPayments) muestra las transacciones. BUG corregido: al endpoint admin_payments le faltaba el decorador @api.get("/admin/payments") (devolvía 404); restaurado.
 - Verificado end-to-end: pago de 2026-09 ($16,640) visible en admin, arrendatario y arrendador.
+
+## 2026-06 — Publicar inmueble
+- Switch "Amueblado" movido debajo de la fila Mantenimiento (sección Precios) en PropertyForm.js; "Pet friendly" permanece en Características. (DONE)

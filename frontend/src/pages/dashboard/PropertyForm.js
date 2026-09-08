@@ -293,6 +293,13 @@ export default function PropertyForm() {
               <span className="text-sm font-semibold text-navy" data-testid="prop-mantenimiento-amt">{money(mantenimientoAmt)}</span>
             </div>
 
+            {form.property_type !== "oficina" && (
+              <div className="flex items-center gap-2 border border-stone-200 rounded-xl p-3 bg-stone-50">
+                <Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" />
+                <Label>Amueblado</Label>
+              </div>
+            )}
+
             <div className="flex items-center justify-between border-t border-stone-200 pt-3">
               <span className="font-display font-semibold text-navy">Total a recibir <span className="text-xs font-normal text-stone-400">(neto, informativo)</span></span>
               <span className="font-display font-bold text-lg text-terracotta" data-testid="prop-total">{money(totalAmt)} MX</span>
@@ -322,10 +329,7 @@ export default function PropertyForm() {
                 <Field label="Estacionamientos" testid="prop-parking" type="number" min="0" step="1" value={form.parking} onChange={(e) => set("parking", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
                 <Field label="Área m²" testid="prop-area_m2" type="number" min="0" step="1" value={form.area_m2} onChange={(e) => set("area_m2", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />
               </div>
-              <div className="flex gap-8">
-                <div className="flex items-center gap-2"><Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" /><Label>Amueblado</Label></div>
-                <div className="flex items-center gap-2"><Switch checked={form.pets_allowed} onCheckedChange={(v) => set("pets_allowed", v)} data-testid="prop-pets" /><Label>Pet friendly</Label></div>
-              </div>
+              <div className="flex items-center gap-2"><Switch checked={form.pets_allowed} onCheckedChange={(v) => set("pets_allowed", v)} data-testid="prop-pets" /><Label>Pet friendly</Label></div>
             </>
           )}
           <div>
