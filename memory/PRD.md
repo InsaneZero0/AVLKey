@@ -304,3 +304,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Switch "Amueblado" movido debajo de la fila Mantenimiento (sección Precios) en PropertyForm.js; "Pet friendly" permanece en Características. (DONE)
 - Régimen fiscal de IVA (checkbox 8%/16%) bajo Amueblado; IVA = renta × tasa, se suma al Total a recibir. Inhabilitado para casa/departamento sin amueblar. Backend PropertyInput.iva_rate. (DONE)
 - Texto IVA actualizado: "Lo puedes consultar en tu constancia de situación fiscal, en tu portal de Internet o con tu contador. Dato muy importante." (DONE)
+- Local comercial, Bodega y Espacio industrial usan las características de Oficina (Privados, Áreas de trabajo, Baños, Estacionamientos, Área, Recepción); se ocultan Amueblado/Pet friendly. Aplicado en PropertyForm.js y PropertyDetail.js. (DONE)

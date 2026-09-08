@@ -100,6 +100,7 @@ export default function PropertyForm() {
   }, [id]);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+  const isCommercial = ["oficina", "local", "bodega", "industrial"].includes(form.property_type);
   const rent = parseInt(form.price_month, 10) || 0;
   const danosAmt = Math.round(rent * 0.05);
   const pagoAmt = Math.round(rent * 0.05);
@@ -297,7 +298,7 @@ export default function PropertyForm() {
               <span className="text-sm font-semibold text-navy" data-testid="prop-mantenimiento-amt">{money(mantenimientoAmt)}</span>
             </div>
 
-            {form.property_type !== "oficina" && (
+            {!isCommercial && (
               <div className="flex items-center gap-2 border border-stone-200 rounded-xl p-3 bg-stone-50">
                 <Switch checked={form.furnished} onCheckedChange={(v) => set("furnished", v)} data-testid="prop-furnished" />
                 <Label>Amueblado</Label>
@@ -339,7 +340,7 @@ export default function PropertyForm() {
 
         <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-display font-semibold text-navy">Características</h2>
-          {form.property_type === "oficina" ? (
+          {isCommercial ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <Field label="Privados" testid="prop-bedrooms" type="number" min="0" step="1" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value.replace(/[^\d]/g, ""))} placeholder="0" />

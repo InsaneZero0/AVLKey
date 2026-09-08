@@ -138,7 +138,7 @@ export default function PropertyDetail() {
 
   if (!prop) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
 
-  const facts = (prop.property_type === "oficina" ? [
+  const facts = (["oficina", "local", "bodega", "industrial"].includes(prop.property_type) ? [
     prop.bedrooms > 0 && { icon: DoorClosed, label: `${prop.bedrooms} privados` },
     prop.work_areas > 0 && { icon: LayoutGrid, label: `${prop.work_areas} áreas de trabajo` },
     prop.bathrooms > 0 && { icon: Bath, label: `${prop.bathrooms} baños` },
