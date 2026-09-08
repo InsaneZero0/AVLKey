@@ -363,8 +363,8 @@ export default function PropertyForm() {
             </>
           )}
           <div>
-            <Label>Amenidades (separadas por coma)</Label>
-            <Input data-testid="prop-amenities" value={form.amenities} onChange={(e) => set("amenities", capFirst(e.target.value))} placeholder="Roof garden, Gimnasio, Seguridad 24h" />
+            <Label>{isCommercial ? "Detalles especiales (separados por coma)" : "Amenidades (separadas por coma)"}</Label>
+            <Input data-testid="prop-amenities" value={form.amenities} onChange={(e) => set("amenities", capFirst(e.target.value))} placeholder={isCommercial ? "Acceso 24h, Andén de carga, Aire acondicionado" : "Roof garden, Gimnasio, Seguridad 24h"} />
           </div>
         </section>
 

@@ -211,7 +211,7 @@ export default function PropertyDetail() {
 
             {prop.amenities?.length > 0 && (
               <div className="mt-8">
-                <h2 className="font-display font-semibold text-xl text-navy">Amenidades</h2>
+                <h2 className="font-display font-semibold text-xl text-navy">{["oficina", "local", "bodega", "industrial"].includes(prop.property_type) ? "Detalles especiales" : "Amenidades"}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
                   {prop.amenities.map((a) => (
                     <div key={a} className="flex items-center gap-2 text-stone-700 text-sm">

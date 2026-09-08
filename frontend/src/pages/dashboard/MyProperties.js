@@ -158,7 +158,7 @@ export default function MyProperties() {
                     </div>
                     {p.amenities?.length > 0 && (
                       <div>
-                        <div className="text-xs text-stone-400 mb-1">Amenidades</div>
+                        <div className="text-xs text-stone-400 mb-1">{["oficina", "local", "bodega", "industrial"].includes(p.property_type) ? "Detalles especiales" : "Amenidades"}</div>
                         <div className="flex flex-wrap gap-2">{p.amenities.map((a) => <Badge key={a} className="rounded-full bg-stone-100 text-stone-600 hover:bg-stone-100">{a}</Badge>)}</div>
                       </div>
                     )}
