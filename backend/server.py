@@ -1235,9 +1235,37 @@ async def payment_status(session_id: str):
                               "updated_at": now_utc().isoformat()}},
                 )
                 record = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+                await _reconcile_checkout_payment(record)
         except Exception:
             pass
     return {"session_id": record["session_id"], "status": record["status"], "payment_status": record["payment_status"], "concept": record.get("concept"), "amount": record.get("amount")}
+
+
+async def _reconcile_checkout_payment(record: dict):
+    """Reflect a paid Stripe Checkout in rent_charges / contract so statements show it."""
+    if not record or record.get("payment_status") != "paid" or record.get("reconciled"):
+        return
+    contract = await db.contracts.find_one({"id": record["contract_id"]}, {"_id": 0})
+    if not contract:
+        return
+    now = now_utc().isoformat()
+    if record.get("concept") == "deposito":
+        await db.contracts.update_one({"id": contract["id"], "deposit_registered": {"$ne": True}}, {"$set": {
+            "deposit_registered": True, "deposit_registered_at": now, "deposit_reference": f"Stripe {record.get('stripe_payment_intent_id') or record['session_id']}"}})
+        period = None
+    else:
+        charge = await db.rent_charges.find_one({"contract_id": contract["id"], "status": {"$ne": "pagado"}}, {"_id": 0}, sort=[("period", 1)])
+        if not charge:
+            prop = await db.properties.find_one({"id": contract["property_id"]}, {"_id": 0}) or {}
+            period = now_utc().strftime("%Y-%m")
+            is_first = (await db.rent_charges.count_documents({"contract_id": contract["id"]})) == 0
+            charge = await _ensure_charge(contract, prop, period, is_first)
+        period = charge["period"]
+        await db.rent_charges.update_one({"id": charge["id"]}, {"$set": {
+            "status": "pagado", "paid_at": now, "last_error": None, "payment_method": "stripe_checkout",
+            "stripe_payment_intent_id": record.get("stripe_payment_intent_id") or record["session_id"]}})
+    await db.payment_transactions.update_one({"session_id": record["session_id"]}, {"$set": {
+        "reconciled": True, "period": period, "tenant_name": contract.get("tenant_name", ""), "landlord_name": contract.get("landlord_name", "")}})
 
 
 @api.post("/stripe/webhook")
@@ -1256,6 +1284,7 @@ async def stripe_webhook(request: Request):
                       "stripe_payment_intent_id": obj.get("payment_intent"),
                       "updated_at": now_utc().isoformat()}},
         )
+        await _reconcile_checkout_payment(await db.payment_transactions.find_one({"session_id": obj["id"]}, {"_id": 0}))
     return {"status": "ok"}
 
 
@@ -1695,7 +1724,9 @@ async def finance_statement(user_id: str, user: dict = Depends(require_permissio
         "registered_at": c.get("deposit_registered_at"),
         "reference": c.get("deposit_reference"),
     } for c in contracts if float(c.get("deposit") or 0) > 0 and c["id"] in paid_deposit_contracts]
-    return {"landlord": landlord, "charges": charges, "totals": totals, "deposits": deposits}
+    payments = await db.payment_transactions.find({"landlord_id": user_id, "payment_status": "paid"}, {"_id": 0}).sort("updated_at", -1).to_list(500)
+    totals["stripe_paid"] = round(sum(float(p.get("amount") or 0) for p in payments), 2)
+    return {"landlord": landlord, "charges": charges, "totals": totals, "deposits": deposits, "payments": payments}
 
 
 @api.get("/admin/finance/tenant-statement/{user_id}")
@@ -1716,7 +1747,9 @@ async def tenant_statement(user_id: str, user: dict = Depends(require_permission
     contracts = await db.contracts.find({"tenant_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
     tenant = {"id": t["id"], "name": t.get("name"), "email": t.get("email"), "phone": t.get("phone"),
               "public_id": public_id_for(with_perms(dict(t)))}
-    return {"tenant": tenant, "charges": charges, "totals": totals, "contracts": [{
+    payments = await db.payment_transactions.find({"tenant_id": user_id, "payment_status": "paid"}, {"_id": 0}).sort("updated_at", -1).to_list(500)
+    totals["stripe_paid"] = round(sum(float(p.get("amount") or 0) for p in payments), 2)
+    return {"tenant": tenant, "charges": charges, "totals": totals, "payments": payments, "contracts": [{
         "id": c["id"], "property_title": c.get("property_title", ""), "landlord_name": c.get("landlord_name", ""),
         "monthly_rent": c.get("monthly_rent", 0), "status": c.get("status"), "start_date": c.get("start_date"), "end_date": c.get("end_date"),
         "deposit": float(c.get("deposit") or 0), "deposit_registered": bool(c.get("deposit_registered")),

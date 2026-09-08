@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Loader2, ArrowLeft, Wallet, TrendingUp, ShieldCheck, Landmark, CheckCircle2 } from "lucide-react";
+import { StripePaymentsTable } from "@/components/StripePaymentsTable";
 
 const chColor = { pagado: "bg-green-100 text-green-700", pendiente: "bg-amber-100 text-amber-700", fallido: "bg-red-100 text-red-700" };
 const chLabel = { pagado: "Pagado", pendiente: "Pendiente", fallido: "Fallido" };
@@ -60,7 +61,7 @@ export default function AdminStatement() {
   };
 
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
-  const { landlord, charges, totals, deposits } = data;
+  const { landlord, charges, totals, deposits, payments = [] } = data;
 
   return (
     <div data-testid="admin-statement">
@@ -84,6 +85,8 @@ export default function AdminStatement() {
         <Stat icon={ShieldCheck} label="Retenido en custodia" value={formatMXN(totals.retained)} testid="stmt-retained" />
       </div>
       <p className="text-sm text-stone-500 mt-3" data-testid="stmt-counts">{totals.paid_count} de {totals.total_count} cobros pagados · Comisión plataforma: <b className="text-navy">{formatMXN(totals.commission)}</b></p>
+
+      <StripePaymentsTable payments={payments} total={totals.stripe_paid} counterpartLabel="Arrendatario" counterpartKey="tenant_name" testid="stmt-stripe" />
 
       {/* Depósitos en garantía */}
       <div className="mt-8" data-testid="deposits-box">

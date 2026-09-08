@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import { formatMXN, formatDate, STATUS_LABEL } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Wallet, AlertTriangle, ShieldCheck, Clock } from "lucide-react";
+import { StripePaymentsTable } from "@/components/StripePaymentsTable";
 
 const chColor = { pagado: "bg-green-100 text-green-700", pendiente: "bg-amber-100 text-amber-700", fallido: "bg-red-100 text-red-700" };
 const chLabel = { pagado: "Pagado", pendiente: "Pendiente", fallido: "Fallido" };
@@ -26,7 +27,7 @@ export default function AdminTenantStatement() {
   }, [userId]);
 
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
-  const { tenant, charges, totals, contracts } = data;
+  const { tenant, charges, totals, contracts, payments = [] } = data;
 
   return (
     <div data-testid="admin-tenant-statement">
@@ -45,6 +46,8 @@ export default function AdminTenantStatement() {
         <Stat icon={ShieldCheck} label="Depósitos en garantía" value={formatMXN(totals.deposits)} testid="tstmt-deposits" />
       </div>
       <p className="text-sm text-stone-500 mt-3" data-testid="tstmt-counts">{totals.paid_count} de {totals.total_count} cobros pagados</p>
+
+      <StripePaymentsTable payments={payments} total={totals.stripe_paid} counterpartLabel="Arrendador" counterpartKey="landlord_name" testid="tstmt-stripe" />
 
       <div className="mt-8">
         <h2 className="font-display font-semibold text-navy text-lg mb-3">Contratos</h2>
