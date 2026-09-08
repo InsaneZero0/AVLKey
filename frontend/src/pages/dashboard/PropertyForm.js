@@ -309,7 +309,7 @@ export default function PropertyForm() {
                 <div>
                   <div className="text-sm font-medium text-navy">Régimen fiscal de IVA</div>
                   <div className="text-xs text-stone-500">
-                    {ivaDisabled ? "No aplica IVA para casa habitación o departamento sin amueblar" : "Se calcula sobre la base de la renta y se suma al total a recibir"}
+                    Lo puedes consultar en tu constancia de situación fiscal, en tu portal de Internet o con tu contador. <span className="font-semibold text-navy">Dato muy importante.</span>
                   </div>
                   <div className="flex gap-6 mt-2">
                     {[8, 16].map((r) => (
@@ -325,7 +325,7 @@ export default function PropertyForm() {
                     ))}
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-emerald-700" data-testid="prop-iva-amt">+ {money(ivaAmt)}</span>
+                <span className="text-sm font-semibold text-emerald-700 whitespace-nowrap" data-testid="prop-iva-amt">+ {money(ivaAmt)}</span>
               </div>
             </div>
 
