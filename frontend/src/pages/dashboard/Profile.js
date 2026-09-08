@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // RFC persona física: 4 letras + 6 dígitos + 3 indistintos (13)
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
+
 const rfcFisica = (raw) => {
   const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   let out = "";
@@ -246,7 +248,7 @@ export default function Profile() {
           <>
           <div>
             <Label>Nombre completo</Label>
-            <Input data-testid="profile-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input data-testid="profile-name" value={form.name} onChange={(e) => setForm({ ...form, name: titleCase(e.target.value) })} />
           </div>
           <div>
             <Label>Teléfono</Label>

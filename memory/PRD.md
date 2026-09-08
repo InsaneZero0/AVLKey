@@ -313,3 +313,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Registro arrendatario: Datos del solicitante (nombre, RFC, CURP, teléfono y lada) se precargan desde Mi perfil cuando el registro aún no los tiene. (DONE)
 - Registro arrendatario: RFC, CURP, teléfono (+lada) y actividad económica se toman siempre de Mi perfil y quedan bloqueados (solo lectura) con leyenda/enlace a Mi perfil. (DONE)
 - Admin > Arrendatarios: columna "Actividad económica" reemplazada por "Estado de cuenta" (botón → /admin/estado-cuenta-arrendatario/:id). Nueva página AdminTenantStatement.js y endpoint GET /admin/finance/tenant-statement/{user_id} (pagado, pendiente, recargos, depósitos, contratos, historial de cobros). (DONE)
+- Mi perfil (arrendatario/arrendador): el input Nombre completo aplica formato Título automáticamente (cada palabra inicia con mayúscula, resto minúsculas; respeta acentos, guiones y apóstrofes). (DONE)
