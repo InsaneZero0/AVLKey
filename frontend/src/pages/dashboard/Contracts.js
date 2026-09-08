@@ -116,9 +116,6 @@ export default function Contracts() {
                             {paying === `${c.id}-deposito` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar depósito</>}
                           </Button>
                         )}
-                        <Button size="sm" className="rounded-full bg-terracotta hover:bg-terracotta-hover" disabled={paying === `${c.id}-renta`} onClick={() => pay(c.id, "renta")} data-testid={`pay-rent-${c.id}`}>
-                          {paying === `${c.id}-renta` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-1" /> Pagar renta</>}
-                        </Button>
                       </>
                     )
                   )}

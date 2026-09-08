@@ -27,9 +27,20 @@ export default function Payments() {
   const [card, setCard] = useState(null);
   const [connect, setConnect] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [contracts, setContracts] = useState([]);
+  const [payingRent, setPayingRent] = useState(null);
+
+  const payRent = async (contractId) => {
+    setPayingRent(contractId);
+    try {
+      const { data } = await api.post("/payments/rent/checkout", { contract_id: contractId, origin_url: window.location.origin, concept: "renta" });
+      window.location.href = data.checkout_url;
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); setPayingRent(null); }
+  };
 
   const load = useCallback(() => {
     api.get("/my/rent-charges").then(({ data }) => setCharges(data)).catch(() => setCharges([]));
+    if (!isLandlord) api.get("/my/contracts").then(({ data }) => setContracts((data || []).filter((c) => c.status !== "finalizado"))).catch(() => setContracts([]));
     api.get("/my/payments").then(({ data }) => setHistory(data)).catch(() => setHistory([]));
     if (isLandlord) api.get("/payments/connect/status").then(({ data }) => setConnect(data)).catch(() => setConnect({ connected: false }));
     else api.get("/payments/card").then(({ data }) => setCard(data)).catch(() => setCard({ has_card: false }));
@@ -99,6 +110,26 @@ export default function Payments() {
           <Button onClick={saveCard} disabled={busy} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-card-btn">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (card?.has_card ? "Actualizar tarjeta" : "Guardar tarjeta")}
           </Button>
+        </div>
+      )}
+
+      {/* Pagar renta por contrato (arrendatario) */}
+      {!isLandlord && contracts.length > 0 && (
+        <div className="mt-6" data-testid="tenant-pay-rent-box">
+          <h2 className="font-display font-semibold text-navy text-lg mb-3">Pagar renta</h2>
+          <div className="grid gap-3">
+            {contracts.map((c) => (
+              <div key={c.id} className="bg-white border border-stone-200 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4" data-testid={`pay-rent-card-${c.id}`}>
+                <div>
+                  <div className="font-medium text-navy">{c.property_title}</div>
+                  <div className="text-sm text-stone-500">Arrendador: {c.landlord_name} · Renta <b className="text-navy">{formatMXN(c.monthly_rent)}</b>/mes · {c.paid_months} pago(s) realizado(s)</div>
+                </div>
+                <Button onClick={() => payRent(c.id)} disabled={payingRent === c.id} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid={`pay-rent-${c.id}`}>
+                  {payingRent === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-1" /> Pagar renta</>}
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
