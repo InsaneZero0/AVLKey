@@ -9,6 +9,7 @@ from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depend
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
@@ -421,6 +422,34 @@ class ProfileUpdate(BaseModel):
     actividad_economica_detalle: Optional[ActividadEconomica] = None
     empleos_anteriores: Optional[List[ActividadEconomica]] = None
     actividad_economica_submitted: Optional[bool] = None
+
+
+VISIT_ACTIVE = ("solicitada", "confirmada", "reprogramada")
+SLOT_TAKEN_MSG = "Ese horario ya fue reservado por otra persona. Elige otro horario."
+
+
+def slot_key(property_id: str, scheduled_at: str):
+    if not scheduled_at:
+        return None
+    try:
+        dt = datetime.fromisoformat(scheduled_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return f"{property_id}|{dt.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M')}"
+    except Exception:
+        return f"{property_id}|{scheduled_at}"
+
+
+async def _reserve_slot(visit_id: str, updates: dict, push: dict = None):
+    """Atomic update; unique partial index on slot_key rejects double booking."""
+    op = {"$set": updates}
+    if push:
+        op["$push"] = push
+    try:
+        await db.visits.update_one({"id": visit_id}, op)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail=SLOT_TAKEN_MSG)
+
 
 
 class PropertyInput(BaseModel):
@@ -1033,8 +1062,13 @@ async def schedule_visit_for_application(application_id: str, data: LandlordVisi
         "history": [entry],
         "created_at": now_utc().isoformat(),
         "updated_at": now_utc().isoformat(),
+        "slot_key": slot_key(app_doc["property_id"], data.scheduled_at),
     }
-    await db.visits.insert_one(dict(visit))
+    try:
+        await db.visits.insert_one(dict(visit))
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail=SLOT_TAKEN_MSG)
+    visit.pop("_id", None)
     await notify(app_doc["tenant_id"], "visita", "El arrendador agendó una cita",
                  f"El arrendador agendó una cita para visitar '{prop['title']}'.", "/panel/visitas")
     return serialize_visit(visit, user["id"], prop)
@@ -1826,10 +1860,8 @@ async def formalize_visit(visit_id: str, data: FormalizeVisit, user: dict = Depe
     scheduled = candidate.isoformat()
     entry = {"status": "confirmada", "by": user["name"], "at": now.isoformat(),
              "note": f"Cita formalizada: {data.day} {data.time}"}
-    await db.visits.update_one({"id": visit_id}, {
-        "$set": {"status": "confirmada", "scheduled_at": scheduled, "updated_at": now.isoformat()},
-        "$push": {"history": entry},
-    })
+    await _reserve_slot(visit_id, {"status": "confirmada", "scheduled_at": scheduled, "updated_at": now.isoformat(),
+                                   "slot_key": slot_key(v["property_id"], scheduled)}, {"history": entry})
     await notify(v["tenant_id"], "visita", "Cita formalizada",
                  f"El arrendador formalizó tu cita para '{v['property_title']}'.", "/panel/visitas")
     prop = await db.properties.find_one({"id": v["property_id"]}, {"_id": 0})
@@ -2058,7 +2090,14 @@ async def create_visit(data: VisitCreate, user: dict = Depends(get_current_user)
         "created_at": now_utc().isoformat(),
         "updated_at": now_utc().isoformat(),
     }
-    await db.visits.insert_one(dict(visit))
+    key = slot_key(data.property_id, data.scheduled_at if not data.availability else "")
+    if key:
+        visit["slot_key"] = key
+    try:
+        await db.visits.insert_one(dict(visit))
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail=SLOT_TAKEN_MSG)
+    visit.pop("_id", None)
     msg = f"{user['name']} solicitó visitar {prop['title']}" + (f". Disponibilidad: {dispo}" if dispo else "")
     await notify(prop["owner_id"], "visita", "Nueva solicitud de visita", msg, "/panel/visitas")
     return serialize_visit(visit, user["id"], prop)
@@ -2078,7 +2117,13 @@ async def _apply_visit_status(v: dict, status: str, user: dict, note: str = "", 
     if scheduled_at:
         updates["scheduled_at"] = scheduled_at
     entry = {"status": status, "by": user["name"], "at": now_utc().isoformat(), "note": note}
-    await db.visits.update_one({"id": v["id"]}, {"$set": updates, "$push": {"history": entry}})
+    if status in VISIT_ACTIVE:
+        key = slot_key(v["property_id"], scheduled_at or v.get("scheduled_at"))
+        if key:
+            updates["slot_key"] = key
+        await _reserve_slot(v["id"], updates, {"history": entry})
+    else:
+        await db.visits.update_one({"id": v["id"]}, {"$set": updates, "$unset": {"slot_key": ""}, "$push": {"history": entry}})
 
 
 @api.patch("/visits/{visit_id}/confirm")
@@ -2109,11 +2154,12 @@ async def reschedule_visit(visit_id: str, data: RescheduleInput, user: dict = De
     v = await _get_visit_and_check(visit_id, user)
     if v["status"] in ("cancelada", "completada", "no_asistio"):
         raise HTTPException(status_code=400, detail="La visita no puede reprogramarse")
-    await db.visits.update_one({"id": visit_id}, {"$set": {
+    await _reserve_slot(visit_id, {
         "status": "reprogramada", "scheduled_at": data.scheduled_at,
+        "slot_key": slot_key(v["property_id"], data.scheduled_at),
         "proposed_by": "arrendador" if user["id"] == v["landlord_id"] else "arrendatario",
         "updated_at": now_utc().isoformat(),
-    }, "$push": {"history": {"status": "reprogramada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note or f"Nueva fecha propuesta"}}})
+    }, {"history": {"status": "reprogramada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note or f"Nueva fecha propuesta"}})
     other = v["tenant_id"] if user["id"] == v["landlord_id"] else v["landlord_id"]
     await notify(other, "visita", "Nueva fecha propuesta", f"Se propuso una nueva fecha para {v['property_title']}.", "/panel/visitas")
     return {"ok": True}
@@ -3009,6 +3055,7 @@ async def seed():
     await db.users.create_index("email", unique=True)
     await db.user_sessions.create_index("session_token")
     await db.properties.create_index("owner_id")
+    await db.visits.create_index("slot_key", unique=True, partialFilterExpression={"slot_key": {"$type": "string"}})
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@rentaloenlinea.mx")
     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
