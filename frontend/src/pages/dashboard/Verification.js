@@ -328,7 +328,9 @@ export default function Verification({ onPersistPersonal } = {}) {
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
       phone: data.phone || user?.phone || "",
-      phone_code: data.phone_code || "+52",
+      phone_code: data.phone_code || user?.phone_code || "+52",
+      rfc: data.rfc || user?.rfc || "",
+      curp: data.curp || user?.curp || "",
       ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
       comprobantes_ingresos: data.comprobantes_ingresos || [],
       adultos_18: data.adultos_18 != null ? String(data.adultos_18) : "",
