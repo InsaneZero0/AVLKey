@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import {
@@ -14,20 +14,26 @@ export default function DashboardLayout() {
   const isLandlord = user?.role === "arrendador";
   const authorized = user?.registro_stage === "autorizado";
   const [hasPublished, setHasPublished] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     if (!isLandlord) return;
     api.get("/my/properties")
-      .then(({ data }) => setHasPublished((data || []).some((p) => (p.review_stage || p.display_status) === "publicado")))
-      .catch(() => setHasPublished(false));
-  }, [isLandlord]);
+      .then(({ data }) => {
+        const list = data || [];
+        setHasPublished(list.some((p) => (p.review_stage || p.display_status) === "publicado"));
+        setHasSubmitted(list.some((p) => p.review_stage !== "borrador"));
+      })
+      .catch(() => { setHasPublished(false); setHasSubmitted(false); });
+  }, [isLandlord, location.pathname]);
 
   const doLogout = async () => { await logout(); navigate("/"); };
 
   const links = isLandlord ? [
     { to: "/panel/perfil", label: "Mi perfil", icon: User, enabled: true },
     { to: "/panel/publicar", label: "Publicar inmueble", icon: PlusCircle, enabled: authorized, hint: "Llena este formulario y al ser aprobada tu información podrás publicar." },
-    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
+    { to: "/panel/inmuebles", label: "Mis inmuebles", icon: Building2, enabled: hasSubmitted, hint: "Se habilitará cuando envíes la información de tu primer inmueble." },
     { to: "/panel/recibidas", label: "Solicitudes recibidas", icon: Inbox, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
     { to: "/panel/visitas", label: "Visitas", icon: CalendarClock, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
     { to: "/panel/contratos", label: "Contratos", icon: FileText, enabled: hasPublished, hint: "Se habilitará cuando el administrador autorice la publicación de tu inmueble." },
