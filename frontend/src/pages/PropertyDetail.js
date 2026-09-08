@@ -242,6 +242,10 @@ export default function PropertyDetail() {
                 {prop.iva_rate > 0 && (
                   <div className="flex justify-between" data-testid="detail-iva"><span className="text-stone-500">IVA <span className="text-xs text-stone-400">({prop.iva_rate}%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * prop.iva_rate / 100))}</span></div>
                 )}
+                <div className="flex justify-between items-baseline border-t border-stone-100 pt-2 mt-2" data-testid="detail-monthly-total">
+                  <span className="font-display font-semibold text-navy">Total mensual a pagar</span>
+                  <span className="font-display font-bold text-lg text-terracotta">{formatMXN(prop.price_month + Math.round(prop.price_month * 0.04) * 2 + Math.round(prop.price_month * (prop.iva_rate || 0) / 100))}</span>
+                </div>
               </div>
 
               {prop.owner && (

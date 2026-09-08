@@ -316,3 +316,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Mi perfil (arrendatario/arrendador): el input Nombre completo aplica formato Título automáticamente (cada palabra inicia con mayúscula, resto minúsculas; respeta acentos, guiones y apóstrofes). (DONE)
 - Detalle de inmueble: se quitó "/mes" en Mantenimiento e IVA (también en tarjeta de Contratos). (DONE)
 - Detalle público del inmueble: Mantenimiento e IVA sin "/mes"; Depósito en garantía movido debajo de la renta, arriba de la línea divisoria de cuotas. (DONE)
+- Detalle público: fila "Total mensual a pagar" = renta + cuota Réntalo (4%) + mantenimiento (4%) + IVA, debajo del IVA. (DONE)
