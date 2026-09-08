@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import api, { apiError, API } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -327,10 +328,11 @@ export default function Verification({ onPersistPersonal } = {}) {
     if (category === "arrendatario") api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
     api.get("/my/fiscal").then(({ data }) => setFiscal((p) => ({
       ...p, ...data,
-      phone: data.phone || user?.phone || "",
-      phone_code: data.phone_code || user?.phone_code || "+52",
-      rfc: data.rfc || user?.rfc || "",
-      curp: data.curp || user?.curp || "",
+      phone: user?.phone || data.phone || "",
+      phone_code: user?.phone_code || data.phone_code || "+52",
+      rfc: user?.rfc || data.rfc || "",
+      curp: user?.curp || data.curp || "",
+      actividad_economica: user?.actividad_economica_detalle?.actividad || data.actividad_economica || "",
       ingreso_mensual: data.ingreso_mensual != null ? String(data.ingreso_mensual) : "",
       comprobantes_ingresos: data.comprobantes_ingresos || [],
       adultos_18: data.adultos_18 != null ? String(data.adultos_18) : "",
@@ -409,9 +411,9 @@ export default function Verification({ onPersistPersonal } = {}) {
         if (fiscal.es_extranjero) {
           if (!(fiscal.pasaporte || "").trim()) { toast.error("El pasaporte del solicitante es obligatorio"); return; }
         } else if (!(fiscal.rfc || "").trim() || !(fiscal.curp || "").trim()) {
-          toast.error("El RFC y CURP del solicitante son obligatorios"); return;
+          toast.error("Captura tu RFC y CURP en Mi perfil antes de enviar el registro"); return;
         }
-        if (!(fiscal.phone || "").trim()) { toast.error("El número de teléfono es obligatorio"); return; }
+        if (!(fiscal.phone || "").trim()) { toast.error("Captura tu teléfono en Mi perfil antes de enviar el registro"); return; }
       }
     }
     setSavingFiscal(true);
@@ -494,21 +496,21 @@ export default function Verification({ onPersistPersonal } = {}) {
             </div>
             <div>
               <Label>RFC {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
-              <Input data-testid="reg-rfc" disabled={fiscal.es_extranjero} maxLength={13} value={fiscal.rfc || ""} onChange={(e) => setFiscal({ ...fiscal, rfc: rfcFisica(e.target.value) })} placeholder="XAXX010101000" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-rfc" disabled maxLength={13} value={fiscal.rfc || ""} placeholder="XAXX010101000" className="bg-stone-100 text-stone-700" />
             </div>
             <div>
               <Label>CURP {!fiscal.es_extranjero && <span className="text-red-500">*</span>}</Label>
-              <Input data-testid="reg-curp" disabled={fiscal.es_extranjero} maxLength={18} value={fiscal.curp || ""} onChange={(e) => setFiscal({ ...fiscal, curp: curpMask(e.target.value) })} placeholder="18 caracteres" className={fiscal.es_extranjero ? "bg-stone-100 text-stone-400" : ""} />
+              <Input data-testid="reg-curp" disabled maxLength={18} value={fiscal.curp || ""} placeholder="18 caracteres" className="bg-stone-100 text-stone-700" />
               {!fiscal.es_extranjero && <p className="text-xs text-stone-400 mt-1">{(fiscal.curp || "").length}/18</p>}
             </div>
             <div>
               <Label>Teléfono <span className="text-red-500">*</span></Label>
               <div className="flex items-center gap-2">
-                <Select value={fiscal.phone_code} onValueChange={(v) => setFiscal({ ...fiscal, phone_code: v })}>
-                  <SelectTrigger data-testid="reg-phone-code" className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                <Select value={fiscal.phone_code} disabled>
+                  <SelectTrigger data-testid="reg-phone-code" className="w-24 shrink-0 bg-stone-100 text-stone-700"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-64">{PHONE_CODES.map((c) => <SelectItem key={c.name} value={c.code}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
                 </Select>
-                <Input data-testid="reg-phone" type="tel" inputMode="numeric" maxLength={10} value={fiscal.phone} onChange={(e) => setFiscal({ ...fiscal, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="5555550000" className="flex-1" />
+                <Input data-testid="reg-phone" type="tel" inputMode="numeric" maxLength={10} value={fiscal.phone} disabled placeholder="5555550000" className="flex-1 bg-stone-100 text-stone-700" />
               </div>
             </div>
             <div>
@@ -520,8 +522,9 @@ export default function Verification({ onPersistPersonal } = {}) {
             </div>
             <div>
               <Label>Actividad económica</Label>
-              <Input data-testid="reg-actividad" value={fiscal.actividad_economica} onChange={(e) => setFiscal({ ...fiscal, actividad_economica: e.target.value })} placeholder="Ej. Empleado, comerciante" />
+              <Input data-testid="reg-actividad" value={fiscal.actividad_economica} disabled placeholder="Se toma de Mi perfil" className="bg-stone-100 text-stone-700" />
             </div>
+            <p className="col-span-full text-xs text-stone-500" data-testid="reg-locked-hint">Nombre, RFC, CURP, teléfono y actividad económica se toman de <Link to="/panel/perfil" className="text-terracotta underline">Mi perfil</Link>; edítalos ahí si necesitas corregirlos.</p>
             <div>
               <Label>Ingreso mensual neto</Label>
               <div className="flex items-center gap-2">

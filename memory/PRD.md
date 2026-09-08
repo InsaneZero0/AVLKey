@@ -311,3 +311,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Horarios ocupados en gris: en "Agendar visita" (detalle público, por día/hora) y en "Proponer nueva fecha" (Visitas) los horarios reservados del inmueble aparecen deshabilitados con "· Ocupado" y leyenda; validación cliente antes de enviar. Usa GET /properties/{id}/visits/busy. (DONE)
 - Menú arrendador: "Mis inmuebles" se habilita desde que se envía el primer inmueble (cualquier review_stage distinto de borrador); el resto del menú sigue requiriendo un inmueble publicado. Se recalcula al cambiar de ruta. (DONE)
 - Registro arrendatario: Datos del solicitante (nombre, RFC, CURP, teléfono y lada) se precargan desde Mi perfil cuando el registro aún no los tiene. (DONE)
+- Registro arrendatario: RFC, CURP, teléfono (+lada) y actividad económica se toman siempre de Mi perfil y quedan bloqueados (solo lectura) con leyenda/enlace a Mi perfil. (DONE)
