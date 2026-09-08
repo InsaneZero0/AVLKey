@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { formatMXN, formatDate, STATUS_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, CreditCard, ShieldCheck, CheckCircle2, Calendar, Eye, Download } from "lucide-react";
+import { FileText, Loader2, CreditCard, ShieldCheck, CheckCircle2, Calendar, Eye, Download, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const statusColor = { borrador: "bg-amber-100 text-amber-700", en_revision_admin: "bg-amber-100 text-amber-700", enviado_arrendatario: "bg-blue-100 text-blue-700", activo: "bg-green-100 text-green-700", finalizado: "bg-stone-100 text-stone-600" };
@@ -15,7 +15,30 @@ export default function Contracts() {
   const [contracts, setContracts] = useState(null);
   const [paying, setPaying] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [uploadingSigned, setUploadingSigned] = useState(null);
+  const signedInputs = useRef({});
   const isLandlord = user?.role === "arrendador";
+
+  const openSigned = async (c) => {
+    try {
+      const res = await api.get(`/my/contracts/${c.id}/signed-pdf`, { responseType: "blob" });
+      window.open(window.URL.createObjectURL(res.data), "_blank", "noopener");
+    } catch { toast.error("No se pudo abrir el contrato firmado"); }
+  };
+
+  const uploadSigned = async (c, file) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) { toast.error("Solo se permite PDF"); return; }
+    setUploadingSigned(c.id);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await api.post(`/my/contracts/${c.id}/signed-pdf`, fd);
+      toast.success("Contrato firmado cargado");
+      load();
+    } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
+    setUploadingSigned(null);
+  };
 
   const load = () => api.get("/my/contracts").then(({ data }) => setContracts(data)).catch(() => setContracts([]));
   useEffect(() => { load(); }, []);
@@ -101,6 +124,15 @@ export default function Contracts() {
                       <Eye className="w-4 h-4 mr-1" /> Ver contrato
                     </Button>
                   )}
+                  <input ref={(el) => { signedInputs.current[c.id] = el; }} type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { uploadSigned(c, e.target.files?.[0]); e.target.value = ""; }} data-testid={`signed-input-${c.id}`} />
+                  {c.signed_pdf_path && (
+                    <Button size="sm" variant="outline" className="rounded-full border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800" onClick={() => openSigned(c)} data-testid={`signed-view-${c.id}`}>
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Contrato firmado
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="rounded-full" disabled={uploadingSigned === c.id} onClick={() => signedInputs.current[c.id]?.click()} data-testid={`signed-upload-${c.id}`}>
+                    {uploadingSigned === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Upload className="w-4 h-4 mr-1" /> {c.signed_pdf_path ? "Reemplazar firmado" : "Subir contrato firmado (PDF)"}</>}
+                  </Button>
                   {isLandlord ? (
                     <>
                       {c.status === "borrador" && <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700" onClick={() => setStatus(c.id, "activo")} data-testid={`activate-${c.id}`}><CheckCircle2 className="w-4 h-4 mr-1" /> Activar contrato</Button>}
