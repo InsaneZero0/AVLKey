@@ -37,6 +37,9 @@ import {
 } from "lucide-react";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+const DAY_KEYS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+const pad = (n) => String(n).padStart(2, "0");
+const busyDayTimes = (busy) => new Set(busy.map((iso) => { const d = new Date(iso); return isNaN(d) ? null : `${DAY_KEYS[d.getDay()]}|${pad(d.getHours())}:${pad(d.getMinutes())}`; }).filter(Boolean));
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -70,6 +73,8 @@ export default function PropertyDetail() {
     if (!user) { navigate("/login"); return; }
     const availability = DAYS.filter((d) => avail[d.key]?.checked).map((d) => ({ day: d.label, time: avail[d.key]?.time || "10:00" }));
     if (availability.length === 0) { toast.error("Selecciona al menos un día"); return; }
+    const taken = busyDayTimes(busy);
+    if (DAYS.some((d) => avail[d.key]?.checked && taken.has(`${d.key}|${avail[d.key]?.time || "10:00"}`))) { toast.error("Uno de los horarios elegidos ya está reservado. Elige otro."); return; }
     setVisitSubmitting(true);
     try {
       await api.post("/visits", { property_id: id, availability, note: vNote });
@@ -348,20 +353,27 @@ export default function PropertyDetail() {
                       <div className="space-y-2">
                         {DAYS.map((d) => {
                           const row = avail[d.key] || {};
+                          const taken = busyDayTimes(busy);
+                          const isTaken = (t) => taken.has(`${d.key}|${t}`);
                           return (
                             <div key={d.key} className="flex items-center gap-3">
                               <label className="flex items-center gap-2 w-28 shrink-0 cursor-pointer">
-                                <Checkbox checked={!!row.checked} onCheckedChange={(c) => setAvail({ ...avail, [d.key]: { ...row, checked: !!c, time: row.time || "10:00" } })} data-testid={`visit-day-${d.key}`} />
+                                <Checkbox checked={!!row.checked} onCheckedChange={(c) => setAvail({ ...avail, [d.key]: { ...row, checked: !!c, time: row.time || TIME_SLOTS.find((t) => !isTaken(t)) || "10:00" } })} data-testid={`visit-day-${d.key}`} />
                                 <span className="text-sm text-navy">{d.label}</span>
                               </label>
                               <Select value={row.time || "10:00"} onValueChange={(t) => setAvail({ ...avail, [d.key]: { ...row, time: t } })} disabled={!row.checked}>
                                 <SelectTrigger data-testid={`visit-time-${d.key}`} className="flex-1"><SelectValue /></SelectTrigger>
-                                <SelectContent>{TIME_SLOTS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                <SelectContent>{TIME_SLOTS.map((t) => (
+                                  <SelectItem key={t} value={t} disabled={isTaken(t)} className={isTaken(t) ? "text-stone-400" : ""} data-testid={`visit-slot-${d.key}-${t}`}>
+                                    {t}{isTaken(t) ? " · Ocupado" : ""}
+                                  </SelectItem>
+                                ))}</SelectContent>
                               </Select>
                             </div>
                           );
                         })}
                       </div>
+                      {busy.length > 0 && <p className="text-xs text-stone-400" data-testid="busy-hint">Los horarios en gris ya están reservados para este inmueble.</p>}
                       <div>
                         <Label>Mensaje (opcional)</Label>
                         <Textarea data-testid="visit-note" value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="Comparte detalles o dudas..." />

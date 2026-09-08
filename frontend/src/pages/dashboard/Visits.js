@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+const pad = (n) => String(n).padStart(2, "0");
+const localKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 const statusMap = {
   solicitada: { label: "Solicitada", cls: "bg-amber-100 text-amber-700" },
@@ -49,6 +51,13 @@ export default function Visits() {
   const [reschedule, setReschedule] = useState(null);
   const [rDate, setRDate] = useState("");
   const [rTime, setRTime] = useState("10:00");
+  const [busy, setBusy] = useState([]);
+  useEffect(() => {
+    if (!reschedule) { setBusy([]); return; }
+    api.get(`/properties/${reschedule.property_id}/visits/busy`).then(({ data }) => setBusy(data.filter((iso) => iso !== reschedule.scheduled_at))).catch(() => setBusy([]));
+  }, [reschedule]);
+  const busyKeys = new Set(busy.map((iso) => { const d = new Date(iso); return isNaN(d) ? null : localKey(d); }).filter(Boolean));
+  const slotTaken = (t) => !!rDate && busyKeys.has(`${rDate}T${t}`);
   const [historyOpen, setHistoryOpen] = useState(null);
   const [slot, setSlot] = useState(null);
   const [contractVisit, setContractVisit] = useState(null);
@@ -94,6 +103,7 @@ export default function Visits() {
 
   const submitReschedule = async () => {
     if (!rDate) { toast.error("Selecciona una fecha"); return; }
+    if (slotTaken(rTime)) { toast.error("Ese horario ya está reservado. Elige otro."); return; }
     await act(reschedule.id, "reschedule", { scheduled_at: `${rDate}T${rTime}:00` });
     setReschedule(null);
   };
@@ -239,8 +249,11 @@ export default function Visits() {
             <div><Label>Hora</Label>
               <Select value={rTime} onValueChange={setRTime}>
                 <SelectTrigger data-testid="reschedule-time"><SelectValue /></SelectTrigger>
-                <SelectContent>{TIME_SLOTS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <SelectContent>{TIME_SLOTS.map((t) => (
+                  <SelectItem key={t} value={t} disabled={slotTaken(t)} className={slotTaken(t) ? "text-stone-400" : ""} data-testid={`reschedule-slot-${t}`}>{t}{slotTaken(t) ? " · Ocupado" : ""}</SelectItem>
+                ))}</SelectContent>
               </Select>
+              {rDate && TIME_SLOTS.some(slotTaken) && <p className="text-xs text-stone-400 mt-1" data-testid="reschedule-busy-hint">Los horarios en gris ya están reservados para este inmueble.</p>}
             </div>
           </div>
           <DialogFooter><Button onClick={submitReschedule} className="w-full rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="submit-reschedule">Proponer</Button></DialogFooter>
