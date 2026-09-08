@@ -235,12 +235,12 @@ export default function PropertyDetail() {
                 <span className="font-display font-bold text-3xl text-terracotta">{formatMXN(prop.price_month)}</span>
                 <span className="text-stone-500">/mes</span>
               </div>
+              <div className="flex justify-between text-sm mt-2" data-testid="detail-deposit"><span className="text-stone-500">Depósito en garantía <span className="text-xs text-stone-400">(1 mes de renta)</span></span><span className="font-medium">{formatMXN(prop.price_month)}</span></div>
               <div className="mt-4 space-y-2 text-sm border-t border-stone-100 pt-4">
-                <div className="flex justify-between"><span className="text-stone-500">Depósito en garantía <span className="text-xs text-stone-400">(1 mes de renta)</span></span><span className="font-medium">{formatMXN(prop.price_month)}</span></div>
                 <div className="flex justify-between"><span className="text-stone-500">Cuota Réntalo en Línea <span className="text-xs text-stone-400">(4%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * 0.04))}</span></div>
-                <div className="flex justify-between"><span className="text-stone-500">Mantenimiento <span className="text-xs text-stone-400">(4%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * 0.04))}/mes</span></div>
+                <div className="flex justify-between"><span className="text-stone-500">Mantenimiento <span className="text-xs text-stone-400">(4%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * 0.04))}</span></div>
                 {prop.iva_rate > 0 && (
-                  <div className="flex justify-between" data-testid="detail-iva"><span className="text-stone-500">IVA <span className="text-xs text-stone-400">({prop.iva_rate}%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * prop.iva_rate / 100))}/mes</span></div>
+                  <div className="flex justify-between" data-testid="detail-iva"><span className="text-stone-500">IVA <span className="text-xs text-stone-400">({prop.iva_rate}%)</span></span><span className="font-medium">{formatMXN(Math.round(prop.price_month * prop.iva_rate / 100))}</span></div>
                 )}
               </div>
 

@@ -87,7 +87,7 @@ export default function Contracts() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 text-sm">
                   <div><div className="text-stone-400 text-xs">Depósito</div><div className="font-medium text-navy">{formatMXN(c.deposit)}</div></div>
                   <div><div className="text-stone-400 text-xs">Comisión (4%)</div><div className="font-medium text-navy">{formatMXN(c.commission)}</div></div>
-                  {c.iva_rate > 0 && <div data-testid={`contract-iva-${c.id}`}><div className="text-stone-400 text-xs">IVA ({c.iva_rate}%)</div><div className="font-medium text-navy">{formatMXN(c.iva_amount)}/mes</div></div>}
+                  {c.iva_rate > 0 && <div data-testid={`contract-iva-${c.id}`}><div className="text-stone-400 text-xs">IVA ({c.iva_rate}%)</div><div className="font-medium text-navy">{formatMXN(c.iva_amount)}</div></div>}
                   <div><div className="text-stone-400 text-xs flex items-center gap-1"><Calendar className="w-3 h-3" />Inicio</div><div className="font-medium text-navy">{formatDate(c.start_date)}</div></div>
                   <div><div className="text-stone-400 text-xs">Vigencia</div><div className="font-medium text-navy">{c.term_months} meses</div></div>
                 </div>

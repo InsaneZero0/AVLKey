@@ -314,3 +314,5 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Registro arrendatario: RFC, CURP, teléfono (+lada) y actividad económica se toman siempre de Mi perfil y quedan bloqueados (solo lectura) con leyenda/enlace a Mi perfil. (DONE)
 - Admin > Arrendatarios: columna "Actividad económica" reemplazada por "Estado de cuenta" (botón → /admin/estado-cuenta-arrendatario/:id). Nueva página AdminTenantStatement.js y endpoint GET /admin/finance/tenant-statement/{user_id} (pagado, pendiente, recargos, depósitos, contratos, historial de cobros). (DONE)
 - Mi perfil (arrendatario/arrendador): el input Nombre completo aplica formato Título automáticamente (cada palabra inicia con mayúscula, resto minúsculas; respeta acentos, guiones y apóstrofes). (DONE)
+- Detalle de inmueble: se quitó "/mes" en Mantenimiento e IVA (también en tarjeta de Contratos). (DONE)
+- Detalle público del inmueble: Mantenimiento e IVA sin "/mes"; Depósito en garantía movido debajo de la renta, arriba de la línea divisoria de cuotas. (DONE)
