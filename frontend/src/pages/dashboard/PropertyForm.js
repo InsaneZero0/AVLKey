@@ -76,7 +76,7 @@ export default function PropertyForm() {
     price_month: "", bedrooms: "", bathrooms: "", parking: "", area_m2: "",
     work_areas: "", reception: false,
     furnished: false, pets_allowed: false, amenities: "", images: [],
-    garantia_danos: false, garantia_pago_puntual: false,
+    garantia_danos: false, garantia_pago_puntual: false, iva_rate: 0,
   });
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function PropertyForm() {
         reception: !!data.reception,
         furnished: !!data.furnished, pets_allowed: !!data.pets_allowed,
         amenities: (data.amenities || []).join(", "), images: data.images || [],
-        garantia_danos: !!data.garantia_danos, garantia_pago_puntual: !!data.garantia_pago_puntual,
+        garantia_danos: !!data.garantia_danos, garantia_pago_puntual: !!data.garantia_pago_puntual, iva_rate: data.iva_rate || 0,
       });
     }).catch(() => toast.error("No se pudo cargar el inmueble"));
   }, [id]);
@@ -105,7 +105,10 @@ export default function PropertyForm() {
   const pagoAmt = Math.round(rent * 0.05);
   const comisionAmt = Math.round(rent * 0.04);
   const mantenimientoAmt = Math.round(rent * 0.04);
-  const totalAmt = rent - (form.garantia_danos ? danosAmt : 0) - (form.garantia_pago_puntual ? pagoAmt : 0) - comisionAmt;
+  const ivaDisabled = ["casa", "departamento"].includes(form.property_type) && !form.furnished;
+  const ivaRate = ivaDisabled ? 0 : form.iva_rate || 0;
+  const ivaAmt = Math.round(rent * ivaRate / 100);
+  const totalAmt = rent - (form.garantia_danos ? danosAmt : 0) - (form.garantia_pago_puntual ? pagoAmt : 0) - comisionAmt + ivaAmt;
   const money = (n) => `$${Number(n || 0).toLocaleString("en-US")}`;
 
   const addImage = (url) => {
@@ -145,6 +148,7 @@ export default function PropertyForm() {
         maintenance_fee: mantenimientoAmt,
         garantia_danos: !!form.garantia_danos,
         garantia_pago_puntual: !!form.garantia_pago_puntual,
+        iva_rate: ivaRate,
         bedrooms: parseInt(form.bedrooms) || 0,
         bathrooms: parseInt(form.bathrooms) || 0,
         parking: parseInt(form.parking) || 0,
@@ -299,6 +303,31 @@ export default function PropertyForm() {
                 <Label>Amueblado</Label>
               </div>
             )}
+
+            <div className={`border border-stone-200 rounded-xl p-3 bg-stone-50 ${ivaDisabled ? "opacity-60" : ""}`} data-testid="prop-iva-box">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-navy">Régimen fiscal de IVA</div>
+                  <div className="text-xs text-stone-500">
+                    {ivaDisabled ? "No aplica IVA para casa habitación o departamento sin amueblar" : "Se calcula sobre la base de la renta y se suma al total a recibir"}
+                  </div>
+                  <div className="flex gap-6 mt-2">
+                    {[8, 16].map((r) => (
+                      <label key={r} className={`flex items-center gap-2 text-sm ${ivaDisabled ? "cursor-not-allowed text-stone-400" : "cursor-pointer text-navy"}`}>
+                        <Checkbox
+                          data-testid={`prop-iva-${r}`}
+                          disabled={ivaDisabled}
+                          checked={ivaRate === r}
+                          onCheckedChange={(v) => set("iva_rate", v ? r : 0)}
+                        />
+                        IVA {r}%
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-emerald-700" data-testid="prop-iva-amt">+ {money(ivaAmt)}</span>
+              </div>
+            </div>
 
             <div className="flex items-center justify-between border-t border-stone-200 pt-3">
               <span className="font-display font-semibold text-navy">Total a recibir <span className="text-xs font-normal text-stone-400">(neto, informativo)</span></span>

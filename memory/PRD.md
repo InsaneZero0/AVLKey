@@ -302,3 +302,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 
 ## 2026-06 — Publicar inmueble
 - Switch "Amueblado" movido debajo de la fila Mantenimiento (sección Precios) en PropertyForm.js; "Pet friendly" permanece en Características. (DONE)
+- Régimen fiscal de IVA (checkbox 8%/16%) bajo Amueblado; IVA = renta × tasa, se suma al Total a recibir. Inhabilitado para casa/departamento sin amueblar. Backend PropertyInput.iva_rate. (DONE)

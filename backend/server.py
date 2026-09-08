@@ -438,6 +438,7 @@ class PropertyInput(BaseModel):
     maintenance_fee: float = 0
     garantia_danos: bool = False
     garantia_pago_puntual: bool = False
+    iva_rate: int = 0
     bedrooms: int = 0
     bathrooms: int = 0
     parking: int = 0
