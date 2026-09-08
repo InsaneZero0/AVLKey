@@ -1698,6 +1698,31 @@ async def finance_statement(user_id: str, user: dict = Depends(require_permissio
     return {"landlord": landlord, "charges": charges, "totals": totals, "deposits": deposits}
 
 
+@api.get("/admin/finance/tenant-statement/{user_id}")
+async def tenant_statement(user_id: str, user: dict = Depends(require_permission("consultar"))):
+    t = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    charges = await db.rent_charges.find({"tenant_id": user_id}, {"_id": 0}).sort("period", -1).to_list(1000)
+    paid = [c for c in charges if c["status"] == "pagado"]
+    pending = [c for c in charges if c["status"] != "pagado"]
+    totals = {
+        "paid_total": round(sum(c["tenant_total"] for c in paid), 2),
+        "pending_total": round(sum(c["tenant_total"] for c in pending), 2),
+        "late_fees": round(sum(float(c.get("late_fee") or 0) for c in charges), 2),
+        "deposits": round(sum(float(c.get("deposit") or 0) for c in paid), 2),
+        "paid_count": len(paid), "total_count": len(charges),
+    }
+    contracts = await db.contracts.find({"tenant_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    tenant = {"id": t["id"], "name": t.get("name"), "email": t.get("email"), "phone": t.get("phone"),
+              "public_id": public_id_for(with_perms(dict(t)))}
+    return {"tenant": tenant, "charges": charges, "totals": totals, "contracts": [{
+        "id": c["id"], "property_title": c.get("property_title", ""), "landlord_name": c.get("landlord_name", ""),
+        "monthly_rent": c.get("monthly_rent", 0), "status": c.get("status"), "start_date": c.get("start_date"), "end_date": c.get("end_date"),
+        "deposit": float(c.get("deposit") or 0), "deposit_registered": bool(c.get("deposit_registered")),
+    } for c in contracts]}
+
+
 @api.post("/admin/finance/contracts/{cid}/register-deposit")
 async def register_deposit(cid: str, data: DisperseInput, user: dict = Depends(require_permission("administrar_pagos"))):
     c = await db.contracts.find_one({"id": cid}, {"_id": 0})

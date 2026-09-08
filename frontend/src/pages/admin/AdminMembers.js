@@ -51,8 +51,7 @@ export default function AdminMembers({ role }) {
               <th className="text-left px-6 py-3">Nombre</th>
               <th className="text-left px-6 py-3">Correo</th>
               <th className="text-left px-6 py-3">Teléfono</th>
-              {isLandlord && <th className="text-left px-6 py-3">Estado de cuenta</th>}
-              {!isLandlord && <th className="text-left px-6 py-3">Actividad económica</th>}
+              <th className="text-left px-6 py-3">Estado de cuenta</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -65,20 +64,11 @@ export default function AdminMembers({ role }) {
                 <td className="px-6 py-4"><Link to={`/admin/miembro/${u.id}`} className="font-medium text-navy hover:text-terracotta hover:underline transition-colors" data-testid={`member-name-${u.id}`}>{u.name}</Link></td>
                 <td className="px-6 py-4 text-stone-600">{u.email}</td>
                 <td className="px-6 py-4 text-stone-600">{u.phone || "—"}</td>
-                {isLandlord && (
-                  <td className="px-6 py-4">
-                    <Link to={`/admin/estado-cuenta/${u.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta hover:text-white px-3 py-1.5 text-xs font-medium transition-colors" data-testid={`member-statement-${u.id}`}>
-                      <Wallet className="w-3.5 h-3.5" /> Estado de cuenta
-                    </Link>
-                  </td>
-                )}
-                {!isLandlord && (
-                  <td className="px-6 py-4">
-                    {u.actividad_economica_submitted ? (
-                      <Link to={`/admin/miembro/${u.id}#actividad-economica`} className="text-terracotta hover:underline font-medium" data-testid={`member-actividad-link-${u.id}`}>Ver actividad económica</Link>
-                    ) : <span className="text-stone-400">Sin enviar</span>}
-                  </td>
-                )}
+                <td className="px-6 py-4">
+                  <Link to={isLandlord ? `/admin/estado-cuenta/${u.id}` : `/admin/estado-cuenta-arrendatario/${u.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-terracotta/10 text-terracotta hover:bg-terracotta hover:text-white px-3 py-1.5 text-xs font-medium transition-colors" data-testid={`member-statement-${u.id}`}>
+                    <Wallet className="w-3.5 h-3.5" /> Estado de cuenta
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

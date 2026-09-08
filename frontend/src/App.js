@@ -41,6 +41,7 @@ import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminPayments from "@/pages/admin/AdminPayments";
 import AdminFinance from "@/pages/admin/AdminFinance";
 import AdminStatement from "@/pages/admin/AdminStatement";
+import AdminTenantStatement from "@/pages/admin/AdminTenantStatement";
 import AdminDocuments from "@/pages/admin/AdminDocuments";
 import AdminVerification from "@/pages/admin/AdminVerification";
 import AdminAudit from "@/pages/admin/AdminAudit";
@@ -88,6 +89,7 @@ function AppRoutes() {
         <Route path="pagos" element={<AdminPayments />} />
         <Route path="finanzas" element={<AdminFinance />} />
         <Route path="estado-cuenta/:userId" element={<AdminStatement />} />
+        <Route path="estado-cuenta-arrendatario/:userId" element={<AdminTenantStatement />} />
         <Route path="documentos" element={<AdminDocuments />} />
         <Route path="verificacion" element={<AdminVerification />} />
         <Route path="auditoria" element={<AdminAudit />} />

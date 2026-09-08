@@ -312,3 +312,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Menú arrendador: "Mis inmuebles" se habilita desde que se envía el primer inmueble (cualquier review_stage distinto de borrador); el resto del menú sigue requiriendo un inmueble publicado. Se recalcula al cambiar de ruta. (DONE)
 - Registro arrendatario: Datos del solicitante (nombre, RFC, CURP, teléfono y lada) se precargan desde Mi perfil cuando el registro aún no los tiene. (DONE)
 - Registro arrendatario: RFC, CURP, teléfono (+lada) y actividad económica se toman siempre de Mi perfil y quedan bloqueados (solo lectura) con leyenda/enlace a Mi perfil. (DONE)
+- Admin > Arrendatarios: columna "Actividad económica" reemplazada por "Estado de cuenta" (botón → /admin/estado-cuenta-arrendatario/:id). Nueva página AdminTenantStatement.js y endpoint GET /admin/finance/tenant-statement/{user_id} (pagado, pendiente, recargos, depósitos, contratos, historial de cobros). (DONE)
