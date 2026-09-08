@@ -109,9 +109,13 @@ export default function Contracts() {
                   ) : (
                     c.status !== "finalizado" && (
                       <>
-                        <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => pay(c.id, "deposito")} data-testid={`pay-deposit-${c.id}`}>
-                          {paying === `${c.id}-deposito` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar depósito</>}
-                        </Button>
+                        {c.deposit_paid ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-3 py-1.5 text-xs font-medium" data-testid={`deposit-paid-${c.id}`}><CheckCircle2 className="w-3.5 h-3.5" /> Depósito pagado</span>
+                        ) : (
+                          <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => pay(c.id, "deposito")} data-testid={`pay-deposit-${c.id}`}>
+                            {paying === `${c.id}-deposito` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar depósito</>}
+                          </Button>
+                        )}
                         <Button size="sm" className="rounded-full bg-terracotta hover:bg-terracotta-hover" disabled={paying === `${c.id}-renta`} onClick={() => pay(c.id, "renta")} data-testid={`pay-rent-${c.id}`}>
                           {paying === `${c.id}-renta` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-1" /> Pagar renta</>}
                         </Button>

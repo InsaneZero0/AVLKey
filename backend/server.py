@@ -1139,6 +1139,7 @@ async def my_contracts(user: dict = Depends(get_current_user)):
     contracts = [c for c in contracts if not (c.get("status") == "en_revision_admin" and c.get("tenant_id") == user["id"] and c.get("landlord_id") != user["id"])]
     for c in contracts:
         c["paid_months"] = await db.payment_transactions.count_documents({"contract_id": c["id"], "payment_status": "paid", "concept": "renta"})
+        c["deposit_paid"] = bool(c.get("deposit_registered")) or (await db.payment_transactions.count_documents({"contract_id": c["id"], "payment_status": "paid", "concept": "deposito"})) > 0
     return contracts
 
 
@@ -1178,6 +1179,9 @@ async def rent_checkout(data: RentCheckoutInput, user: dict = Depends(get_curren
     if concept == "deposito":
         amount = float(contract.get("deposit", 0))
         label = "Depósito en garantía"
+        already = contract.get("deposit_registered") or await db.payment_transactions.find_one({"contract_id": contract["id"], "payment_status": "paid", "concept": "deposito"})
+        if already:
+            raise HTTPException(status_code=400, detail="El depósito en garantía ya fue pagado")
     else:
         amount = float(contract["monthly_rent"])
         label = "Renta mensual"
