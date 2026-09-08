@@ -306,3 +306,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Texto IVA actualizado: "Lo puedes consultar en tu constancia de situación fiscal, en tu portal de Internet o con tu contador. Dato muy importante." (DONE)
 - Local comercial, Bodega y Espacio industrial usan las características de Oficina (Privados, Áreas de trabajo, Baños, Estacionamientos, Área, Recepción); se ocultan Amueblado/Pet friendly. Aplicado en PropertyForm.js y PropertyDetail.js. (DONE)
 - Para oficina/local/bodega/industrial, "Amenidades" se renombra a "Detalles especiales" (PropertyForm, PropertyDetail, MyProperties). (DONE)
+- IVA en detalle público (fila "IVA (x%)"), en contratos (iva_rate/iva_amount guardados; cláusula CUARTA menciona IVA) y tarjeta de Contratos. Video de solicitud (video_url) visible en Solicitudes recibidas (arrendador) y Admin > Solicitudes. (DONE)

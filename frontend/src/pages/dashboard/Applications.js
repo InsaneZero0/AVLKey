@@ -98,6 +98,12 @@ export default function Applications() {
               </div>
 
               {a.message && <p className="mt-4 text-sm text-stone-600 bg-stone-50 rounded-xl p-3 italic">"{a.message}"</p>}
+              {a.video_url && (
+                <div className="mt-4" data-testid={`app-video-${a.id}`}>
+                  <div className="text-xs text-stone-400 mb-1">Video de presentación (45 seg)</div>
+                  <video src={a.video_url} controls preload="metadata" className="w-full max-w-md rounded-xl bg-black max-h-64" />
+                </div>
+              )}
 
               {a.status !== "rechazada" && (
                 <div className="flex flex-wrap gap-2 mt-5">

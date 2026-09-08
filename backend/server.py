@@ -1080,6 +1080,8 @@ async def update_application_status(application_id: str, data: StatusUpdate, use
                 "deposit": prop["price_month"],
                 "commission": commission,
                 "maintenance_fund": prop.get("maintenance_fee", 0),
+                "iva_rate": int(prop.get("iva_rate") or 0),
+                "iva_amount": round(prop["price_month"] * (prop.get("iva_rate") or 0) / 100, 2),
                 "start_date": start.date().isoformat(),
                 "end_date": (start + timedelta(days=365)).date().isoformat(),
                 "term_months": 12,
@@ -1862,6 +1864,10 @@ def build_contract_text(prop: dict, landlord: dict, tenant: dict, c: dict) -> st
     dir_completa = exact_address(prop)
     recargo = round(float(c["monthly_rent"]) * 0.10, 2)
     pena = float(c["monthly_rent"])
+    iva_rate = int(c.get("iva_rate") or 0)
+    iva_amount = float(c.get("iva_amount") or 0)
+    iva_txt = (f" Adicionalmente, la renta causará el Impuesto al Valor Agregado (IVA) a la tasa del {iva_rate}%, equivalente a {_money(iva_amount)} mensuales, para un total de {_money(float(c['monthly_rent']) + iva_amount)} mensuales."
+               if iva_rate else " La renta no causa IVA por tratarse de un inmueble destinado a casa habitación sin amueblar.")
     return f"""CONTRATO DE ARRENDAMIENTO (BORRADOR DE PRUEBA — PENDIENTE DE REVISIÓN Y AJUSTE POR EL ADMINISTRADOR)
 
 Folio del contrato: {c['id']}
@@ -1880,7 +1886,7 @@ SEGUNDA. DESTINO Y USO. El inmueble se destinará EXCLUSIVAMENTE para uso HABITA
 
 TERCERA. VIGENCIA. El presente contrato tendrá una vigencia forzosa de {c['term_months']} meses, iniciando el {c['start_date']} y concluyendo el {c['end_date']}.
 
-CUARTA. RENTA. El ARRENDATARIO pagará una renta mensual de {_money(c['monthly_rent'])}, pagadera por adelantado dentro de los primeros CINCO (5) días naturales de cada mes.
+CUARTA. RENTA. El ARRENDATARIO pagará una renta mensual de {_money(c['monthly_rent'])}, pagadera por adelantado dentro de los primeros CINCO (5) días naturales de cada mes.{iva_txt}
 
 QUINTA. INCREMENTO ANUAL. La renta se incrementará automáticamente cada doce (12) meses conforme al Índice Nacional de Precios al Consumidor (INPC) publicado por el INEGI correspondiente al periodo inmediato anterior, aplicándose sobre la última renta vigente.
 
@@ -1979,6 +1985,8 @@ async def create_contract_from_visit(visit_id: str, data: ContractFromVisit = Co
         "deposit": prop["price_month"],
         "commission": commission,
         "maintenance_fund": prop.get("maintenance_fee", 0),
+        "iva_rate": int(prop.get("iva_rate") or 0),
+        "iva_amount": round(prop["price_month"] * (prop.get("iva_rate") or 0) / 100, 2),
         "start_date": start.date().isoformat(),
         "end_date": end.isoformat(),
         "term_months": term_months,
