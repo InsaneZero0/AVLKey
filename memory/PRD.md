@@ -324,3 +324,5 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Arrendador > Contratos: mismos botones de contrato firmado (subir/reemplazar PDF y ver). (DONE)
 - Arrendatario > Pagos: se quitó el apartado "Mis cobros de renta" (la tabla de cobros solo se muestra al arrendador). (DONE)
 - Menú arrendador: "Pagos" renombrado a "Rentas recibidas" (misma ruta /panel/pagos; título de la página también). (DONE)
+- Stripe: el cobro de renta (checkout y cargos automáticos) usa el Total mensual a pagar = renta + cuota Réntalo 4% + mantenimiento 4% + IVA (helper monthly_total_to_pay; /my/contracts expone monthly_total_to_pay). Tarjeta "Pagar renta" muestra el total.
+- Publicaciones: los inmuebles con contrato vigente (status ≠ finalizado/cancelado/rechazado) se excluyen del listado público GET /properties. (DONE)

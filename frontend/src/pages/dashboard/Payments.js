@@ -123,6 +123,7 @@ export default function Payments() {
                 <div>
                   <div className="font-medium text-navy">{c.property_title}</div>
                   <div className="text-sm text-stone-500">Arrendador: {c.landlord_name} · Renta <b className="text-navy">{formatMXN(c.monthly_rent)}</b>/mes · {c.paid_months} pago(s) realizado(s)</div>
+                  <div className="text-sm text-stone-600 mt-1" data-testid={`pay-rent-total-${c.id}`}>Total mensual a pagar: <b className="text-terracotta">{formatMXN(c.monthly_total_to_pay)}</b> <span className="text-xs text-stone-400">(renta + cuota Réntalo 4% + mantenimiento 4%{c.iva_rate > 0 ? ` + IVA ${c.iva_rate}%` : ""})</span></div>
                 </div>
                 <Button onClick={() => payRent(c.id)} disabled={payingRent === c.id} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid={`pay-rent-${c.id}`}>
                   {payingRent === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-1" /> Pagar renta</>}

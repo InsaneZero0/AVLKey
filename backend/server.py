@@ -822,6 +822,9 @@ async def list_properties(
     if status:
         query["status"] = status
     query["review_stage"] = "publicado"
+    rented_ids = [c["property_id"] async for c in db.contracts.find({"status": {"$nin": ["finalizado", "cancelado", "rechazado"]}}, {"_id": 0, "property_id": 1})]
+    if rented_ids:
+        query["id"] = {"$nin": rented_ids}
     if property_type and property_type != "todos":
         query["property_type"] = property_type
     if state and state != "todos":
@@ -1140,6 +1143,7 @@ async def my_contracts(user: dict = Depends(get_current_user)):
     for c in contracts:
         c["paid_months"] = await db.payment_transactions.count_documents({"contract_id": c["id"], "payment_status": "paid", "concept": "renta"})
         c["deposit_paid"] = bool(c.get("deposit_registered")) or (await db.payment_transactions.count_documents({"contract_id": c["id"], "payment_status": "paid", "concept": "deposito"})) > 0
+        c["monthly_total_to_pay"] = monthly_total_to_pay(float(c.get("monthly_rent") or 0), c.get("iva_rate"))["total"]
     return contracts
 
 
@@ -1223,8 +1227,10 @@ async def rent_checkout(data: RentCheckoutInput, user: dict = Depends(get_curren
         if already:
             raise HTTPException(status_code=400, detail="El depósito en garantía ya fue pagado")
     else:
-        amount = float(contract["monthly_rent"])
-        label = "Renta mensual"
+        prop = await db.properties.find_one({"id": contract["property_id"]}, {"_id": 0}) or {}
+        breakdown = monthly_total_to_pay(float(contract["monthly_rent"]), contract.get("iva_rate") or prop.get("iva_rate"))
+        amount = breakdown["total"]
+        label = "Renta mensual (renta + cuota Réntalo + mantenimiento" + (" + IVA)" if breakdown["iva"] else ")")
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Monto inválido")
     origin = data.origin_url.rstrip("/")
@@ -1356,18 +1362,27 @@ class DisperseInput(BaseModel):
 CRON_SECRET = os.environ.get("CRON_SECRET", "rentalo-cron-2026")
 
 
+def monthly_total_to_pay(rent: float, iva_rate) -> dict:
+    """Total mensual a pagar por el arrendatario: renta + cuota Réntalo 4% + mantenimiento 4% + IVA."""
+    fee = round(rent * 0.04, 2)
+    maintenance = round(rent * 0.04, 2)
+    iva = round(rent * float(iva_rate or 0) / 100, 2)
+    return {"rent": rent, "platform_fee": fee, "maintenance": maintenance, "iva": iva, "total": round(rent + fee + maintenance + iva, 2)}
+
+
 def compute_charge_amounts(contract: dict, prop: dict, is_first: bool) -> dict:
     rent = float(contract.get("monthly_rent") or 0)
     maintenance = round(rent * 0.04, 2)
     commission = round(rent * 0.04, 2)
+    iva = round(rent * float(contract.get("iva_rate") or prop.get("iva_rate") or 0) / 100, 2)
     g_danos = round(rent * 0.05, 2) if prop.get("garantia_danos") else 0.0
     g_pago = round(rent * 0.05, 2) if prop.get("garantia_pago_puntual") else 0.0
     deposit = float(contract.get("deposit") or rent) if is_first else 0.0
-    base_total = round(rent + maintenance + deposit, 2)
+    base_total = round(rent + commission + maintenance + iva + deposit, 2)
     net_landlord = round(rent - commission - g_danos - g_pago, 2)
     retained = round(deposit + g_danos + g_pago + maintenance, 2)
     return {
-        "rent": rent, "maintenance": maintenance, "commission": commission,
+        "rent": rent, "maintenance": maintenance, "commission": commission, "iva": iva,
         "guarantee_danos": g_danos, "guarantee_pago": g_pago, "deposit": deposit,
         "base_total": base_total, "late_fee": 0.0, "tenant_total": base_total,
         "net_landlord": net_landlord, "retained": retained,
