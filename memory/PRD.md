@@ -326,3 +326,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Menú arrendador: "Pagos" renombrado a "Rentas recibidas" (misma ruta /panel/pagos; título de la página también). (DONE)
 - Stripe: el cobro de renta (checkout y cargos automáticos) usa el Total mensual a pagar = renta + cuota Réntalo 4% + mantenimiento 4% + IVA (helper monthly_total_to_pay; /my/contracts expone monthly_total_to_pay). Tarjeta "Pagar renta" muestra el total.
 - Publicaciones: los inmuebles con contrato vigente (status ≠ finalizado/cancelado/rechazado) se excluyen del listado público GET /properties. (DONE)
+- Panel interno > Arrendadores y Arrendatarios: nueva columna RFC (usa rfc del usuario o empresa_datos.rfc). (DONE)
