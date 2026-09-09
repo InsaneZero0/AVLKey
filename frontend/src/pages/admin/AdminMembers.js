@@ -19,7 +19,7 @@ export default function AdminMembers({ role }) {
     [users, role]
   );
   const filtered = members.filter((u) =>
-    ((u.name || "") + (u.email || "") + (u.public_id || "")).toLowerCase().includes(q.toLowerCase())
+    [u.name, u.email, u.public_id, u.rfc, u.empresa_datos?.rfc].filter(Boolean).join(" ").toLowerCase().includes(q.trim().toLowerCase())
   );
 
   if (!users) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-terracotta" /></div>;
@@ -40,7 +40,7 @@ export default function AdminMembers({ role }) {
 
       <div className="mt-6 flex items-center gap-2 border border-stone-200 rounded-lg px-3 bg-white max-w-md">
         <Search className="w-4 h-4 text-stone-400" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por ID, nombre o correo" className="border-0 focus-visible:ring-0 shadow-none px-0" data-testid="member-search" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por ID, nombre, correo o RFC" className="border-0 focus-visible:ring-0 shadow-none px-0" data-testid="member-search" />
       </div>
 
       <div className="mt-6 bg-white border border-stone-200 rounded-xl overflow-x-auto">
