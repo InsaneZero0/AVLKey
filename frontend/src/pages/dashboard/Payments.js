@@ -92,7 +92,7 @@ export default function Payments() {
 
   return (
     <div>
-      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">Pagos</h1>
+      <h1 className="font-display font-bold text-3xl text-navy tracking-tight">{isLandlord ? "Rentas recibidas" : "Pagos"}</h1>
       <p className="text-stone-500 mt-1">{isLandlord ? "Cobros de tus inmuebles y dispersiones a tu cuenta." : "Paga tu renta y consulta tu historial."}</p>
 
       {/* Tarjeta (arrendatario) */}
@@ -161,8 +161,9 @@ export default function Payments() {
         </div>
       )}
 
-      {/* Cobros */}
-      <h2 className="font-display font-semibold text-navy text-lg mt-8 mb-3">{isLandlord ? "Cobros de renta" : "Mis cobros de renta"}</h2>
+      {/* Cobros (solo arrendador) */}
+      {isLandlord && (<>
+      <h2 className="font-display font-semibold text-navy text-lg mt-8 mb-3">Cobros de renta</h2>
       {charges.length === 0 ? (
         <div className="bg-white border border-dashed border-stone-300 rounded-2xl py-16 flex flex-col items-center text-stone-500" data-testid="empty-charges">
           <CreditCard className="w-12 h-12 mb-4" />
@@ -212,6 +213,7 @@ export default function Payments() {
           </table>
         </div>
       )}
+      </>)}
 
       {/* Historial de pagos registrados en Stripe */}
       <h2 className="font-display font-semibold text-navy text-lg mt-8 mb-3">Historial de pagos (Stripe)</h2>

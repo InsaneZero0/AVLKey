@@ -322,3 +322,5 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Arrendatario: botón "Pagar renta" (Stripe Checkout) removido de Contratos y movido a Pagos (sección "Pagar renta" con una tarjeta por contrato activo). (DONE)
 - Arrendatario > Contratos: botón "Subir contrato firmado (PDF)" por contrato (POST /my/contracts/{id}/signed-pdf, solo PDF ≤15MB, object storage privado) + botón "Contrato firmado" que abre el PDF vía GET autenticado /my/contracts/{id}/signed-pdf (partes y staff). Notifica a la contraparte. (DONE)
 - Arrendador > Contratos: mismos botones de contrato firmado (subir/reemplazar PDF y ver). (DONE)
+- Arrendatario > Pagos: se quitó el apartado "Mis cobros de renta" (la tabla de cobros solo se muestra al arrendador). (DONE)
+- Menú arrendador: "Pagos" renombrado a "Rentas recibidas" (misma ruta /panel/pagos; título de la página también). (DONE)
