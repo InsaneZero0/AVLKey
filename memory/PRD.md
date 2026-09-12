@@ -328,3 +328,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Publicaciones: los inmuebles con contrato vigente (status ≠ finalizado/cancelado/rechazado) se excluyen del listado público GET /properties. (DONE)
 - Panel interno > Arrendadores y Arrendatarios: nueva columna RFC (usa rfc del usuario o empresa_datos.rfc). (DONE)
 - Panel interno: buscador de Arrendadores/Arrendatarios también filtra por RFC. (DONE)
+- Depósito con tarjeta guardada: al pagar el depósito vía Checkout (customer + setup_future_usage=off_session) la tarjeta se guarda como método de cobro automático (_save_card_from_payment_intent, autopay_enabled). El cron mensual (_generate_period) cobra automáticamente contratos activos desde el mes de start_date y omite periodos anteriores; se detiene al finalizar/cancelar el contrato. (DONE)

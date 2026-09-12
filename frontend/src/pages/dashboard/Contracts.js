@@ -144,10 +144,11 @@ export default function Contracts() {
                         {c.deposit_paid ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-3 py-1.5 text-xs font-medium" data-testid={`deposit-paid-${c.id}`}><CheckCircle2 className="w-3.5 h-3.5" /> Depósito pagado</span>
                         ) : (
-                          <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => pay(c.id, "deposito")} data-testid={`pay-deposit-${c.id}`}>
+                          <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => pay(c.id, "deposito")} data-testid={`pay-deposit-${c.id}`} title="Al pagar el depósito se guarda tu tarjeta para el cobro automático de la renta">
                             {paying === `${c.id}-deposito` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar depósito</>}
                           </Button>
                         )}
+                        {!c.deposit_paid && <p className="w-full text-xs text-stone-500 text-right" data-testid={`autopay-hint-${c.id}`}>Al pagar el depósito se guarda tu tarjeta y la renta se cobrará automáticamente cada mes desde el inicio del contrato hasta su cancelación.</p>}
                       </>
                     )
                   )}

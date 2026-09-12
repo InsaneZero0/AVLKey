@@ -1234,9 +1234,16 @@ async def rent_checkout(data: RentCheckoutInput, user: dict = Depends(get_curren
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Monto inválido")
     origin = data.origin_url.rstrip("/")
+    session_kwargs = {}
+    if concept == "deposito":
+        udoc = await db.users.find_one({"id": user["id"]})
+        session_kwargs = {"customer": await get_or_create_customer(udoc),
+                          "payment_intent_data": {"setup_future_usage": "off_session"},
+                          "payment_method_options": {"card": {"setup_future_usage": "off_session"}}}
     try:
         session = stripe.checkout.Session.create(
             mode="payment",
+            **session_kwargs,
             line_items=[{
                 "price_data": {
                     "currency": "mxn",
@@ -1291,6 +1298,28 @@ async def payment_status(session_id: str):
     return {"session_id": record["session_id"], "status": record["status"], "payment_status": record["payment_status"], "concept": record.get("concept"), "amount": record.get("amount")}
 
 
+async def _save_card_from_payment_intent(tenant_id: str, payment_intent_id: str):
+    """Guarda la tarjeta usada en el depósito como método de cobro automático de renta."""
+    if not payment_intent_id:
+        return
+    try:
+        pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+        if not pi.payment_method:
+            return
+        pm = stripe.PaymentMethod.retrieve(pi.payment_method)
+        cust_id = pi.customer
+        if cust_id:
+            if not pm.customer:
+                pm = stripe.PaymentMethod.attach(pm.id, customer=cust_id)
+            stripe.Customer.modify(cust_id, invoice_settings={"default_payment_method": pm.id})
+        updates = {"default_payment_method_id": pm.id, "card_brand": pm.card.brand, "card_last4": pm.card.last4, "autopay_enabled": True}
+        if cust_id:
+            updates["stripe_customer_id"] = cust_id
+        await db.users.update_one({"id": tenant_id}, {"$set": updates})
+    except Exception as e:
+        logger.error(f"No se pudo guardar la tarjeta del depósito: {e}")
+
+
 async def _reconcile_checkout_payment(record: dict):
     """Reflect a paid Stripe Checkout in rent_charges / contract so statements show it."""
     if not record or record.get("payment_status") != "paid" or record.get("reconciled"):
@@ -1302,6 +1331,7 @@ async def _reconcile_checkout_payment(record: dict):
     if record.get("concept") == "deposito":
         await db.contracts.update_one({"id": contract["id"], "deposit_registered": {"$ne": True}}, {"$set": {
             "deposit_registered": True, "deposit_registered_at": now, "deposit_reference": f"Stripe {record.get('stripe_payment_intent_id') or record['session_id']}"}})
+        await _save_card_from_payment_intent(contract["tenant_id"], record.get("stripe_payment_intent_id"))
         period = None
     else:
         charge = await db.rent_charges.find_one({"contract_id": contract["id"], "status": {"$ne": "pagado"}}, {"_id": 0}, sort=[("period", 1)])
@@ -1506,6 +1536,8 @@ async def _generate_period(period: str) -> list:
     contracts = await db.contracts.find({"status": "activo"}, {"_id": 0}).to_list(1000)
     results = []
     for c in contracts:
+        if c.get("start_date") and period < c["start_date"][:7]:
+            continue
         prop = await db.properties.find_one({"id": c["property_id"]}, {"_id": 0}) or {}
         is_first = (await db.rent_charges.count_documents({"contract_id": c["id"]})) == 0
         charge = await _ensure_charge(c, prop, period, is_first)
