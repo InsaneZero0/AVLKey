@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Loader2, CreditCard, ShieldCheck, CheckCircle2, Calendar, Eye, Download, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusColor = { borrador: "bg-amber-100 text-amber-700", en_revision_admin: "bg-amber-100 text-amber-700", enviado_arrendatario: "bg-blue-100 text-blue-700", activo: "bg-green-100 text-green-700", finalizado: "bg-stone-100 text-stone-600" };
 
@@ -15,6 +19,7 @@ export default function Contracts() {
   const [contracts, setContracts] = useState(null);
   const [paying, setPaying] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [depositConfirm, setDepositConfirm] = useState(null);
   const [uploadingSigned, setUploadingSigned] = useState(null);
   const signedInputs = useRef({});
   const isLandlord = user?.role === "arrendador";
@@ -144,7 +149,7 @@ export default function Contracts() {
                         {c.deposit_paid ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-3 py-1.5 text-xs font-medium" data-testid={`deposit-paid-${c.id}`}><CheckCircle2 className="w-3.5 h-3.5" /> Depósito pagado</span>
                         ) : (
-                          <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => pay(c.id, "deposito")} data-testid={`pay-deposit-${c.id}`} title="Al pagar el depósito se guarda tu tarjeta para el cobro automático de la renta">
+                          <Button size="sm" variant="outline" className="rounded-full" disabled={paying === `${c.id}-deposito`} onClick={() => setDepositConfirm(c)} data-testid={`pay-deposit-${c.id}`} title="Al pagar el depósito se guarda tu tarjeta para el cobro automático de la renta">
                             {paying === `${c.id}-deposito` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar depósito</>}
                           </Button>
                         )}
@@ -158,6 +163,22 @@ export default function Contracts() {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!depositConfirm} onOpenChange={(o) => { if (!o) setDepositConfirm(null); }}>
+        <AlertDialogContent data-testid="deposit-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-navy">Pagar depósito en garantía</AlertDialogTitle>
+            <AlertDialogDescription>
+              Al pagar el depósito se guarda tu tarjeta y la renta se cobrará automáticamente cada mes desde el inicio del contrato hasta su cancelación.
+              {depositConfirm && <> Monto del depósito: <b className="text-navy">{formatMXN(depositConfirm.deposit)}</b>.</>} ¿Deseas continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full" data-testid="deposit-confirm-cancel">Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="deposit-confirm-accept" onClick={() => { const c = depositConfirm; setDepositConfirm(null); pay(c.id, "deposito"); }}>Aceptar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
         <DialogContent className="max-w-3xl" data-testid="contract-view-dialog">

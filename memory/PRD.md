@@ -329,3 +329,4 @@ Plataforma web responsive tipo SaaS "Réntalo en Línea" para la administración
 - Panel interno > Arrendadores y Arrendatarios: nueva columna RFC (usa rfc del usuario o empresa_datos.rfc). (DONE)
 - Panel interno: buscador de Arrendadores/Arrendatarios también filtra por RFC. (DONE)
 - Depósito con tarjeta guardada: al pagar el depósito vía Checkout (customer + setup_future_usage=off_session) la tarjeta se guarda como método de cobro automático (_save_card_from_payment_intent, autopay_enabled). El cron mensual (_generate_period) cobra automáticamente contratos activos desde el mes de start_date y omite periodos anteriores; se detiene al finalizar/cancelar el contrato. (DONE)
+- Contratos (arrendatario): al oprimir "Pagar depósito" se muestra AlertDialog (Aceptar/Cancelar) advirtiendo que la tarjeta quedará guardada para el cobro automático de rentas. (DONE)
