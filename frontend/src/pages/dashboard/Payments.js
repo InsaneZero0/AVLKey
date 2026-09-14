@@ -11,6 +11,7 @@ import { CreditCard, Loader2, Landmark, ShieldCheck, CheckCircle2, Clock } from 
 const chColor = { pagado: "bg-green-100 text-green-700", pendiente: "bg-amber-100 text-amber-700", fallido: "bg-red-100 text-red-700" };
 const chLabel = { pagado: "Pagado", pendiente: "Pendiente", fallido: "Fallido" };
 const payColor = { paid: "bg-green-100 text-green-700", pending: "bg-amber-100 text-amber-700", failed: "bg-red-100 text-red-700" };
+const nextChargeLabel = () => { const d = new Date(); const n = new Date(d.getFullYear(), d.getMonth() + 1, 1); return n.toLocaleDateString("es-MX", { day: "2-digit", month: "long" }); };
 const payLabel = { paid: "Pagado", pending: "Pendiente", failed: "Fallido", expired: "Expirado", completed: "Pagado" };
 const conceptLabel = { renta: "Renta mensual", deposito: "Depósito en garantía" };
 
@@ -103,12 +104,13 @@ export default function Payments() {
             <div>
               <div className="font-medium text-navy">Método de pago</div>
               {card?.has_card
-                ? <div className="text-sm text-stone-500 capitalize" data-testid="tenant-card-info">{card.brand} · terminación {card.last4}</div>
+                ? <div className="text-sm text-stone-500" data-testid="tenant-card-info"><span className="capitalize">{card.brand}</span> · terminación {card.last4} · <span className="text-stone-400">próximo cobro automático: {nextChargeLabel()}</span></div>
                 : <div className="text-sm text-stone-500">Aún no has guardado una tarjeta.</div>}
+              {card?.has_card && <div className="text-xs text-stone-400 mt-0.5">Puedes cambiar la tarjeta en cualquier momento; el siguiente cobro usará la nueva.</div>}
             </div>
           </div>
-          <Button onClick={saveCard} disabled={busy} className="rounded-full bg-terracotta hover:bg-terracotta-hover" data-testid="save-card-btn">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (card?.has_card ? "Actualizar tarjeta" : "Guardar tarjeta")}
+          <Button onClick={saveCard} disabled={busy} variant={card?.has_card ? "outline" : "default"} className={`rounded-full ${card?.has_card ? "" : "bg-terracotta hover:bg-terracotta-hover"}`} data-testid="save-card-btn">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (card?.has_card ? "Cambiar tarjeta" : "Guardar tarjeta")}
           </Button>
         </div>
       )}

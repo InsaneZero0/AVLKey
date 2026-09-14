@@ -1,7 +1,6 @@
 """Tests for property image upload endpoint and public media serving."""
 import io
 import os
-from pathlib import Path
 
 import pytest
 import requests

@@ -3,7 +3,6 @@ End-to-end backend tests for Réntalo en Línea.
 Runs against the public REACT_APP_BACKEND_URL /api prefix.
 """
 import os
-import time
 import uuid
 import pytest
 import requests

@@ -1,0 +1,5 @@
+[lint]
+# Los routers (routes_*.py) y server.py reciben el namespace compartido desde core.py vía star-import (patrón intencional).
+[lint.per-file-ignores]
+"routes_*.py" = ["F403", "F405"]
+"server.py" = ["F403", "F405"]

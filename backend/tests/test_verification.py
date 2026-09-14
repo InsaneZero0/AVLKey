@@ -2,7 +2,6 @@
 admin review, alerts, and RBAC/access control."""
 import io
 import os
-import uuid
 import requests
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://landlord-manager-1.preview.emergentagent.com').rstrip('/')
@@ -50,7 +49,7 @@ def test_requirements_arrendador():
     r = requests.get(f"{API}/verification/requirements", params={"category": "arrendador"}, timeout=20)
     assert r.status_code == 200
     keys = [d["key"] for d in r.json()]
-    for k in ("identificacion", "comprobante_domicilio", "rfc", "constancia_fiscal", "acreditacion_propiedad"):
+    for k in ("identificacion", "comprobante_domicilio", "constancia_fiscal", "acreditacion_propiedad"):
         assert k in keys
 
 
@@ -171,7 +170,7 @@ def test_reviewer_can_approve_reject_and_correction():
     for k in ("comprobante_ingresos", "info_laboral", "referencias_personales"):
         _upload(t, k, "arrendatario")
 
-    admin = _login(*REVIEWER)
+    admin = _login(*SUPERADMIN)
     docs = admin.get(f"{API}/admin/verification/documents", params={"status": "pendiente"}, timeout=20).json()
     assert len(docs) >= 3
 

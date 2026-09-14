@@ -3,7 +3,6 @@ Backend tests for the Visitas (visit scheduling) feature + notifications.
 Runs against public REACT_APP_BACKEND_URL /api prefix.
 """
 import os
-import time
 import uuid
 from datetime import datetime, timedelta, timezone
 

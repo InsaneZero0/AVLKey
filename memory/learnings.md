@@ -1,0 +1,1 @@
+- No correr `ruff --fix F401` en backend/core.py: los routers reciben imports vía star-import.
