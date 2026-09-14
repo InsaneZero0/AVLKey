@@ -435,7 +435,7 @@ export default function Verification({ onPersistPersonal } = {}) {
         })),
       };
       await api.patch("/users/me/fiscal", payload);
-      if (onPersistPersonal) { try { await onPersistPersonal(); } catch (e) { /* noop */ } }
+      if (onPersistPersonal) { try { await onPersistPersonal(); } catch (e) { console.warn("persist personal:", e?.message || e); } }
       if (category === "arrendatario" && accepted && !consent?.consent?.accepted) {
         await api.post("/consent/credit-check", { accepted: true, consent_text: consent?.text, consent_version: consent?.version });
         api.get("/my/consent").then(({ data }) => setConsent(data)).catch(() => {});
@@ -658,7 +658,7 @@ export default function Verification({ onPersistPersonal } = {}) {
       {alerts.length > 0 && (
         <div className="mt-4 space-y-2">
           {alerts.map((a, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm bg-red-50 text-red-700 rounded-lg px-3 py-2" data-testid={`alert-${i}`}>
+            <div key={a} className="flex items-center gap-2 text-sm bg-red-50 text-red-700 rounded-lg px-3 py-2" data-testid={`alert-${i}`}>
               <AlertTriangle className="w-4 h-4" /> {a.message}
             </div>
           ))}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
@@ -90,8 +90,8 @@ export default function Visits() {
     } catch (e) { toast.error(apiError(e.response?.data?.detail)); }
   };
 
-  const load = () => api.get("/my/visits").then(({ data }) => setVisits(data)).catch(() => setVisits([]));
-  useEffect(() => { load(); }, []);
+  const load = useCallback(() => api.get("/my/visits").then(({ data }) => setVisits(data)).catch(() => setVisits([])), []);
+  useEffect(() => { load(); }, [load]);
 
   const act = async (id, action, body) => {
     try {
@@ -148,11 +148,11 @@ export default function Visits() {
                             <span className="text-stone-500">Disponibilidad:</span>
                             {v.availability.map((a, i) => (
                               landlord ? (
-                                <button key={i} onClick={() => setSlot({ visitId: v.id, day: a.day, time: a.time })} className="text-terracotta font-medium underline underline-offset-2 hover:text-terracotta-hover" data-testid={`avail-link-${v.id}-${i}`}>
+                                <button key={`${a.day}-${a.time}`} onClick={() => setSlot({ visitId: v.id, day: a.day, time: a.time })} className="text-terracotta font-medium underline underline-offset-2 hover:text-terracotta-hover" data-testid={`avail-link-${v.id}-${i}`}>
                                   {a.day} {a.time}
                                 </button>
                               ) : (
-                                <span key={i} className="text-terracotta font-medium">{a.day} {a.time}{i < v.availability.length - 1 ? "," : ""}</span>
+                                <span key={`${a.day}-${a.time}`} className="text-terracotta font-medium">{a.day} {a.time}{i < v.availability.length - 1 ? "," : ""}</span>
                               )
                             ))}
                           </div>
@@ -266,7 +266,7 @@ export default function Visits() {
           <DialogHeader><DialogTitle className="font-display">Historial de la visita</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2 max-h-80 overflow-y-auto">
             {(historyOpen?.history || []).slice().reverse().map((h, i) => (
-              <div key={i} className="flex items-start gap-3">
+              <div key={`${h.at}-${h.status}`} className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-terracotta mt-1.5" />
                 <div>
                   <div className="text-sm font-medium text-navy">{statusMap[h.status]?.label || h.status}</div>

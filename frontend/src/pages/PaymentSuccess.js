@@ -25,7 +25,7 @@ export default function PaymentSuccess() {
         setInfo(data);
         if (data.payment_status === "paid") { setStatus("paid"); return; }
         if (["failed", "expired"].includes(data.payment_status)) { setStatus("error"); return; }
-      } catch { /* keep polling */ }
+      } catch (e) { console.warn("payment status poll:", e?.message || e); }
       polls.current += 1;
       if (polls.current >= MAX_POLLS) { setStatus("timeout"); return; }
       timer = setTimeout(poll, POLL_INTERVAL);

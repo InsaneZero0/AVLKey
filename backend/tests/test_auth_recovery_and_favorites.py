@@ -17,7 +17,8 @@ def _new_email():
     return f"test_recover_{uuid.uuid4().hex[:10]}@example.com"
 
 
-def _register(email, password="Passw0rd!", name="Test Recover"):
+def _register(email, password=None, name="Test Recover"):
+    password = password or os.environ.get("TEST_USER_PASSWORD", "Passw0rd!")
     r = requests.post(f"{API}/auth/register", json={"email": email, "password": password, "name": name})
     return r
 

@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-    } catch {}
+    } catch (e) { console.warn("logout:", e?.message || e); }
     setUser(null);
   };
 

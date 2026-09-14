@@ -5,7 +5,7 @@ import os
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, UploadFile, File, Form, Header, Query, BackgroundTasks
+from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
@@ -2150,7 +2150,7 @@ def build_contract_pdf(c: dict) -> bytes:
     from reportlab.lib.units import cm
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+    from reportlab.lib.enums import TA_JUSTIFY
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=2 * cm, bottomMargin=2 * cm,
                             leftMargin=2.2 * cm, rightMargin=2.2 * cm, title="Contrato de arrendamiento")
@@ -2361,7 +2361,7 @@ async def reschedule_visit(visit_id: str, data: RescheduleInput, user: dict = De
         "slot_key": slot_key(v["property_id"], data.scheduled_at),
         "proposed_by": "arrendador" if user["id"] == v["landlord_id"] else "arrendatario",
         "updated_at": now_utc().isoformat(),
-    }, {"history": {"status": "reprogramada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note or f"Nueva fecha propuesta"}})
+    }, {"history": {"status": "reprogramada", "by": user["name"], "at": now_utc().isoformat(), "note": data.note or "Nueva fecha propuesta"}})
     other = v["tenant_id"] if user["id"] == v["landlord_id"] else v["landlord_id"]
     await notify(other, "visita", "Nueva fecha propuesta", f"Se propuso una nueva fecha para {v['property_title']}.", "/panel/visitas")
     return {"ok": True}

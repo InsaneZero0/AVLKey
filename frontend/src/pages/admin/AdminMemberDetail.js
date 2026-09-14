@@ -56,7 +56,7 @@ function PropertyActivity({ propertyId }) {
               const Icon = style.icon;
               const badge = ACT_STATUS_COLOR[e.status];
               return (
-                <li key={i} className="flex gap-3">
+                <li key={`${e.at || e.date || ""}-${i}`} className="flex gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${badge || style.color}`}><Icon className="w-4 h-4" /></div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-navy">{e.title}</div>
@@ -552,7 +552,7 @@ export default function AdminMemberDetail() {
                       {p.images?.length > 0 && (
                         <div>
                           <div className="text-xs text-stone-400 mb-1">Fotos ({p.images.length})</div>
-                          <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={i} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
+                          <div className="flex flex-wrap gap-2">{p.images.map((im, i) => <img key={im} src={im} alt="" className="w-20 h-16 object-cover rounded-lg border border-stone-200" />)}</div>
                         </div>
                       )}
                     </div>
