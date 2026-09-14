@@ -12,7 +12,7 @@ from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 import logging
 import uuid
 import bcrypt
@@ -1625,8 +1625,61 @@ async def _send_reminder_email(tenant: dict, charge: dict):
     await send_email_managed(tenant["email"], subject, _reminder_html(charge, tenant.get("name", "arrendatario")))
 
 
+def _autopay_notice_html(tenant_name: str, contract: dict, breakdown: dict, card_brand: str, card_last4: str, charge_date: str) -> str:
+    rows = [("Renta mensual", breakdown["rent"]), ("Cuota Réntalo en Línea (4%)", breakdown["platform_fee"]), ("Mantenimiento (4%)", breakdown["maintenance"])]
+    if breakdown["iva"] > 0:
+        rows.append(("IVA", breakdown["iva"]))
+    row_html = "".join(
+        f'<tr><td style="padding:6px 0;color:#57534e">{escape(lbl)}</td>'
+        f'<td style="padding:6px 0;text-align:right;color:#1c1917">{_fmt_money(val)}</td></tr>' for lbl, val in rows)
+    return (
+        f'<table role="presentation" width="100%" style="max-width:560px;margin:auto;font-family:Arial,sans-serif"><tr><td style="padding:24px">'
+        f'<h2 style="color:#1e293b;margin:0 0 8px">Aviso de cobro automático</h2>'
+        f'<p style="color:#57534e">Hola {escape(tenant_name)}, el <b>{escape(charge_date)}</b> realizaremos el cobro automático de la renta de '
+        f'<b>{escape(contract.get("property_title", ""))}</b> a tu tarjeta <b>{escape((card_brand or "tarjeta").upper())} terminación {escape(card_last4 or "----")}</b>.</p>'
+        f'<table width="100%" style="border-top:1px solid #e7e5e4;border-bottom:1px solid #e7e5e4;margin:16px 0">{row_html}'
+        f'<tr><td style="padding:10px 0;font-weight:bold;color:#1c1917">Total a cobrar</td>'
+        f'<td style="padding:10px 0;text-align:right;font-weight:bold;color:#c2410c">{_fmt_money(breakdown["total"])}</td></tr></table>'
+        f'<p style="color:#78716c;font-size:13px">Asegúrate de contar con fondos suficientes. Si deseas cambiar la tarjeta, hazlo desde tu panel en Pagos antes de esa fecha.</p>'
+        f'<p style="color:#a8a29e;font-size:12px">{EMAIL_FROM_NAME}</p></td></tr></table>')
+
+
+async def _send_autopay_notices():
+    """3 días antes del cobro automático (día 1) avisa al arrendatario monto y tarjeta."""
+    today = now_utc().date()
+    y, m = (today.year + (1 if today.month == 12 else 0), 1 if today.month == 12 else today.month + 1)
+    charge_day = date(y, m, 1)
+    if (charge_day - today).days != 3:
+        return
+    period = charge_day.strftime("%Y-%m")
+    contracts = await db.contracts.find({"status": "activo"}, {"_id": 0}).to_list(1000)
+    for c in contracts:
+        if c.get("start_date") and period < c["start_date"][:7]:
+            continue
+        if await db.autopay_notices.find_one({"contract_id": c["id"], "period": period}):
+            continue
+        tenant = await db.users.find_one({"id": c["tenant_id"]}, {"_id": 0})
+        if not tenant or not tenant.get("default_payment_method_id"):
+            continue
+        prop = await db.properties.find_one({"id": c["property_id"]}, {"_id": 0}) or {}
+        breakdown = monthly_total_to_pay(float(c.get("monthly_rent") or 0), c.get("iva_rate") or prop.get("iva_rate"))
+        charge_date = charge_day.strftime("%d/%m/%Y")
+        card = f"{(tenant.get('card_brand') or 'tarjeta').upper()} •••• {tenant.get('card_last4') or '----'}"
+        await notify(c["tenant_id"], "pago", "Aviso de cobro automático",
+                     f"El {charge_date} cobraremos ${breakdown['total']:,.0f} MX de la renta de {c.get('property_title', '')} a tu {card}.", "/panel/pagos")
+        try:
+            if tenant.get("email"):
+                await send_email_managed(tenant["email"], f"Aviso de cobro automático {period} · {EMAIL_FROM_NAME}",
+                                         _autopay_notice_html(tenant.get("name", "arrendatario"), c, breakdown, tenant.get("card_brand"), tenant.get("card_last4"), charge_date))
+        except Exception as e:
+            logger.error(f"autopay notice email error: {e}")
+        await db.autopay_notices.insert_one({"contract_id": c["id"], "tenant_id": c["tenant_id"], "period": period,
+                                             "amount": breakdown["total"], "sent_at": now_utc().isoformat()})
+
+
 async def _payments_daily():
     today = now_utc().date().isoformat()
+    await _send_autopay_notices()
     charges = await db.rent_charges.find({"status": {"$in": ["pendiente", "fallido"]}}, {"_id": 0}).to_list(3000)
     for c in charges:
         if c.get("due_date") and today > c["due_date"]:
